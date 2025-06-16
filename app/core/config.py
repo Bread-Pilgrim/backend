@@ -23,4 +23,4 @@ class Configs(BaseSettings):
     GOOGLE_CREDENTIAL: str
 
     class Config:
-        env_file = ".env"
+        env_file = ".env.test"
