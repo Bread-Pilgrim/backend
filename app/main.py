@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api import receipt, tour
+from app.api import auth, receipt, tour
 from app.core.exception import UnknowExceptionError, exception_handler
 
 origins = [
@@ -23,8 +23,9 @@ app.add_middleware(
 )
 
 # router
-app.include_router(tour.router)
-app.include_router(receipt.router)
+app.include_router(auth.router)
+# app.include_router(tour.router)
+# app.include_router(receipt.router)
 
 # Exception
 app.add_exception_handler(UnknowExceptionError, exception_handler)
