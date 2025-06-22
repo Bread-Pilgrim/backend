@@ -21,3 +21,18 @@ class Users(Base, DateTimeMixin):
     age_range = Column(SmallInteger, nullable=True, comment="연령대")
     profile_img = Column(String(128), nullable=True, comment="프로필 썸네일")
     gender = Column(String(4), nullable=True)
+
+
+class UserPreference(Base, DateTimeMixin):
+    __tablename__ = "user_preferences"
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE", comment="users 테이블 id"),
+        primary_key=True,
+    )
+    tag_id = Column(
+        Integer,
+        ForeignKey("tags.id", ondelete="CASCADE", comment="tags 테이블 id"),
+        primary_key=True,
+    )
