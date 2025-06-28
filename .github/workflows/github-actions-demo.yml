@@ -1,0 +1,36 @@
+name: Deploy to Cloud Run from main branch
+on:
+  push:
+    branches: [main]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_RUN_PROJECT_ID }}
+  REGION: asia-northeast3
+  SERVICE: fastapi
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          project_id: ${{ env.GCP_RUN_PROJECT_ID }}
+          region: asia-northeast3
+          service: fastapi
+          source: ./
+
+      - name: Show URL
+        run: echo "URL => ${{ steps.deploy.outputs.url }}"
