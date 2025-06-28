@@ -23,13 +23,14 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
+          token_format: "access_token"
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
-          project_id: ${{ env.GCP_RUN_PROJECT_ID }}
-          region: asia-northeast3
-          service: fastapi
+          project_id: ${{ env.PROJECT_ID }}
+          region: ${{ env.REGION }}
+          service: ${{ env.SERVICE }}
           source: ./
 
       - name: Show URL
