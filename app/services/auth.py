@@ -55,10 +55,13 @@ class AuthService:
                     detail=f"카카오 API 요청 중 오류 발생: {str(e)}"
                 )
 
-    async def is_existing_user(self, login_type: str, access_token: str):
+    async def is_existing_user(
+        self, login_type: str, access_token: Optional[str] = None
+    ):
         """이미 존재하는 유저인지 확인하는 메소드."""
 
-        if login_type == "KAKAO":
+        # TODO 이거 if문 수정 필요
+        if login_type == "KAKAO" and access_token and self.db:
             data = await self.__get_kakao_user_info(access_token)
             kakao_data = parse_kakao_user_info(data)
             social_id, email = kakao_data.social_id, kakao_data.email
@@ -78,13 +81,15 @@ class AuthService:
     async def sign_up_user(self, login_type: str, data):
         """회원가입 메소드."""
 
-        try:
-            add_data = {key: value for key, value in data if value is not None}
-            user = Users(**{**add_data, "login_type": login_type})
-            self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
-            return user.id
-        except Exception as e:
-            self.db.rollback()
-            raise e
+        # TODO if 문 수정 필요
+        if self.db:
+            try:
+                add_data = {key: value for key, value in data if value is not None}
+                user = Users(**{**add_data, "login_type": login_type})
+                self.db.add(user)
+                self.db.commit()
+                self.db.refresh(user)
+                return user.id
+            except Exception as e:
+                self.db.rollback()
+                raise e
