@@ -34,4 +34,4 @@ jobs:
           source: ./
 
       - name: Show URL
-        run: echo "URL => ${{ steps.deploy.outputs.url }}"
+        run: echo "URL -> ${{ steps.deploy.outputs.url }}"
