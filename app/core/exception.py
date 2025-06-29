@@ -47,6 +47,13 @@ class InvalidTokenException(CustomException):
     ERROR_CODE = ErrorCode.UNAUTHORIZED
 
 
+class RequestDataMissingException(CustomException):
+    """요청데이터 누락 Exception"""
+
+    STATUS_CODE = status.HTTP_400_BAD_REQUEST
+    ERROR_CODE = ErrorCode.REQUEST_MISSING
+
+
 async def exception_handler(_, exc: Exception):
     """CustomException 예외 발생 시 처리"""
 

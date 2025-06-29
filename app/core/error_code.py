@@ -3,3 +3,5 @@ class ErrorCode:
     UNKNOWN_ERROR = 1000
     # 토큰 만료 오류
     UNAUTHORIZED = 1001
+    # 요청 누락
+    REQUEST_MISSING = 1002
