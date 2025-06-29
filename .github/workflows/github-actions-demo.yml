@@ -32,6 +32,7 @@ jobs:
           region: ${{ env.REGION }}
           service: ${{ env.SERVICE }}
           source: ./
+          build_service_account: 1015297428835-compute@developer.gserviceaccount.com
 
       - name: Show URL
         run: echo "URL -> ${{ steps.deploy.outputs.url }}"
