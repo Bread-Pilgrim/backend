@@ -1,10 +1,12 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Header, Request
 
-from app.core.auth import create_jwt_token
+from app.core.auth import create_jwt_token, verify_token
+from app.core.base import BaseResponse, BaseTokenHeader
 from app.core.config import Configs
 from app.core.database import get_db
 from app.schema.auth import AuthToken, LoginRequestModel
-from app.schema.base_response import BaseResponse
 from app.services.auth import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -12,13 +14,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 configs = Configs()
 
 
-@router.get("/token-test")
-async def kakao_callback(req: Request):
-    """카카오 서버 테스트용 redirect 경로"""
-    code = req.query_params.get("code")
-    auth = AuthService()
-    res = await auth.kakao_auth_callback(code=code)
-    return {"res": res}
+# @router.get("/kakao/callback")
+# async def kakao_callback(req: Request):
+#     """카카오 서버 테스트용 redirect 경로"""
+#     code = req.query_params.get("code")
+#     auth = AuthService()
+#     res = await auth.kakao_auth_callback(code=code)
+#     return {"res": res}
 
 
 @router.post("/login")
@@ -45,3 +47,10 @@ async def login_and_signup(
     return BaseResponse(
         token=AuthToken(access_token=access_token, refresh_token=refresh_token)
     )
+
+
+@router.post("/token/verify")
+async def verify_user_token(headers: Annotated[BaseTokenHeader, Header()]):
+    """access_token과 refresh_token 유효성 검사하는 API"""
+
+    return verify_token(headers)

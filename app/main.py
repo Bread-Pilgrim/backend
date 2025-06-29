@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api import auth, test
+from app.api import auth
 from app.core.exception import (
+    InvalidTokenException,
+    RequestDataMissingException,
     TokenExpiredException,
     UnknowExceptionError,
     exception_handler,
@@ -28,12 +30,13 @@ app.add_middleware(
 
 # router
 app.include_router(auth.router)
-app.include_router(test.router)
 # app.include_router(tour.router)
 # app.include_router(receipt.router)
 
 # Exception
 app.add_exception_handler(UnknowExceptionError, exception_handler)
 app.add_exception_handler(TokenExpiredException, exception_handler)
+app.add_exception_handler(RequestDataMissingException, exception_handler)
+app.add_exception_handler(InvalidTokenException, exception_handler)
 
 Instrumentator().instrument(app).expose(app)
