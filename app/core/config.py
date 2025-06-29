@@ -21,6 +21,9 @@ class Configs(BaseSettings):
     ALGORITHM: str
 
     GOOGLE_CREDENTIAL: str
+    GCP_RUN_PROJECT_ID: str
+    GCP_SA_EMAIL: str
+    GCP_WIF_PROVIDER: str
 
     class Config:
-        env_file = ".env.test"
+        env_file = ".env"
