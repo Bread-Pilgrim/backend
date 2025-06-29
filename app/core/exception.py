@@ -3,8 +3,8 @@ from typing import Any, Dict, Optional
 from fastapi import status
 from fastapi.responses import JSONResponse
 
+from app.core.base import BaseResponse
 from app.core.error_code import ErrorCode
-from app.schema.base_response import BaseResponse
 
 
 class CustomException(Exception):
@@ -38,6 +38,13 @@ class TokenExpiredException(CustomException):
     STATUS_CODE = status.HTTP_401_UNAUTHORIZED
     ERROR_CODE = ErrorCode.UNAUTHORIZED
     DEFAULT_MESSAGE = "토큰이 만료되었습니다."
+
+
+class InvalidTokenException(CustomException):
+    """유효하지 않은 토큰 Exception"""
+
+    STATUS_CODE = status.HTTP_401_UNAUTHORIZED
+    ERROR_CODE = ErrorCode.UNAUTHORIZED
 
 
 async def exception_handler(_, exc: Exception):
