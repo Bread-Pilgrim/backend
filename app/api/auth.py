@@ -14,13 +14,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 configs = Configs()
 
 
-# @router.get("/kakao/callback")
-# async def kakao_callback(req: Request):
-#     """카카오 서버 테스트용 redirect 경로"""
-#     code = req.query_params.get("code")
-#     auth = AuthService()
-#     res = await auth.kakao_auth_callback(code=code)
-#     return {"res": res}
+@router.get("/kakao/callback")
+async def kakao_callback(req: Request):
+    """카카오 서버 테스트용 redirect 경로"""
+    code = req.query_params.get("code")
+    auth = AuthService()
+    res = await auth.kakao_auth_callback(code=code)
+    return {"res": res}
 
 
 @router.post("/login")
