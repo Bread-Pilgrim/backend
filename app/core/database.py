@@ -11,6 +11,7 @@ from app.core.config import Configs
 config = Configs()
 
 engine = create_engine(config.DATABASE_URL, echo=True)
+print("📌 DB Connection URL : ", config.DATABASE_URL)
 
 SessionLocal = sessionmaker(bind=engine, class_=Session, expire_on_commit=False)
 
