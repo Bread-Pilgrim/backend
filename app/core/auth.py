@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from fastapi import Depends
 from jose import ExpiredSignatureError, JWTError, jwt
 
 from app.core.base import BaseResponse, BaseTokenHeader
@@ -81,8 +82,9 @@ def decode_jwt_payload(access_token: str, refresh_token: str):
             raise TokenExpiredException() from None
 
 
-def verify_token(headers: BaseTokenHeader):
+def verify_token(headers: BaseTokenHeader = Depends()):
     """API 회원 인증 검증 메소드. (주입해서 처리할 예정)"""
+
     access_token = headers.access_token
     refresh_token = headers.refresh_token
 
