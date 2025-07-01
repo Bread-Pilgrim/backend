@@ -8,6 +8,7 @@ from app.core.config import Configs
 from app.core.database import get_db
 from app.schema.auth import AuthToken, LoginRequestModel
 from app.services.auth import AuthService
+from app.services.users import UserService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -44,8 +45,14 @@ async def login_and_signup(
     # 3. token 발행
     access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
 
+    # 4. 취향필터 선택했는 지 체크
+    is_set_preferences = await UserService(db=db).check_is_set_preferences(
+        user_id=user_id
+    )
+
     return BaseResponse(
-        token=AuthToken(access_token=access_token, refresh_token=refresh_token)
+        token=AuthToken(access_token=access_token, refresh_token=refresh_token),
+        data={"is_set_preferences": is_set_preferences},
     )
 
 
