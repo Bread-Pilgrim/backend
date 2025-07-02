@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api import auth, users
+from app.api import auth, preferences, users
 from app.core.exception import (
     InvalidTokenException,
     RequestDataMissingException,
@@ -31,6 +31,7 @@ app.add_middleware(
 # router
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(preferences.router)
 # app.include_router(receipt.router)
 
 # Exception
