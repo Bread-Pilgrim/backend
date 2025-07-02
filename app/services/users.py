@@ -60,14 +60,18 @@ class UserService:
         except Exception as e:
             raise e
 
-    async def check_is_set_preferences(self, user_id: int) -> bool:
-        """취향선택 여부 반환하는 메소드."""
+    async def check_completed_onboarding(self, user_id: int) -> bool:
+        """온보딩 완료사항여부 반환하는 메소드."""
 
         try:
-            return (
-                self.db.query(Users.is_preferences_set)
+            res = (
+                self.db.query(Users.is_preferences_set, Users.nickname)
                 .filter(Users.id == user_id)
-                .scalar()
+                .first()
             )
+            if res.is_preferences_set is None and res.social_id is None:
+                return True
+            return False
+
         except Exception as e:
             raise e

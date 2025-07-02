@@ -46,13 +46,13 @@ async def login_and_signup(
     access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
 
     # 4. 취향필터 선택했는 지 체크
-    is_set_preferences = await UserService(db=db).check_is_set_preferences(
+    onboarding_completed = await UserService(db=db).check_completed_onboarding(
         user_id=user_id
     )
 
     return BaseResponse(
         token=AuthToken(access_token=access_token, refresh_token=refresh_token),
-        data={"is_set_preferences": is_set_preferences},
+        data={"onboarding_completed": onboarding_completed},
     )
 
 
