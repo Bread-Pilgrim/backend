@@ -47,3 +47,6 @@ class Preferences(Base, DateTimeMixin):
     id = Column(Integer, primary_key=True, autoincrement=True, comment="취향항목 ID")
     name = Column(String(124), comment="취향항목 이름")
     type = Column(String(40), comment="취향항목 타입")
+
+    class Config:
+        orm_mode = True
