@@ -3,9 +3,10 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-class UserPreferencesRequestModel(BaseModel):
+class UserOnboardRequestModel(BaseModel):
     """유저 취향등록 요청 모델."""
 
+    nickname: str = Field(..., description="닉네임")
     bread_types: List[int] = Field(..., description="빵종류 ID")
     flavors: List[int] = Field(..., description="빵맛")
     atmospheres: List[int] = Field(..., description="빵집 분위기 ID")
