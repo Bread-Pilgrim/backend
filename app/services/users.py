@@ -4,6 +4,7 @@ from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 
 from app.model.users import UserPreferences, Users
+from app.schema.users import ModifyUserInfoRequestModel
 
 
 class UserService:
@@ -43,6 +44,19 @@ class UserService:
                 user.is_preferences_set = True
                 self.db.commit()
 
+        except Exception as e:
+            raise e
+
+    async def modify_user_info(self, user_id: int, req: ModifyUserInfoRequestModel):
+        """유저 정보 수정"""
+
+        try:
+            target_field = req.model_dump(exclude_unset=True, exclude_none=True)
+            user = self.db.query(Users).filter(Users.id == user_id).first()
+
+            for key, value in target_field.items():
+                setattr(user, key, value)
+            self.db.commit()
         except Exception as e:
             raise e
 
