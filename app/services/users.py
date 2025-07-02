@@ -69,7 +69,7 @@ class UserService:
                 .filter(Users.id == user_id)
                 .first()
             )
-            if res.is_preferences_set is None and res.social_id is None:
+            if res.is_preferences_set is None and res.nickname is None:
                 return True
             return False
 
