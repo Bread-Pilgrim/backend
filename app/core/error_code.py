@@ -5,3 +5,5 @@ class ErrorCode:
     UNAUTHORIZED = 1001
     # 요청 누락
     REQUEST_MISSING = 1002
+    # 중복데이터
+    DUPLICATE_DATA = 1009

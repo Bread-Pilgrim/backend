@@ -54,6 +54,13 @@ class RequestDataMissingException(CustomException):
     ERROR_CODE = ErrorCode.REQUEST_MISSING
 
 
+class DuplicateException(CustomException):
+    """중복데이터 Exception"""
+
+    STATUS_CODE = status.HTTP_409_CONFLICT
+    ERROR_CODE = ErrorCode.DUPLICATE_DATA
+
+
 async def exception_handler(_, exc: Exception):
     """CustomException 예외 발생 시 처리"""
 
