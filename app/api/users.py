@@ -29,6 +29,9 @@ async def complete_onboarding(
 
     if user_id:
         u_service = UserService(db=db)
+
+        await u_service.check_nickname_exists(nickname)
+
         await u_service.insert_user_perferences(
             user_id=int(user_id),
             atmospheres=a,
