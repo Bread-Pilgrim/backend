@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 
+from app.core.exception import DuplicateException
 from app.model.users import UserPreferences, Users
 from app.schema.users import ModifyUserInfoRequestModel
 
@@ -10,6 +11,15 @@ from app.schema.users import ModifyUserInfoRequestModel
 class UserService:
     def __init__(self, db: Session):
         self.db = db
+
+    async def check_nickname_exists(self, nickname: str):
+        """nickname 중복처리하는 메소드."""
+
+        is_exist = self.db.query(Users).filter(Users.nickname == nickname).first()
+        if is_exist:
+            raise DuplicateException(
+                "사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!"
+            )
 
     async def insert_user_perferences(
         self,
