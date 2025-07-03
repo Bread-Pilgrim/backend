@@ -23,7 +23,7 @@ class PreferenceService:
             atmosphere=buckets.get("atmosphere", []),
             bread_type=buckets.get("bread_type", []),
             flavor=buckets.get("flavor", []),
-            c_area=buckets.get("flavor", []),
+            c_area=buckets.get("c_area", []),
         )
 
     async def get_preference_options(self):
