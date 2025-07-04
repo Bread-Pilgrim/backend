@@ -24,7 +24,7 @@ class CustomException(Exception):
         self.headers = headers
 
 
-class UnknowExceptionError(CustomException):
+class UnknownExceptionError(CustomException):
     """알 수 없는 에러"""
 
     STATUS_CODE = status.HTTP_500_INTERNAL_SERVER_ERROR

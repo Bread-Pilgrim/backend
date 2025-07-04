@@ -5,7 +5,7 @@ from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
 from app.services.users import UserService
-from app.utils.converer import user_info_to_id
+from app.utils.conveter import user_info_to_id
 
 router = APIRouter(prefix="/users", tags=["users"])
 
