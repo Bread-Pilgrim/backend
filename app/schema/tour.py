@@ -14,3 +14,14 @@ class EventPopupResponseModel(BaseModel):
     mapx: float = Field(..., description="x좌표")
     mapy: float = Field(..., description="y좌표")
     tel: str = Field(..., description="행사장 전화번호")
+
+
+class TourResponseModel(BaseModel):
+    """관광지 정보"""
+
+    title: str = Field(..., description="관광지명")
+    tour_type: str = Field(..., description="관광지 타입")
+    address: str = Field(..., description="관광지 장소")
+    tour_img: str = Field(..., description="관광지 이미지")
+    mapx: float = Field(..., description="x좌표")
+    mapy: float = Field(..., description="y좌표")
