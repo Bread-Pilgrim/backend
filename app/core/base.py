@@ -1,16 +1,16 @@
-from typing import Any, Optional
+from typing import Generic, TypeVar
 
-from fastapi import Header
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from pydantic.generics import GenericModel
 
-from app.schema.auth import AuthToken
+T = TypeVar("T")
 
 
-class BaseResponse(BaseModel):
+class BaseResponse(GenericModel, Generic[T]):
     status_code: int = 200
     message: str = "성공"
-    data: Optional[Any] = None
-    token: Optional[AuthToken] = None
+    data: T
+    token: str | None = None
 
 
 class BaseTokenHeader(BaseModel):
