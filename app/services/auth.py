@@ -5,7 +5,7 @@ from fastapi import logger
 from sqlalchemy.orm.session import Session
 
 from app.core.config import Configs
-from app.core.exception import UnknowExceptionError
+from app.core.exception import UnknownExceptionError
 from app.model.users import Users
 from app.utils.kakao import parse_kakao_user_info
 
@@ -24,8 +24,8 @@ class AuthService:
                     url="https://kauth.kakao.com/oauth/token",
                     data={
                         "grant_type": "authorization_code",
-                        "client_id": configs.KAKAO_API_KEY,
-                        "redirect_uri": configs.KAKAO_REDIRECT_URI,
+                        "client_id": "72c44b0660f24c80012e3048974b9a22",
+                        "redirect_uri": "http://127.0.0.1:8080/auth/kakao/callback",
                         "code": code,
                     },
                 )
@@ -47,11 +47,11 @@ class AuthService:
                 )
                 return res.json()
             except httpx.HTTPStatusError as e:
-                raise UnknowExceptionError(
+                raise UnknownExceptionError(
                     detail=f"카카오 API 호출 중 오류 발생: {str(e)}"
                 )
             except httpx.RequestError as e:
-                raise UnknowExceptionError(
+                raise UnknownExceptionError(
                     detail=f"카카오 API 요청 중 오류 발생: {str(e)}"
                 )
 
