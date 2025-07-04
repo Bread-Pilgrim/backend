@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends
 
@@ -28,7 +28,9 @@ async def show_region_event_popup(
     )
 
 
-@router.get("/region/{region_code}", response_model=BaseResponse(TourResponseModel))
-async def get(region_code: str, db=Depends(get_db), user_info=Depends(verify_token)):
+@router.get(
+    "/region/{region_code}", response_model=BaseResponse[List[TourResponseModel]]
+)
+async def get(region_code: str, db=Depends(get_db)):
     """주변 관광지 추천하는 API"""
-    return await TourService(db=db).get_region_tour(int(region_code))
+    return BaseResponse(data=await TourService(db=db).get_region_tour(int(region_code)))
