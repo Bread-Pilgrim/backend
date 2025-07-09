@@ -3,6 +3,8 @@ from typing import Generic, TypeVar
 from pydantic import BaseModel
 from pydantic.generics import GenericModel
 
+from app.schema.auth import AuthToken
+
 T = TypeVar("T")
 
 
@@ -10,7 +12,7 @@ class BaseResponse(GenericModel, Generic[T]):
     status_code: int = 200
     message: str = "성공"
     data: T
-    token: str | None = None
+    token: AuthToken | None = None
 
 
 class BaseTokenHeader(BaseModel):
