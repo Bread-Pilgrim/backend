@@ -29,7 +29,7 @@ class UnknownExceptionError(CustomException):
 
     STATUS_CODE = status.HTTP_500_INTERNAL_SERVER_ERROR
     ERROR_CODE = ErrorCode.UNKNOWN_ERROR
-    DEFAULT_MESSAGE = "서버 내부에 알 수 없는 오류가 발생했습니다."
+    DEFAULT_MESSAGE = "알 수 없는 오류가 발생했습니다."
 
 
 class TokenExpiredException(CustomException):
@@ -45,6 +45,7 @@ class InvalidTokenException(CustomException):
 
     STATUS_CODE = status.HTTP_401_UNAUTHORIZED
     ERROR_CODE = ErrorCode.UNAUTHORIZED
+    DEFAULT_MESSAGE = "유효하지 않은 토큰입니다."
 
 
 class RequestDataMissingException(CustomException):
@@ -52,6 +53,7 @@ class RequestDataMissingException(CustomException):
 
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
     ERROR_CODE = ErrorCode.REQUEST_MISSING
+    DEFAULT_MESSAGE = "요청데이터가 누락되었습니다."
 
 
 class DuplicateException(CustomException):
@@ -59,6 +61,7 @@ class DuplicateException(CustomException):
 
     STATUS_CODE = status.HTTP_409_CONFLICT
     ERROR_CODE = ErrorCode.DUPLICATE_DATA
+    DEFAULT_MESSAGE = "중복된 데이터 입니다."
 
 
 async def exception_handler(_, exc: Exception):
@@ -82,8 +85,8 @@ def build_error_response(exc_cls):
     example = {
         "status_code": exc_cls.ERROR_CODE,
         "message": exc_cls.DEFAULT_MESSAGE,
-        "data": "NULL | 필요한 데이터",
-        "token": "token 데이터",
+        "data": "",
+        "token": "",
     }
 
     return {
