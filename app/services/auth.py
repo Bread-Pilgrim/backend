@@ -92,4 +92,4 @@ class AuthService:
                 return user.id
             except Exception as e:
                 self.db.rollback()
-                raise e
+                raise UnknownExceptionError(str(e))

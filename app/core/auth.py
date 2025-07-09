@@ -89,7 +89,7 @@ def verify_token(headers: BaseTokenHeader = Header()):
     refresh_token = headers.refresh_token
 
     if access_token is None or refresh_token is None:
-        raise RequestDataMissingException(detail="토큰값 누락")
+        raise RequestDataMissingException(detail="토큰값이 누락되었습니다!")
 
     res = decode_jwt_payload(access_token=access_token, refresh_token=refresh_token)
     return res

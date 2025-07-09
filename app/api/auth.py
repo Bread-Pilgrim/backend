@@ -6,6 +6,7 @@ from app.core.auth import create_jwt_token, verify_token
 from app.core.base import BaseResponse, BaseTokenHeader
 from app.core.config import Configs
 from app.core.database import get_db
+from app.core.exception import ERROR_DATA_MISSING, ERROR_UNKNOWN
 from app.schema.auth import AuthToken, LoginRequestModel
 from app.services.auth import AuthService
 from app.services.users import UserService
@@ -24,7 +25,13 @@ async def kakao_callback(req: Request):
     return {"res": res}
 
 
-@router.post("/login")
+@router.post(
+    "/login",
+    response_model=BaseResponse,
+    responses=ERROR_UNKNOWN,
+    response_description="""
+    1. 500 에러 예시 : DB 이슈""",
+)
 async def login_and_signup(
     req: LoginRequestModel,
     access_token: str = Header(),
@@ -56,7 +63,15 @@ async def login_and_signup(
     )
 
 
-@router.post("/token/verify")
+@router.post(
+    "/token/verify",
+    response_model=BaseResponse,
+    responses=ERROR_DATA_MISSING,
+    response_description="""
+    1. 400 요청데이터 누락 에러 메세지 예시 : 토큰값이 누락되었습니다!
+    2. 500 에러 예시 : DB 이슈
+    """,
+)
 async def verify_user_token(headers: Annotated[BaseTokenHeader, Header()]):
     """access_token과 refresh_token 유효성 검사하는 API"""
 
