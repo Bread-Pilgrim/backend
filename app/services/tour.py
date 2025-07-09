@@ -87,21 +87,29 @@ class TourService:
     async def get_region_event(self, region_code: int):
         """지역행사 조회하는 API"""
 
+        params = {
+            "numOfRows": 10,
+            "pageNo": 1,
+            "MobileOS": "ETC",
+            "eventStartDate": "20250401",
+            "MobileApp": "bread-pilgrim",
+            "areaCode": 6,
+            "serviceKey": config.ORG_TOUR_SECRET_KEY,
+            "_type": "json",
+        }
+
         try:
             r = await self.request_with_ssl(
                 method="GET",
                 url=f"{config.REQ_URL_DOMAIN}/searchFestival2",
-                params={
-                    "numOfRows": 10,
-                    "pageNo": 1,
-                    "MobileOS": "ETC",
-                    "eventStartDate": "20250401",
-                    "MobileApp": "bread-pilgrim",
-                    "areaCode": 6,
-                    "sigunguCode": region_code,
-                    "serviceKey": config.ORG_TOUR_SECRET_KEY,
-                    "_type": "json",
-                },
+                params=(
+                    params
+                    if region_code == 14
+                    else {
+                        **params,
+                        "sigunguCode": region_code,
+                    }
+                ),
             )
 
             transformed_r = transform_tour_response(r)

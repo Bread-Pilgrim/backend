@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 @router.get(
-    "/events/region/{region_code}",
+    "/events/region",
     response_model=BaseResponse[Optional[EventPopupResponseModel]],
     responses=ERROR_UNKNOWN,
     response_description="""
