@@ -19,9 +19,33 @@ router = APIRouter(prefix="/prefer", tags=["prefer"])
     """,
 )
 async def get_preference_options(user_info=Depends(verify_token), db=Depends(get_db)):
-    """온보딩 취향설정 항목 조회 API"""
+    """취향항목 일괄조회 API"""
 
     user_id = user_info_to_id(user_info)
     if user_id:
         res = await PreferenceService(db=db).get_preference_options()
+    return BaseResponse(data=res)
+
+
+@router.get(
+    "/option",
+    response_model=BaseResponse,
+    responses=ERROR_UNKNOWN,
+    response_description="""
+    1. 500 에러 예시 : DB 이슈
+    """,
+    description="""취향항목 개별조회 API\n
+    [option_type]
+    atmosphere : 분위기
+    bread_type : 빵 취향
+    flavor : 빵 맛
+    c_area : 지역
+    """,
+)
+async def get_preference_option(
+    option_type: str, user_info=Depends(verify_token), db=Depends(get_db)
+):
+    user_id = user_info_to_id(user_info)
+    if user_id:
+        res = await PreferenceService(db=db).get_preference_option(option_type)
     return BaseResponse(data=res)
