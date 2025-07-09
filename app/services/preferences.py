@@ -35,3 +35,16 @@ class PreferenceService:
 
         except Exception as e:
             raise UnknownExceptionError(str(e))
+
+    async def get_preference_option(self, option_type: str):
+        """취향항목 조회하는 메소드."""
+        try:
+            res = (
+                self.db.query(Preferences.id, Preferences.name)
+                .filter(Preferences.type == option_type)
+                .all()
+            )
+            return [PreferenceType(id=r.id, name=r.name) for r in res]
+
+        except Exception as e:
+            raise UnknownExceptionError(str(e))
