@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from fastapi import status
 from fastapi.responses import JSONResponse
@@ -69,3 +69,34 @@ async def exception_handler(_, exc: Exception):
         content=exc.response.model_dump(),
         headers=exc.headers,
     )
+
+
+from typing import Dict, Type
+
+from fastapi import status
+
+
+def build_error_response(exc_cls):
+    """에러케이스 문서화 메소드."""
+
+    example = {
+        "status_code": exc_cls.ERROR_CODE,
+        "message": exc_cls.DEFAULT_MESSAGE,
+        "data": "NULL | 필요한 데이터",
+        "token": "token 데이터",
+    }
+
+    return {
+        exc_cls.STATUS_CODE: {
+            "model": BaseResponse,
+            "description": exc_cls.DEFAULT_MESSAGE,
+            "content": {"application/json": {"example": example}},
+        }
+    }
+
+
+ERROR_UNKNOWN = build_error_response(UnknownExceptionError)
+ERROR_EXPIRED_TOKEN = build_error_response(TokenExpiredException)
+ERROR_INVALID_TOKEN = build_error_response(InvalidTokenException)
+ERROR_DATA_MISSING = build_error_response(RequestDataMissingException)
+ERROR_DUPLE = build_error_response(DuplicateException)
