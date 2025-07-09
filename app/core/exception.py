@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from fastapi import status
 from fastapi.responses import JSONResponse
@@ -29,7 +29,7 @@ class UnknownExceptionError(CustomException):
 
     STATUS_CODE = status.HTTP_500_INTERNAL_SERVER_ERROR
     ERROR_CODE = ErrorCode.UNKNOWN_ERROR
-    DEFAULT_MESSAGE = "서버 내부에 알 수 없는 오류가 발생했습니다."
+    DEFAULT_MESSAGE = "알 수 없는 오류가 발생했습니다."
 
 
 class TokenExpiredException(CustomException):
@@ -45,6 +45,7 @@ class InvalidTokenException(CustomException):
 
     STATUS_CODE = status.HTTP_401_UNAUTHORIZED
     ERROR_CODE = ErrorCode.UNAUTHORIZED
+    DEFAULT_MESSAGE = "유효하지 않은 토큰입니다."
 
 
 class RequestDataMissingException(CustomException):
@@ -52,6 +53,7 @@ class RequestDataMissingException(CustomException):
 
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
     ERROR_CODE = ErrorCode.REQUEST_MISSING
+    DEFAULT_MESSAGE = "요청데이터가 누락되었습니다."
 
 
 class DuplicateException(CustomException):
@@ -59,6 +61,7 @@ class DuplicateException(CustomException):
 
     STATUS_CODE = status.HTTP_409_CONFLICT
     ERROR_CODE = ErrorCode.DUPLICATE_DATA
+    DEFAULT_MESSAGE = "중복된 데이터 입니다."
 
 
 async def exception_handler(_, exc: Exception):
@@ -69,3 +72,34 @@ async def exception_handler(_, exc: Exception):
         content=exc.response.model_dump(),
         headers=exc.headers,
     )
+
+
+from typing import Dict, Type
+
+from fastapi import status
+
+
+def build_error_response(exc_cls):
+    """에러케이스 문서화 메소드."""
+
+    example = {
+        "status_code": exc_cls.ERROR_CODE,
+        "message": exc_cls.DEFAULT_MESSAGE,
+        "data": "",
+        "token": "",
+    }
+
+    return {
+        exc_cls.STATUS_CODE: {
+            "model": BaseResponse,
+            "description": exc_cls.DEFAULT_MESSAGE,
+            "content": {"application/json": {"example": example}},
+        }
+    }
+
+
+ERROR_UNKNOWN = build_error_response(UnknownExceptionError)
+ERROR_EXPIRED_TOKEN = build_error_response(TokenExpiredException)
+ERROR_INVALID_TOKEN = build_error_response(InvalidTokenException)
+ERROR_DATA_MISSING = build_error_response(RequestDataMissingException)
+ERROR_DUPLE = build_error_response(DuplicateException)

@@ -3,6 +3,7 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
+from app.core.exception import UnknownExceptionError
 from app.model.users import Preferences
 from app.schema.preferences import PreferenceResponseModel, PreferenceType
 
@@ -33,4 +34,4 @@ class PreferenceService:
             return self.convert_list_to_model(res)
 
         except Exception as e:
-            raise e
+            raise UnknownExceptionError(str(e))

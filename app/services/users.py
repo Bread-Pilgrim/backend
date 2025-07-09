@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import DuplicateException
+from app.core.exception import DuplicateException, UnknownExceptionError
 from app.model.users import UserPreferences, Users
 from app.schema.users import ModifyUserInfoRequestModel
 
@@ -43,7 +43,7 @@ class UserService:
             self.db.commit()
 
         except Exception as e:
-            raise e
+            raise UnknownExceptionError(str(E))
 
     async def modify_preferencec_state(self, user_id: int):
         """취향설정 완료 상태 변경"""
@@ -55,7 +55,7 @@ class UserService:
                 self.db.commit()
 
         except Exception as e:
-            raise e
+            raise UnknownExceptionError(str(e))
 
     async def modify_user_info(self, user_id: int, req: ModifyUserInfoRequestModel):
         """유저 정보 수정"""
@@ -68,7 +68,7 @@ class UserService:
                 setattr(user, key, value)
             self.db.commit()
         except Exception as e:
-            raise e
+            raise UnknownExceptionError(str(e))
 
     async def check_completed_onboarding(self, user_id: int) -> bool:
         """온보딩 완료사항여부 반환하는 메소드."""
@@ -84,4 +84,4 @@ class UserService:
             return False
 
         except Exception as e:
-            raise e
+            raise UnknownExceptionError(str(e))

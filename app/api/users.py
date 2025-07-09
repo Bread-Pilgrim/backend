@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.core.auth import verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
+from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
 from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
 from app.services.users import UserService
 from app.utils.conveter import user_info_to_id
@@ -10,7 +11,18 @@ from app.utils.conveter import user_info_to_id
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("/me/onboarding", response_model=BaseResponse)
+@router.post(
+    "/me/onboarding",
+    response_model=BaseResponse,
+    responses={
+        **ERROR_DUPLE,
+        **ERROR_UNKNOWN,
+    },
+    response_description="""
+    1. 409 중복 에러 메세지 예시 : 사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!
+    2. 500 에러 예시 : DB 이슈
+    """,
+)
 async def complete_onboarding(
     req: UserOnboardRequestModel,
     user_info=Depends(verify_token),
@@ -47,7 +59,14 @@ async def complete_onboarding(
         return BaseResponse(message="유저 취향설정 성공")
 
 
-@router.patch("/info", response_model=BaseResponse)
+@router.patch(
+    "/info",
+    response_model=BaseResponse,
+    responses=ERROR_UNKNOWN,
+    response_description="""
+    1. 500 에러 예시 : DB 이슈
+    """,
+)
 async def modify_user_info(
     req: ModifyUserInfoRequestModel, user_info=Depends(verify_token), db=Depends(get_db)
 ):
