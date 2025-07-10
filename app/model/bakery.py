@@ -1,4 +1,14 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
+    SmallInteger,
+    String,
+    Text,
+    Time,
+)
 from sqlalchemy.orm import relationship
 
 from app.model.base import Base
@@ -10,22 +20,19 @@ class Bakery(Base, DateTimeMixin):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(40), nullable=False, comment="빵집이름")
-    full_address = Column(String(128), nullable=False, comment="주소 전문")
+    address = Column(String(128), nullable=False, comment="주소 전문")
     gu = Column(String(24), comment="구 아름")
     dong = Column(String(24), comment="동 이름")
-    area_id = Column(
+    lat = Column(Float, comment="위도 : mapy")
+    lng = Column(Float, comment="경도 : mapx")
+    phone = Column(String(40), comment="연락처")
+    commercial_area_id = Column(
         Integer,
-        ForeignKey("areas.id", ondelete="SET NULL"),
         nullable=True,
         comment="지역 ID",
     )
     avg_rating = Column(Float, default=0, comment="평균 별점")
     review_count = Column(Integer, default=0, comment="리뷰 개수")
-    tags = relationship(
-        "BakeryTag",
-        back_populates="bakery",  # BakeryTag 모델 안에 있는 bakery 관계 필드와 양방향 연결한다는 뜻.
-        cascade="all, delete-orphan",  # 부모테이블 삭제되면, 얘도 삭제됨.
-    )
 
 
 class BakeryMenu(Base, DateTimeMixin):
@@ -34,6 +41,33 @@ class BakeryMenu(Base, DateTimeMixin):
     id = Column(Integer, primary_key=True)
     name = Column(String(64), nullable=False)
     is_signature = Column(Boolean, default=False)
-    bakery_id = Column(
-        Integer, ForeignKey("bakeries.id", ondelete="CASCADE"), nullable=False
-    )
+    price = Column(Integer, comment="가격")
+    bakery_id = Column(Integer, nullable=False)
+
+
+class BakeryThumbnail(Base, DateTimeMixin):
+    __tablename__ = "bakery_thumbnails"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bakery_id = Column(Integer, nullable=False)
+    img_url = Column(Text, comment="이미지 경로")
+    is_signature = Column(Boolean, default=False)
+
+
+class BakeryPreference(Base):
+    __tablename__ = "bakery_preferences"
+
+    bakery_id = Column(Integer, nullable=False, primary_key=True)
+    preference_id = Column(Integer, nullable=False, primary_key=True)
+
+
+class OperatingHour(Base):
+    __tablename__ = "operating_hours"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bakery_id = Column(Integer, nullable=False)
+    day_of_week = Column(SmallInteger, nullable=True, comment="요일 1 : 월  ~ 7 : 일")
+    open_time = Column(Time, comment="오픈시간")
+    close_time = Column(Time, comment="종료시간")
+    is_opened = Column(Boolean, default=True, comment="오픈여부")
+    occasion = Column(String(128), comment="공휴일, 설날 등의 텍스트 상황")
