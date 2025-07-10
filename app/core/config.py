@@ -9,10 +9,6 @@ class Configs(BaseSettings):
     DB_PORT: str
     DATA_BASE: str
 
-    @property
-    def DATABASE_URL(self):
-        return "postgresql+psycopg2://kimjihan77:dkffkqbd2019!@34.47.117.55:5432/bread"
-
     # ====================== KAKAKO AUTH
     KAKAO_API_KEY: str
     KAKAO_REDIRECT_URI: str
@@ -34,6 +30,12 @@ class Configs(BaseSettings):
     GCP_RUN_PROJECT_ID: str
     GCP_SA_EMAIL: str
     GCP_WIF_PROVIDER: str
+
+    @property
+    # def DATABASE_URL(self):
+    #     return "postgresql+psycopg2://kimjihan77:dkffkqbd2019!@34.47.117.55:5432/bread"
+    def DATABASE_URL(self):
+        return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-db"
 
     class Config:
         env_file = ".env"
