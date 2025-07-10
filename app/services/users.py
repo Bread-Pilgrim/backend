@@ -43,7 +43,9 @@ class UserService:
             self.db.commit()
 
         except Exception as e:
-            raise UnknownExceptionError(str(E))
+            raise DuplicateException(
+                "이미 취향이 설정되어 있습니다. 취향을 수정하시려면 변경 요청을 해주세요."
+            )
 
     async def modify_preferencec_state(self, user_id: int):
         """취향설정 완료 상태 변경"""

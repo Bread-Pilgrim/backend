@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api import auth, preferences, test, tour, users
+from app.api import auth, bakery, common, preferences, test, tour, users
 from app.core.exception import (
     DuplicateException,
     InvalidTokenException,
@@ -33,8 +33,10 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(preferences.router)
-app.include_router(test.router)
+# app.include_router(test.router)
+app.include_router(bakery.router)
 app.include_router(tour.router)
+app.include_router(common.router)
 
 # Exception
 app.add_exception_handler(UnknownExceptionError, exception_handler)
