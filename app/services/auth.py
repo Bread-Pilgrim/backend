@@ -24,8 +24,8 @@ class AuthService:
                     url="https://kauth.kakao.com/oauth/token",
                     data={
                         "grant_type": "authorization_code",
-                        "client_id": "72c44b0660f24c80012e3048974b9a22",
-                        "redirect_uri": "http://127.0.0.1:8080/auth/kakao/callback",
+                        "client_id": configs.KAKAO_API_KEY,
+                        "redirect_uri": configs.KAKAO_REDIRECT_URI,
                         "code": code,
                     },
                 )
