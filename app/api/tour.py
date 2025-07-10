@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 @router.get(
-    "/events/region",
+    "/events/area",
     response_model=BaseResponse[Optional[EventPopupResponseModel]],
     responses=ERROR_UNKNOWN,
     response_description="""
@@ -39,16 +39,14 @@ router = APIRouter(
     14 : 전체
     """,
 )
-async def show_region_event_popup(
-    region_code: str, db=Depends(get_db), user_info=Depends(verify_token)
+async def show_area_event_popup(
+    area_code: str, db=Depends(get_db), user_info=Depends(verify_token)
 ):
-    return BaseResponse(
-        data=await TourService(db=db).get_region_event(int(region_code))
-    )
+    return BaseResponse(data=await TourService(db=db).get_area_event(int(area_code)))
 
 
 @router.get(
-    "/region",
+    "/area",
     response_model=BaseResponse[List[TourResponseModel]],
     responses=ERROR_UNKNOWN,
     response_description="""
@@ -80,9 +78,9 @@ async def show_region_event_popup(
     """,
 )
 async def get(
-    region_code: str, tour_cat: str, db=Depends(get_db), user_info=Depends(verify_token)
+    area_code: str, tour_cat: str, db=Depends(get_db), user_info=Depends(verify_token)
 ):
 
     return BaseResponse(
-        data=await TourService(db=db).get_region_tour(int(region_code), tour_cat)
+        data=await TourService(db=db).get_area_tour(int(area_code), tour_cat)
     )

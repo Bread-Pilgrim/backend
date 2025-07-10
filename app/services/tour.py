@@ -85,7 +85,7 @@ class TourService:
 
         return only_img_exist
 
-    async def get_region_event(self, region_code: int):
+    async def get_area_event(self, area_code: int):
         """지역행사 조회하는 API"""
 
         params = {
@@ -105,10 +105,10 @@ class TourService:
                 url=f"{config.REQ_URL_DOMAIN}/searchFestival2",
                 params=(
                     params
-                    if region_code == 14
+                    if area_code == 14
                     else {
                         **params,
-                        "sigunguCode": region_code,
+                        "sigunguCode": area_code,
                     }
                 ),
             )
@@ -118,7 +118,7 @@ class TourService:
         except Exception as e:
             raise UnknownExceptionError(str(e))
 
-    async def get_region_tour(self, region_code: int, tour_cat: str):
+    async def get_area_tour(self, area_code: int, tour_cat: str):
         """주변 관광지 가져오는 API (자연, 인문, 레포츠)"""
 
         params = {
@@ -138,10 +138,10 @@ class TourService:
                 url=f"{config.REQ_URL_DOMAIN}/areaBasedList2",
                 params=(
                     params
-                    if region_code == 14
+                    if area_code == 14
                     else {
                         **params,
-                        "sigunguCode": region_code,
+                        "sigunguCode": area_code,
                     }
                 ),
             )
