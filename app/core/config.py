@@ -35,7 +35,7 @@ class Configs(BaseSettings):
     # def DATABASE_URL(self):
     #     return "postgresql+psycopg2://kimjihan77:dkffkqbd2019!@34.47.117.55:5432/bread"
     def DATABASE_URL(self):
-        return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-db"
+        return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-road-db"
 
     class Config:
         env_file = ".env"
