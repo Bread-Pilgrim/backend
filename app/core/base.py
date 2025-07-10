@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
 
 from pydantic import BaseModel
 from pydantic.generics import GenericModel
@@ -11,7 +11,7 @@ T = TypeVar("T")
 class BaseResponse(GenericModel, Generic[T]):
     status_code: int = 200
     message: str = "성공"
-    data: T
+    data: Optional[T] = None
     token: AuthToken | None = None
 
 
