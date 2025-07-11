@@ -7,7 +7,7 @@ from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_UNKNOWN
 from app.schema.tour import EventPopupResponseModel, TourResponseModel
-from app.services.tour import TourService
+from app.services.tour_service import TourService
 
 router = APIRouter(
     prefix="/tour",
