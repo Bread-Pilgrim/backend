@@ -71,7 +71,7 @@ class AuthService:
 
         # 2. 소셜 유저 정보 기반으로 기저회원 여부 체크
         auth_repo = AuthRepository(db=self.db)
-        user_id = await auth_repo.get_user_id_by_socials(login_type, social_id, email)
+        user_id = await auth_repo.get_user_id_by_socials(login_type, email, social_id)
 
         # 3. 기저회원 아니면 회원가입
         if not user_id:
