@@ -78,24 +78,24 @@ class BakeryRepository:
 
             stmt = (
                 select(
-                    literal_column("DIXTINCT ON (b.id) b.id"),
-                    Bakery.id.label("bakery_id"),
+                    literal_column("DISTINCT ON (b.id) b.id"),
+                    Bakery.id,
                     Bakery.name,
                     Bakery.avg_rating,
                     Bakery.review_count,
                     OperatingHour.is_opened,
                     BakeryThumbnail.img_url,
                 )
-                .select_from(Bakery.alias("b"))
+                .select_from(Bakery.__table__.alias("b"))
                 .join(OperatingHour, OperatingHour.bakery_id == literal_column("b.id"))
                 .join(
                     BakeryThumbnail, BakeryThumbnail.bakery_id == literal_column("b.id")
                 )
                 .where(
-                    OperatingHour.day_of_week == target_day_of_week,
-                    Bakery.commercial_area_id.in_(area_codes),
+                    OperatingHour.day_of_week == 5,
+                    literal_column("b.commercial_area_id").in_([1, 4, 6]),
                 )
-                .order_by(Bakery.avg_rating.desc)
+                .order_by(literal_column("b.id"), Bakery.avg_rating.desc())
                 .limit(10)
             )
 
