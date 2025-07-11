@@ -93,3 +93,15 @@ def verify_token(headers: BaseTokenHeader = Header()):
         raise RequestDataMissingException(detail="토큰값이 누락되었습니다!")
 
     return decode_jwt_payload(access_token=access_token, refresh_token=refresh_token)
+
+
+def get_user_id(user_info: dict = Depends(verify_token)):
+    """user_info에서 user_id만 추출하는 메소드."""
+
+    data = user_info.data
+
+    if data:
+        user_id = data.get("user_id")
+        return int(user_id) if user_id else None
+    else:
+        raise InvalidTokenException("유효하지 않은 회원입니다.")
