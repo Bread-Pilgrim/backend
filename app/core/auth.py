@@ -29,7 +29,7 @@ def get_expiration_time(token_type: str) -> int:
     return current_time + expire_times
 
 
-def create_jwt_token(data: str):
+def create_jwt_token(data: dict[str, str]):
     """jwt token 반환하는 메소드."""
     to_encode = data.copy()
 
