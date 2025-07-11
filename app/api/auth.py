@@ -1,14 +1,12 @@
-from typing import Annotated
-
 from fastapi import APIRouter, Depends, Header, Request
 
 from app.core.auth import create_jwt_token, verify_token
-from app.core.base import BaseResponse, BaseTokenHeader
+from app.core.base import BaseResponse
 from app.core.config import Configs
 from app.core.database import get_db
 from app.core.exception import ERROR_DATA_MISSING, ERROR_UNKNOWN
-from app.schema.auth import AuthToken, LoginRequestModel
-from app.services.auth import AuthService
+from app.schema.auth import AuthToken, LoginRequestModel, LoginResponseModel
+from app.services.auth_service import AuthService
 from app.services.users import UserService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -27,7 +25,7 @@ async def kakao_callback(req: Request):
 
 @router.post(
     "/login",
-    response_model=BaseResponse,
+    response_model=BaseResponse[LoginResponseModel],
     responses=ERROR_UNKNOWN,
     response_description="""
     1. 500 에러 예시 : DB 이슈""",
@@ -38,29 +36,8 @@ async def login_and_signup(
     db=Depends(get_db),
 ):
     """로그인/회원가입."""
-
-    auth = AuthService(db=db)
-    login_type = req.login_type
-
-    # 1. login_type 기준으로 기저회원인지 체크
-    user_id, data = await auth.is_existing_user(login_type, access_token)
-
-    # 2. 기저회원 아니면 회원가입
-    if not user_id:
-        user_id = await auth.sign_up_user(login_type, data)
-
-    # 3. token 발행
-    access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
-
-    # 4. 취향필터 선택했는 지 체크
-    onboarding_completed = await UserService(db=db).check_completed_onboarding(
-        user_id=user_id
-    )
-
-    return BaseResponse(
-        token=AuthToken(access_token=access_token, refresh_token=refresh_token),
-        data={"onboarding_completed": onboarding_completed},
-    )
+    token, data = await AuthService(db=db).login_and_signup(req, access_token)
+    return BaseResponse(token=token, data=data)
 
 
 @router.post(
