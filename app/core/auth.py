@@ -11,6 +11,7 @@ from app.core.exception import (
     TokenExpiredException,
 )
 from app.schema.auth import AuthToken
+from app.utils.conveter import user_info_to_id
 
 configs = Configs()
 
@@ -91,5 +92,4 @@ def verify_token(headers: BaseTokenHeader = Header()):
     if access_token is None or refresh_token is None:
         raise RequestDataMissingException(detail="토큰값이 누락되었습니다!")
 
-    res = decode_jwt_payload(access_token=access_token, refresh_token=refresh_token)
-    return res
+    return decode_jwt_payload(access_token=access_token, refresh_token=refresh_token)
