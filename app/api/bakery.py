@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.auth import verify_token
+from app.core.auth import get_user_id, verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_UNKNOWN
@@ -24,13 +24,13 @@ async def get_bakeries_by_preference(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    user_info=Depends(verify_token),
+    user_id=Depends(get_user_id),
     db=Depends(get_db),
 ):
     """유저 취향+지역 필터 기반으로 한 빵집 조회 API"""
 
     return BaseResponse(
-        data=await BakeryService(db=db).get_bakeries_by_personal(area_code, user_info)
+        data=await BakeryService(db=db).get_bakeries_by_personal(area_code, user_id)
     )
 
 

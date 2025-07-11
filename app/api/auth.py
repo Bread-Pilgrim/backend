@@ -7,7 +7,6 @@ from app.core.database import get_db
 from app.core.exception import ERROR_DATA_MISSING, ERROR_UNKNOWN
 from app.schema.auth import AuthToken, LoginRequestModel, LoginResponseModel
 from app.services.auth_service import AuthService
-from app.services.users import UserService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
