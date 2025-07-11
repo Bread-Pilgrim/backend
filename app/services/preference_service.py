@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.exception import UnknownExceptionError
 from app.model.users import Preferences
 from app.repositories.preference_repo import PreferenceRepository
+from app.schema.preferences import PreferenceType
 
 
 class PreferenceService:
@@ -18,14 +19,6 @@ class PreferenceService:
         return await PreferenceRepository(db=self.db).get_preference_options()
 
     async def get_preference_option(self, option_type: str):
-        """취향항목 조회하는 메소드."""
-        try:
-            res = (
-                self.db.query(Preferences.id, Preferences.name)
-                .filter(Preferences.type == option_type)
-                .all()
-            )
-            return [PreferenceType(id=r.id, name=r.name) for r in res]
+        """취향항목 조회하는 비즈니스 로직."""
 
-        except Exception as e:
-            raise UnknownExceptionError(str(e))
+        return await PreferenceRepository(db=self.db).get_preference_option(option_type)
