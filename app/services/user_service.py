@@ -5,85 +5,46 @@ from sqlalchemy.orm.session import Session
 
 from app.core.exception import DuplicateException, UnknownExceptionError
 from app.model.users import UserPreferences, Users
-from app.schema.users import ModifyUserInfoRequestModel
+from app.repositories.user_repo import UserRepository
+from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
 
 
 class UserService:
     def __init__(self, db: Session):
         self.db = db
 
-    async def check_nickname_exists(self, nickname: str):
-        """nickname 중복처리하는 메소드."""
+    async def set_user_preference_onboarding(
+        self, user_id: int, req: UserOnboardRequestModel
+    ):
+        """온보딩에서 유저의 취향설정을 완료처리하는 비즈니스 로직"""
 
-        is_exist = self.db.query(Users).filter(Users.nickname == nickname).first()
+        a, b, c, f, nickname = (
+            req.atmospheres,
+            req.bread_types,
+            req.commercial_areas,
+            req.flavors,
+            req.nickname,
+        )
+
+        user_repo = UserRepository(db=self.db)
+
+        # 1. 닉네임 중복체크
+        is_exist = await user_repo.find_user_by_nickname(nickname=nickname)
         if is_exist:
             raise DuplicateException(
                 "사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!"
             )
 
-    async def insert_user_perferences(
-        self,
-        user_id: int,
-        atmospheres: List[int],
-        bread_types: List[int],
-        commercial_areas: List[int],
-        flavors: List[int],
-    ):
-        """유저의 취향 insert 하는 메소드."""
-        try:
-            preference_ids = atmospheres + bread_types + commercial_areas + flavors
-            preference_ids = list(set(preference_ids))  # 중복제거
+        # 2. 유저-취향 N:M 테이블 데이터 적재
+        preference_ids = a + b + c + f
+        preference_ids = list(set(preference_ids))  # 중복제거
 
-            maps = [
-                {"user_id": user_id, "preference_id": pid} for pid in preference_ids
-            ]
+        maps = [{"user_id": user_id, "preference_id": pid} for pid in preference_ids]
+        await user_repo.bulk_insert_user_perferences(maps=maps)
 
-            user_preferences = inspect(UserPreferences)
-            self.db.bulk_insert_mappings(user_preferences, maps)
-            self.db.commit()
+        # 3. 유저 정보 수정 - 닉네임
+        target_field = req.model_dump(exclude_unset=True, exclude_none=True)
+        await user_repo.modify_user_info(user_id=user_id, target_field=target_field)
 
-        except Exception as e:
-            raise DuplicateException(
-                "이미 취향이 설정되어 있습니다. 취향을 수정하시려면 변경 요청을 해주세요."
-            )
-
-    async def modify_preferencec_state(self, user_id: int):
-        """취향설정 완료 상태 변경"""
-        try:
-            user = self.db.query(Users).filter(Users.id == user_id).first()
-
-            if user:
-                user.is_preferences_set = True
-                self.db.commit()
-
-        except Exception as e:
-            raise UnknownExceptionError(str(e))
-
-    async def modify_user_info(self, user_id: int, req: ModifyUserInfoRequestModel):
-        """유저 정보 수정"""
-
-        try:
-            target_field = req.model_dump(exclude_unset=True, exclude_none=True)
-            user = self.db.query(Users).filter(Users.id == user_id).first()
-
-            for key, value in target_field.items():
-                setattr(user, key, value)
-            self.db.commit()
-        except Exception as e:
-            raise UnknownExceptionError(str(e))
-
-    async def check_completed_onboarding(self, user_id: int) -> bool:
-        """온보딩 완료사항여부 반환하는 메소드."""
-
-        try:
-            res = (
-                self.db.query(Users.is_preferences_set, Users.nickname)
-                .filter(Users.id == user_id)
-                .first()
-            )
-            if res.is_preferences_set is None and res.nickname is None:
-                return True
-            return False
-
-        except Exception as e:
-            raise UnknownExceptionError(str(e))
+        # 4. 취향설정 완료여부 변경
+        await user_repo.modify_preference_state(user_id=user_id)

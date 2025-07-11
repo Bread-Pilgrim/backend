@@ -30,32 +30,8 @@ async def complete_onboarding(
 ):
     """유저의 온보딩완료 처리하는 API(취향설정, 닉네임 설정)"""
 
-    a, b, c, f, nickname = (
-        req.atmospheres,
-        req.bread_types,
-        req.commercial_areas,
-        req.flavors,
-        req.nickname,
-    )
-
-    if user_id:
-        u_service = UserService(db=db)
-
-        await u_service.check_nickname_exists(nickname)
-
-        await u_service.insert_user_perferences(
-            user_id=int(user_id),
-            atmospheres=a,
-            bread_types=b,
-            commercial_areas=c,
-            flavors=f,
-        )
-        await u_service.modify_user_info(
-            user_id=user_id, req=ModifyUserInfoRequestModel(nickname=nickname)
-        )
-        await u_service.modify_preferencec_state(user_id=user_id)
-
-        return BaseResponse(message="유저 취향설정 성공")
+    await UserService(db=db).set_user_preference_onboarding(user_id=user_id, req=req)
+    return BaseResponse(message="유저 취향설정 성공")
 
 
 @router.patch(
