@@ -1,14 +1,14 @@
 from collections import defaultdict
 from typing import List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm.session import Session
 
 from app.core.exception import UnknownExceptionError
 from app.model.users import Preferences
 from app.schema.preferences import PreferenceResponseModel, PreferenceType
 
 
-class PreferenceService:
+class PreferenceRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
@@ -28,16 +28,16 @@ class PreferenceService:
         )
 
     async def get_preference_options(self):
-        """취향항목 조회하는 메소드."""
+        """취향항목 전체 조회 쿼리."""
         try:
             res = self.db.query(Preferences).all()
             return self.convert_list_to_model(res)
-
         except Exception as e:
             raise UnknownExceptionError(str(e))
 
     async def get_preference_option(self, option_type: str):
-        """취향항목 조회하는 메소드."""
+        """특정 취향항목 조회하는 쿼리."""
+
         try:
             res = (
                 self.db.query(Preferences.id, Preferences.name)

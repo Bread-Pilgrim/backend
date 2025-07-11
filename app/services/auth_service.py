@@ -4,9 +4,12 @@ import httpx
 from fastapi import logger
 from sqlalchemy.orm.session import Session
 
+from app.core.auth import create_jwt_token
 from app.core.config import Configs
 from app.core.exception import UnknownExceptionError
 from app.model.users import Users
+from app.repositories.auth_repo import AuthRepository
+from app.schema.auth import AuthToken, LoginRequestModel, LoginResponseModel
 from app.utils.kakao import parse_kakao_user_info
 
 configs = Configs()
@@ -55,41 +58,31 @@ class AuthService:
                     detail=f"카카오 API 요청 중 오류 발생: {str(e)}"
                 )
 
-    async def is_existing_user(
-        self, login_type: str, access_token: Optional[str] = None
-    ):
-        """이미 존재하는 유저인지 확인하는 메소드."""
+    async def login_and_signup(self, req: LoginRequestModel, social_access_token: str):
+        """로그인/회원가입 비즈니스 로직."""
 
-        # TODO 이거 if문 수정 필요
-        if login_type == "KAKAO" and access_token and self.db:
-            data = await self.__get_kakao_user_info(access_token)
+        login_type = req.login_type
+
+        # 1. login_type 기준으로 소셜 유저 정보 조회
+        if login_type == "KAKAO" and social_access_token and self.db:
+            data = await self.__get_kakao_user_info(social_access_token)
             kakao_data = parse_kakao_user_info(data)
             social_id, email = kakao_data.social_id, kakao_data.email
 
-            user = (
-                self.db.query(Users.id)
-                .filter(
-                    Users.login_type == login_type,
-                    Users.email == email,
-                    Users.social_id == social_id,
-                )
-                .first()
-            )
+        # 2. 소셜 유저 정보 기반으로 기저회원 여부 체크
+        auth_repo = AuthRepository(db=self.db)
+        user_id = await auth_repo.get_user_id_by_socials(login_type, email, social_id)
 
-            return user.id if user else None, kakao_data
+        # 3. 기저회원 아니면 회원가입
+        if not user_id:
+            user_id = await auth_repo.sign_up_user(login_type, kakao_data)
 
-    async def sign_up_user(self, login_type: str, data):
-        """회원가입 메소드."""
+        # 4. token 발행
+        access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
 
-        # TODO if 문 수정 필요
-        if self.db:
-            try:
-                add_data = {key: value for key, value in data if value is not None}
-                user = Users(**{**add_data, "login_type": login_type})
-                self.db.add(user)
-                self.db.commit()
-                self.db.refresh(user)
-                return user.id
-            except Exception as e:
-                self.db.rollback()
-                raise UnknownExceptionError(str(e))
+        # 5. 취향필터 선택했는 지 체크
+        onboarding_completed = await auth_repo.check_completed_onboarding(user_id)
+
+        return AuthToken(
+            access_token=access_token, refresh_token=refresh_token
+        ), LoginResponseModel(onboarding_completed=onboarding_completed)

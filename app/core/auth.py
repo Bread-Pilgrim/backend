@@ -11,6 +11,7 @@ from app.core.exception import (
     TokenExpiredException,
 )
 from app.schema.auth import AuthToken
+from app.utils.conveter import user_info_to_id
 
 configs = Configs()
 
@@ -29,7 +30,7 @@ def get_expiration_time(token_type: str) -> int:
     return current_time + expire_times
 
 
-def create_jwt_token(data: str):
+def create_jwt_token(data: dict[str, str]):
     """jwt token 반환하는 메소드."""
     to_encode = data.copy()
 
@@ -91,5 +92,16 @@ def verify_token(headers: BaseTokenHeader = Header()):
     if access_token is None or refresh_token is None:
         raise RequestDataMissingException(detail="토큰값이 누락되었습니다!")
 
-    res = decode_jwt_payload(access_token=access_token, refresh_token=refresh_token)
-    return res
+    return decode_jwt_payload(access_token=access_token, refresh_token=refresh_token)
+
+
+def get_user_id(user_info: dict = Depends(verify_token)):
+    """user_info에서 user_id만 추출하는 메소드."""
+
+    data = user_info.data
+
+    if data:
+        user_id = data.get("user_id")
+        return int(user_id) if user_id else None
+    else:
+        raise InvalidTokenException("유효하지 않은 회원입니다.")

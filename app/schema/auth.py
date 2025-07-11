@@ -18,6 +18,12 @@ class LoginRequestModel(BaseModel):
     # pass_word: Optional[str] = Field(default=None, description="비밀번호")
 
 
+class LoginResponseModel(BaseModel):
+    """로그인/회원가입 응답 모델."""
+
+    onboarding_completed: bool = Field(..., description="온보딩 취향설정 완료여부")
+
+
 class KakaoUserInfoModel(BaseModel):
     """카카오 유저정보 모델"""
 
