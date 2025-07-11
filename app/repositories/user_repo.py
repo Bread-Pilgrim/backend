@@ -10,7 +10,7 @@ class UserRepository:
         self.db = db
 
     async def find_user_by_nickname(self, nickname: str):
-        """nickname 조회하는 메소드."""
+        """nickname 조회하는 쿼리.."""
 
         return self.db.query(Users).filter(Users.nickname == nickname).first()
 
@@ -18,7 +18,7 @@ class UserRepository:
         self,
         maps,
     ):
-        """유저의 취향 insert 하는 메소드."""
+        """유저의 취향 insert 하는 쿼리.."""
 
         try:
             user_preferences = inspect(UserPreferences)
@@ -31,7 +31,7 @@ class UserRepository:
             )
 
     async def modify_user_info(self, user_id: int, target_field):
-        """유저 정보 수정"""
+        """유저 정보 수정하는 쿼리."""
 
         try:
             user = self.db.query(Users).filter(Users.id == user_id).first()
@@ -43,7 +43,7 @@ class UserRepository:
             raise UnknownExceptionError(str(e))
 
     async def modify_preference_state(self, user_id: int):
-        """취향설정 완료 상태 변경"""
+        """취향설정 완료 상태 변경하는 쿼리."""
         try:
             user = self.db.query(Users).filter(Users.id == user_id).first()
 

@@ -48,3 +48,11 @@ class UserService:
 
         # 4. 취향설정 완료여부 변경
         await user_repo.modify_preference_state(user_id=user_id)
+
+    async def modify_user_info(self, user_id: int, req: ModifyUserInfoRequestModel):
+        """유저 정보 수정하는 비즈니스 로직."""
+
+        target_field = req.model_dump(exclude_unset=True, exclude_none=True)
+        await UserRepository(db=self.db).modify_user_info(
+            user_id=user_id, target_field=target_field
+        )
