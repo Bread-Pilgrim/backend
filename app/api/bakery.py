@@ -8,8 +8,6 @@ from app.core.database import get_db
 from app.core.exception import ERROR_UNKNOWN
 from app.schema.bakery import RecommendBakery
 from app.services.bakery_service import BakeryService
-from app.services.preferences import PreferenceService
-from app.utils.conveter import user_info_to_id
 
 router = APIRouter(prefix="/bakery", tags=["bakery"])
 
@@ -48,7 +46,7 @@ async def get_recommend_bakery_by_area(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    user_info=Depends(verify_token),
+    _: None = Depends(verify_token),
     db=Depends(get_db),
 ):
     """지역 추천 빵집 조회 API."""

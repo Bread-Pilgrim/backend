@@ -40,7 +40,7 @@ router = APIRouter(
     """,
 )
 async def show_area_event_popup(
-    area_code: str, db=Depends(get_db), user_info=Depends(verify_token)
+    area_code: str, db=Depends(get_db), _: None = Depends(verify_token)
 ):
     return BaseResponse(data=await TourService(db=db).get_area_event(int(area_code)))
 
@@ -78,7 +78,7 @@ async def show_area_event_popup(
     """,
 )
 async def get(
-    area_code: str, tour_cat: str, db=Depends(get_db), user_info=Depends(verify_token)
+    area_code: str, tour_cat: str, db=Depends(get_db), _: None = Depends(verify_token)
 ):
 
     return BaseResponse(

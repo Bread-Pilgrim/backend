@@ -72,7 +72,7 @@ async def login_and_signup(
     2. 500 에러 예시 : DB 이슈
     """,
 )
-async def verify_user_token(headers: Annotated[BaseTokenHeader, Header()]):
+async def verify_user_token(user_info=Depends(verify_token)):
     """access_token과 refresh_token 유효성 검사하는 API"""
 
-    return verify_token(headers)
+    return user_info
