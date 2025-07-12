@@ -2,19 +2,29 @@ from sqlalchemy import and_, literal_column, select
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import UnknownExceptionError
-from app.model.bakery import Bakery, BakeryPreference, BakeryThumbnail, OperatingHour
+from app.model.bakery import (
+    Bakery,
+    BakeryMenu,
+    BakeryPreference,
+    BakeryThumbnail,
+    OperatingHour,
+)
 from app.model.users import UserPreferences
-from app.schema.bakery import RecommendBakery
+from app.schema.bakery import LoadMoreBakery, RecommendBakery
 
 
 class BakeryRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    async def get_bakeries_by_personal(
-        self, area_codes: list[str], user_id: int, target_day_of_week: int
+    async def get_bakeries_by_preference(
+        self,
+        area_codes: list[str],
+        user_id: int,
+        target_day_of_week: int,
+        page_size: int = 10,
     ):
-        """지역코드 조회하는 쿼리."""
+        """(홈) 유저의 취향이 반영된 빵집 조회하는 쿼리."""
 
         try:
             conditions = [UserPreferences.user_id == user_id]
@@ -53,14 +63,14 @@ class BakeryRepository:
                     ),
                 )
                 .where(and_(*conditions))
-                .limit(10)
+                .limit(page_size)
             )
 
             res = self.db.execute(stmt).mappings().all()
             return [
                 RecommendBakery(
                     bakery_id=r.id,
-                    name=r.name,
+                    bakery_name=r.name,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
                     is_opened=r.is_opened,
@@ -68,6 +78,91 @@ class BakeryRepository:
                 )
                 for r in res
             ]
+
+        except Exception as e:
+            raise UnknownExceptionError(str(e))
+
+    async def get_more_bakeries_by_preference(
+        self,
+        cursor_id: int,
+        page_size: int,
+        area_codes: list[str],
+        user_id: int,
+        target_day_of_week: int,
+    ):
+        """(더보기) 유저의 취향이 반영된 빵집 조회하는 쿼리"""
+
+        conditions = [UserPreferences.user_id == user_id, Bakery.id > cursor_id]
+
+        if area_codes != ["14"]:
+            conditions.append(Bakery.commercial_area_id.in_(area_codes))
+
+        stmt = (
+            select(
+                Bakery.id,
+                Bakery.name,
+                Bakery.gu,
+                Bakery.dong,
+                Bakery.avg_rating,
+                Bakery.review_count,
+                OperatingHour.is_opened,
+                BakeryThumbnail.img_url,
+            )
+            .distinct()
+            .select_from(UserPreferences)
+            .join(
+                BakeryPreference,
+                BakeryPreference.preference_id == UserPreferences.preference_id,
+            )
+            .join(Bakery, Bakery.id == BakeryPreference.bakery_id)
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+            )
+            .join(
+                BakeryThumbnail,
+                and_(
+                    BakeryThumbnail.bakery_id == Bakery.id,
+                    BakeryThumbnail.is_signature.is_(True),
+                ),
+            )
+            .where(and_(*conditions))
+            .order_by(Bakery.id.asc())
+            .limit(page_size)
+        )
+
+        res = self.db.execute(stmt).mappings().all()
+        return [
+            LoadMoreBakery(
+                bakery_id=r.id,
+                bakery_name=r.name,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                is_opened=r.is_opened,
+                img_url=r.img_url,
+                gu=r.gu,
+                dong=r.dong,
+            )
+            for r in res
+        ]
+
+    async def get_signature_menus(self, bakery_ids: list[int]):
+        """베이커리 내 대표메뉴 조회하는 쿼리."""
+
+        try:
+            menus = (
+                self.db.query(BakeryMenu.bakery_id, BakeryMenu.name)
+                .filter(
+                    BakeryMenu.is_signature == True,
+                    BakeryMenu.bakery_id.in_(bakery_ids),
+                )
+                .all()
+            )
+
+            return [{"bakery_id": m.bakery_id, "menu_name": m.name} for m in menus]
         except Exception as e:
             raise UnknownExceptionError(str(e))
 
@@ -104,7 +199,7 @@ class BakeryRepository:
             return [
                 RecommendBakery(
                     bakery_id=r.id,
-                    name=r.name,
+                    bakery_name=r.name,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
                     is_opened=r.is_opened,
