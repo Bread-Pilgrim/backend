@@ -6,7 +6,7 @@ from sqlalchemy.orm.session import Session
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import LoadMoreBakery, LoadMoreBakeryResponseModel
 from app.schema.common import CursorModel, PagingModel
-from app.utils.parser import parse_area_codes
+from app.utils.parser import parse_comma_to_list
 
 
 class BakeryService:
@@ -30,7 +30,7 @@ class BakeryService:
         """(홈) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
 
         # 구분자로 받은 지역코드 list로 반환
-        area_codes = parse_area_codes(area_code)
+        area_codes = parse_comma_to_list(area_code)
         # 오늘 요일
         target_day_of_week = datetime.today().weekday()
 
@@ -47,7 +47,7 @@ class BakeryService:
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
 
         # 구분자로 받은 지역코드 list로 반환
-        area_codes = parse_area_codes(area_code)
+        area_codes = parse_comma_to_list(area_code)
         # 오늘 요일
         target_day_of_week = datetime.today().weekday()
 
@@ -94,7 +94,7 @@ class BakeryService:
     async def get_bakery_by_area(self, area_code: str):
         """지역코드 기반으로 빵집 조회하는 비즈니스 로직."""
 
-        area_codes = parse_area_codes(area_code)
+        area_codes = parse_comma_to_list(area_code)
         target_day_of_week = datetime.today().weekday()
 
         return await BakeryRepository(self.db).get_bakery_by_area(
