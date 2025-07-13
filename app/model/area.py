@@ -11,3 +11,4 @@ class CommercialAreas(Base, DateTimeMixin):
         SmallInteger, primary_key=True, autoincrement=True, comment="상권지역 id"
     )
     name = Column(String(64), nullable=True, comment="상권지역 이름")
+    ordering = Column(SmallInteger, nullable=True, comment="정렬순서용 번호")
