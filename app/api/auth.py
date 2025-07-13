@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Header, Request
 
-from app.core.auth import create_jwt_token, verify_token
+from app.core.auth import verify_token
 from app.core.base import BaseResponse
 from app.core.config import Configs
 from app.core.database import get_db
 from app.core.exception import ERROR_DATA_MISSING, ERROR_UNKNOWN
-from app.schema.auth import AuthToken, LoginRequestModel, LoginResponseModel
+from app.schema.auth import LoginRequestModel, LoginResponseModel
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
