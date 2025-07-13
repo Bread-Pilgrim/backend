@@ -32,7 +32,7 @@ class BakeryService:
         # 구분자로 받은 지역코드 list로 반환
         area_codes = parse_area_codes(area_code)
         # 오늘 요일
-        target_day_of_week = datetime.today().weekday() + 1
+        target_day_of_week = datetime.today().weekday()
 
         # 유저 취향 + 지역 기반으로 빵집 조회
         return await BakeryRepository(self.db).get_bakeries_by_preference(
@@ -49,7 +49,7 @@ class BakeryService:
         # 구분자로 받은 지역코드 list로 반환
         area_codes = parse_area_codes(area_code)
         # 오늘 요일
-        target_day_of_week = datetime.today().weekday() + 1
+        target_day_of_week = datetime.today().weekday()
 
         # 베이커리 정보 조회
         bakery_repo = BakeryRepository(db=self.db)
@@ -95,7 +95,7 @@ class BakeryService:
         """지역코드 기반으로 빵집 조회하는 비즈니스 로직."""
 
         area_codes = parse_area_codes(area_code)
-        target_day_of_week = datetime.today().weekday() + 1
+        target_day_of_week = datetime.today().weekday()
 
         return await BakeryRepository(self.db).get_bakery_by_area(
             area_codes, target_day_of_week

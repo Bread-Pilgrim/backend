@@ -66,7 +66,7 @@ class OperatingHour(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     bakery_id = Column(Integer, nullable=False)
-    day_of_week = Column(SmallInteger, nullable=True, comment="요일 1 : 월  ~ 7 : 일")
+    day_of_week = Column(SmallInteger, nullable=True, comment="요일 0 : 월  ~ 6 : 일")
     open_time = Column(Time, comment="오픈시간")
     close_time = Column(Time, comment="종료시간")
     is_opened = Column(Boolean, default=True, comment="오픈여부")
