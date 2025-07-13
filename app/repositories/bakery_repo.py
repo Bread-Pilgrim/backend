@@ -1,4 +1,5 @@
 from sqlalchemy import and_, literal_column, select
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import UnknownExceptionError
@@ -22,7 +23,7 @@ class BakeryRepository:
         area_codes: list[str],
         user_id: int,
         target_day_of_week: int,
-        page_size: int = 10,
+        page_size: int = 20,
     ):
         """(홈) 유저의 취향이 반영된 빵집 조회하는 쿼리."""
 
@@ -171,27 +172,29 @@ class BakeryRepository:
 
         try:
 
+            b = aliased(Bakery)
+
+            conditions = [OperatingHour.day_of_week == target_day_of_week]
+            if area_codes != ["14"]:
+                conditions.append(Bakery.commercial_area_id.in_(area_codes))
+
             stmt = (
                 select(
-                    literal_column("DISTINCT ON (b.id) b.id"),
-                    Bakery.id,
-                    Bakery.name,
-                    Bakery.avg_rating,
-                    Bakery.review_count,
+                    b.id.label("bakery_id"),
+                    b.id,
+                    b.name,
+                    b.avg_rating,
+                    b.review_count,
                     OperatingHour.is_opened,
                     BakeryThumbnail.img_url,
                 )
-                .select_from(Bakery.__table__.alias("b"))
-                .join(OperatingHour, OperatingHour.bakery_id == literal_column("b.id"))
-                .join(
-                    BakeryThumbnail, BakeryThumbnail.bakery_id == literal_column("b.id")
-                )
-                .where(
-                    OperatingHour.day_of_week == 5,
-                    literal_column("b.commercial_area_id").in_([1, 4, 6]),
-                )
-                .order_by(literal_column("b.id"), Bakery.avg_rating.desc())
-                .limit(10)
+                .distinct(b.id)
+                .select_from(b)
+                .join(OperatingHour, OperatingHour.bakery_id == b.id)
+                .join(BakeryThumbnail, BakeryThumbnail.bakery_id == b.id)
+                .where(and_(*conditions))
+                .order_by(b.id, b.avg_rating.desc())
+                .limit(20)
             )
 
             res = self.db.execute(stmt).mappings().all()
