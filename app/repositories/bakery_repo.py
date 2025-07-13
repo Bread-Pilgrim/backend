@@ -187,8 +187,8 @@ class BakeryRepository:
                     BakeryThumbnail, BakeryThumbnail.bakery_id == literal_column("b.id")
                 )
                 .where(
-                    OperatingHour.day_of_week == 5,
-                    literal_column("b.commercial_area_id").in_([1, 4, 6]),
+                    OperatingHour.day_of_week == target_day_of_week,
+                    literal_column("b.commercial_area_id").in_(area_codes),
                 )
                 .order_by(literal_column("b.id"), Bakery.avg_rating.desc())
                 .limit(10)
