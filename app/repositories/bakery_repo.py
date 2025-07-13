@@ -23,7 +23,7 @@ class BakeryRepository:
         area_codes: list[str],
         user_id: int,
         target_day_of_week: int,
-        page_size: int = 10,
+        page_size: int = 20,
     ):
         """(홈) 유저의 취향이 반영된 빵집 조회하는 쿼리."""
 
@@ -194,7 +194,7 @@ class BakeryRepository:
                 .join(BakeryThumbnail, BakeryThumbnail.bakery_id == b.id)
                 .where(and_(*conditions))
                 .order_by(b.id, b.avg_rating.desc())
-                .limit(10)
+                .limit(20)
             )
 
             res = self.db.execute(stmt).mappings().all()
