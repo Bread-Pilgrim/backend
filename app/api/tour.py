@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.core.auth import verify_token
 from app.core.base import BaseResponse
@@ -47,8 +47,8 @@ async def show_area_event_popup(
 
 @router.get(
     "/area",
-    response_model=BaseResponse[List[TourResponseModel]],
-    responses=ERROR_UNKNOWN,
+    # response_model=BaseResponse[List[TourResponseModel]],
+    # responses=ERROR_UNKNOWN,
     response_description="""
     1. 500 에러 예시 : DB 이슈
     """,
@@ -78,9 +78,15 @@ async def show_area_event_popup(
     """,
 )
 async def get(
-    area_code: str, tour_cat: str, db=Depends(get_db), _: None = Depends(verify_token)
+    area_code: str = Query(
+        description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
+    ),
+    tour_cat: str = Query(
+        description="관광지 카테고리 코드 (쉼표로 여러 개 전달 가능)"
+    ),
+    db=Depends(get_db),
+    _: None = Depends(verify_token),
 ):
-
     return BaseResponse(
-        data=await TourService(db=db).get_area_tour(int(area_code), tour_cat)
+        data=await TourService(db=db).get_area_tour(area_code, tour_cat)
     )
