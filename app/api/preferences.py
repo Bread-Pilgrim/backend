@@ -10,7 +10,7 @@ from app.schema.preferences import PreferenceResponseModel, PreferenceType
 from app.services.preference_service import PreferenceService
 from app.utils.conveter import user_info_to_id
 
-router = APIRouter(prefix="/prefer", tags=["prefer"])
+router = APIRouter(prefix="/preference", tags=["preference"])
 
 
 @router.get(

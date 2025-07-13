@@ -10,7 +10,8 @@ class CommonRepository:
 
     async def get_commercial_area_code(self):
         """지역코드 조회하는 쿼리."""
-        res = self.db.query(CommercialAreas).all()
+        res = self.db.query(CommercialAreas).order_by(CommercialAreas.ordering).all()
+
         return (
             [AreaCodeModel(area_code=r.id, area_name=r.name) for r in res]
             if res

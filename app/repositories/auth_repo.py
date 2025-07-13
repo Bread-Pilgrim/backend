@@ -40,13 +40,12 @@ class AuthRepository:
 
         try:
             res = (
-                self.db.query(Users.is_preferences_set, Users.nickname)
+                self.db.query(Users.is_preferences_set)
                 .filter(Users.id == user_id)
                 .first()
             )
-            if res.is_preferences_set is None and res.nickname is None:
-                return True
-            return False
+
+            return res.is_preferences_set
 
         except Exception as e:
             raise UnknownExceptionError(str(e))
