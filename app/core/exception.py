@@ -84,7 +84,7 @@ from typing import Dict, Type
 from fastapi import status
 
 
-def build_error_response(exc_cls):
+def build_error_response(exc_cls) -> dict:
     """에러케이스 문서화 메소드."""
 
     example = {
