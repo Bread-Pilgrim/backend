@@ -212,3 +212,64 @@ class BakeryRepository:
             ]
         except Exception as e:
             raise UnknownExceptionError(str(e))
+
+    async def get_more_hot_bakeries(
+        self,
+        cursor_id: int,
+        page_size: int,
+        area_codes: list[str],
+        target_day_of_week: int,
+    ):
+        """(더보기) hot한 빵집 조회하는 쿼리"""
+
+        conditions = [Bakery.id > cursor_id]
+
+        if area_codes != ["14"]:
+            conditions.append(Bakery.commercial_area_id.in_(area_codes))
+
+        stmt = (
+            select(
+                Bakery.id,
+                Bakery.name,
+                Bakery.gu,
+                Bakery.dong,
+                Bakery.avg_rating,
+                Bakery.review_count,
+                OperatingHour.is_opened,
+                BakeryThumbnail.img_url,
+            )
+            .distinct()
+            .select_from(Bakery)
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+            )
+            .join(
+                BakeryThumbnail,
+                and_(
+                    BakeryThumbnail.bakery_id == Bakery.id,
+                    BakeryThumbnail.is_signature.is_(True),
+                ),
+            )
+            .where(and_(*conditions))
+            .order_by(Bakery.avg_rating.desc())
+            .limit(page_size)
+        )
+
+        res = self.db.execute(stmt).mappings().all()
+        return [
+            LoadMoreBakery(
+                bakery_id=r.id,
+                bakery_name=r.name,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                is_opened=r.is_opened,
+                img_url=r.img_url,
+                gu=r.gu,
+                dong=r.dong,
+            )
+            for r in res
+        ]

@@ -92,11 +92,45 @@ class BakeryService:
         )
 
     async def get_bakery_by_area(self, area_code: str):
-        """지역코드 기반으로 빵집 조회하는 비즈니스 로직."""
+        """(홈탭용)hot한 빵집 조회하는 비즈니스 로직."""
 
         area_codes = parse_comma_to_list(area_code)
         target_day_of_week = datetime.today().weekday()
 
         return await BakeryRepository(self.db).get_bakery_by_area(
             area_codes, target_day_of_week
+        )
+
+    async def get_hot_bakeries(
+        self, cursor_id: int, page_size: int, area_code: str
+    ) -> LoadMoreBakeryResponseModel:
+        """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
+
+        area_codes = parse_comma_to_list(area_code)
+        target_day_of_week = datetime.today().weekday()
+
+        bakery_repo = BakeryRepository(self.db)
+
+        # 빵집 정보
+        bakeries = await bakery_repo.get_more_hot_bakeries(
+            cursor_id=cursor_id,
+            area_codes=area_codes,
+            target_day_of_week=target_day_of_week,
+            page_size=page_size,
+        )
+        # 빵 시그니처 메뉴 정보
+        menus = await bakery_repo.get_signature_menus(
+            bakery_ids=[b.bakery_id for b in bakeries]
+        )
+
+        bakery_infos = self.__merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+
+        return LoadMoreBakeryResponseModel(
+            items=bakery_infos,
+            paging=PagingModel(
+                cursor=CursorModel(
+                    before=cursor_id,
+                    after=bakeries[-1].bakery_id if bakeries else 0,
+                )
+            ),
         )
