@@ -86,10 +86,11 @@ class TourService:
 
         return only_img_exist
 
-    async def get_area_event(self, area_code: int):
+    async def get_area_event(self, area_code: str):
         """지역행사 조회하는 API"""
+        sigungu_codes = area_to_sigungu(area_code)
 
-        params = {
+        param_base = {
             "numOfRows": 10,
             "pageNo": 1,
             "MobileOS": "ETC",
@@ -101,20 +102,24 @@ class TourService:
         }
 
         try:
-            r = await self.request_with_ssl(
-                method="GET",
-                url=f"{config.REQ_URL_DOMAIN}/searchFestival2",
-                params=(
-                    params
-                    if area_code == 14
-                    else {
-                        **params,
-                        "sigunguCode": area_code,
-                    }
-                ),
-            )
+            task = [
+                self.request_with_ssl(
+                    method="GET",
+                    url=f"{config.REQ_URL_DOMAIN}/searchFestival2",
+                    params=(
+                        param_base
+                        if area_code == 14
+                        else {
+                            **param_base,
+                            "sigunguCode": s,
+                        }
+                    ),
+                )
+                for s in sigungu_codes
+            ]
 
-            transformed_r = transform_tour_response(r)
+            res = await asyncio.gather(*task)
+            transformed_r = transform_tour_response(response=res, transformed_r=[])
             return self.__filter_events_today(transformed_r) if transformed_r else None
         except Exception as e:
             raise UnknownExceptionError(str(e))
@@ -153,17 +158,7 @@ class TourService:
                     )
 
             res = await asyncio.gather(*task)
-            transformed_r = []
-            for r in res:
-                items = r.get("response", {}).get("body", {}).get("items", {})
-
-                if isinstance(items, dict):
-                    item = items.get("item", [])
-                    if isinstance(item, dict):
-                        transformed_r.append(item)
-                    else:
-                        transformed_r.extend(item)
-
+            transformed_r = transform_tour_response(response=res, transformed_r=[])
             return self.__proceed_tour_data(transformed_r) if transformed_r else []
 
         except Exception as e:

@@ -25,16 +25,20 @@ def user_info_to_id(user_info) -> int:
     return int(user_id)
 
 
-def transform_tour_response(response: dict):
+def transform_tour_response(response: list, transformed_r: list):
     """투어 API 원하는 response형태로 변환해서 반환하는 메소드."""
 
-    res = response.get("response")
     try:
-        if res:
-            items = res.get("body").get("items")
-            if items != "":
-                item = items.get("item")
-                return item
+        for r in response:
+            items = r.get("response", {}).get("body", {}).get("items", {})
+
+            if isinstance(items, dict):
+                item = items.get("item", [])
+                if isinstance(item, dict):
+                    transformed_r.append(item)
+                else:
+                    transformed_r.extend(item)
+        return transformed_r
     except Exception as e:
         raise UnknownExceptionError(str(e))
 
