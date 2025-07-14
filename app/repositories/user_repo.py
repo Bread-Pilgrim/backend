@@ -9,10 +9,14 @@ class UserRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    async def find_user_by_nickname(self, nickname: str):
+    async def find_user_by_nickname(self, nickname: str, user_id: int):
         """nickname 조회하는 쿼리.."""
 
-        return self.db.query(Users).filter(Users.nickname == nickname).first()
+        return (
+            self.db.query(Users)
+            .filter(Users.nickname == nickname, Users.id != user_id)
+            .first()
+        )
 
     async def bulk_insert_user_perferences(
         self,

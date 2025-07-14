@@ -29,7 +29,9 @@ class UserService:
         user_repo = UserRepository(db=self.db)
 
         # 1. 닉네임 중복체크
-        is_exist = await user_repo.find_user_by_nickname(nickname=nickname)
+        is_exist = await user_repo.find_user_by_nickname(
+            nickname=nickname, user_id=user_id
+        )
         if is_exist:
             raise DuplicateException(
                 "사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!"
