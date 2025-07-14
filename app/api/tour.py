@@ -40,15 +40,19 @@ router = APIRouter(
     """,
 )
 async def show_area_event_popup(
-    area_code: str, db=Depends(get_db), _: None = Depends(verify_token)
+    area_code: str = Query(
+        description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
+    ),
+    db=Depends(get_db),
+    _: None = Depends(verify_token),
 ):
-    return BaseResponse(data=await TourService(db=db).get_area_event(int(area_code)))
+    return BaseResponse(data=await TourService(db=db).get_area_event(area_code))
 
 
 @router.get(
     "/area",
-    # response_model=BaseResponse[List[TourResponseModel]],
-    # responses=ERROR_UNKNOWN,
+    response_model=BaseResponse[List[TourResponseModel]],
+    responses=ERROR_UNKNOWN,
     response_description="""
     1. 500 에러 예시 : DB 이슈
     """,
