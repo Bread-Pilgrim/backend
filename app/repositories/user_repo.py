@@ -31,7 +31,8 @@ class UserRepository:
 
         except Exception as e:
             raise DuplicateException(
-                "이미 취향이 설정되어 있습니다. 취향을 수정하시려면 변경 요청을 해주세요."
+                detail="이미 취향이 설정되어 있습니다. 취향을 수정하시려면 변경 요청을 해주세요.",
+                error_code="ALREADY_ONBOARDED",
             )
 
     async def modify_user_info(self, user_id: int, target_field):
@@ -44,7 +45,7 @@ class UserRepository:
                 setattr(user, key, value)
             self.db.commit()
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))
 
     async def modify_preference_state(self, user_id: int):
         """취향설정 완료 상태 변경하는 쿼리."""
@@ -56,4 +57,4 @@ class UserRepository:
                 self.db.commit()
 
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))

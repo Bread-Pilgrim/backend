@@ -122,7 +122,7 @@ class TourService:
             transformed_r = transform_tour_response(response=res, transformed_r=[])
             return self.__filter_events_today(transformed_r) if transformed_r else None
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))
 
     async def get_area_tour(self, area_code: str, tour_cat: str):
         """주변 관광지 가져오는 API (자연, 인문, 레포츠)"""
@@ -162,4 +162,4 @@ class TourService:
             return self.__proceed_tour_data(transformed_r) if transformed_r else []
 
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))

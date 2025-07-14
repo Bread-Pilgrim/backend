@@ -82,7 +82,7 @@ class BakeryRepository:
             ]
 
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))
 
     async def get_more_bakeries_by_preference(
         self,
@@ -168,7 +168,7 @@ class BakeryRepository:
 
             return [{"bakery_id": m.bakery_id, "menu_name": m.name} for m in menus]
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))
 
     async def get_bakery_by_area(self, area_codes: list[str], target_day_of_week: int):
         """지역코드로 베이터리 조회하는 쿼리."""
@@ -215,7 +215,7 @@ class BakeryRepository:
                 for r in res
             ]
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))
 
     async def get_more_hot_bakeries(
         self,

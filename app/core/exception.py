@@ -15,11 +15,16 @@ class CustomException(Exception):
     DEFAULT_MESSAGE = "오류가 발생했습니다."
 
     def __init__(
-        self, detail: Optional[str] = None, headers: Optional[Dict[str, Any]] = None
+        self,
+        detail: Optional[str] = None,
+        error_code: Optional[str] = None,
+        headers: Optional[Dict[str, Any]] = None,
     ):
         self.http_status_code = self.STATUS_CODE
         self.response = BaseResponse(
-            status_code=self.ERROR_CODE, message=detail or self.DEFAULT_MESSAGE
+            status_code=self.ERROR_CODE,
+            message=detail or self.DEFAULT_MESSAGE,
+            data=error_code if error_code else None,
         )
         self.headers = headers
 
