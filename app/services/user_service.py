@@ -1,10 +1,6 @@
-from typing import List
-
-from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import DuplicateException, UnknownExceptionError
-from app.model.users import UserPreferences, Users
+from app.core.exception import DuplicateException
 from app.repositories.user_repo import UserRepository
 from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
 
@@ -34,7 +30,8 @@ class UserService:
         )
         if is_exist:
             raise DuplicateException(
-                "사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!"
+                detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
+                error_code="DUPLICATE_NICKNAME",
             )
 
         # 2. 유저-취향 N:M 테이블 데이터 적재

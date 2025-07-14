@@ -1,12 +1,6 @@
-from collections import defaultdict
-from typing import List
-
 from sqlalchemy.orm import Session
 
-from app.core.exception import UnknownExceptionError
-from app.model.users import Preferences
 from app.repositories.preference_repo import PreferenceRepository
-from app.schema.preferences import PreferenceType
 
 
 class PreferenceService:

@@ -1,5 +1,5 @@
 import asyncio
-import itertools
+import math
 import random
 import ssl
 from datetime import datetime
@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from app.core.config import Configs
 from app.core.exception import UnknownExceptionError
 from app.schema.tour import EventPopupResponseModel, TourResponseModel
-from app.utils.conveter import transform_tour_response
+from app.utils.conveter import area_to_sigungu, transform_tour_response
+from app.utils.parser import parse_comma_to_list
 
 config = Configs()
 
@@ -85,10 +86,11 @@ class TourService:
 
         return only_img_exist
 
-    async def get_area_event(self, area_code: int):
+    async def get_area_event(self, area_code: str):
         """지역행사 조회하는 API"""
+        sigungu_codes = area_to_sigungu(area_code)
 
-        params = {
+        param_base = {
             "numOfRows": 10,
             "pageNo": 1,
             "MobileOS": "ETC",
@@ -100,54 +102,64 @@ class TourService:
         }
 
         try:
-            r = await self.request_with_ssl(
-                method="GET",
-                url=f"{config.REQ_URL_DOMAIN}/searchFestival2",
-                params=(
-                    params
-                    if area_code == 14
-                    else {
-                        **params,
-                        "sigunguCode": area_code,
-                    }
-                ),
-            )
+            task = [
+                self.request_with_ssl(
+                    method="GET",
+                    url=f"{config.REQ_URL_DOMAIN}/searchFestival2",
+                    params=(
+                        param_base
+                        if area_code == 14
+                        else {
+                            **param_base,
+                            "sigunguCode": s,
+                        }
+                    ),
+                )
+                for s in sigungu_codes
+            ]
 
-            transformed_r = transform_tour_response(r)
+            res = await asyncio.gather(*task)
+            transformed_r = transform_tour_response(response=res, transformed_r=[])
             return self.__filter_events_today(transformed_r) if transformed_r else None
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))
 
-    async def get_area_tour(self, area_code: int, tour_cat: str):
+    async def get_area_tour(self, area_code: str, tour_cat: str):
         """주변 관광지 가져오는 API (자연, 인문, 레포츠)"""
 
-        params = {
-            "numOfRows": 10,
+        # 다중 지역코드 list로 반환
+        sigungu_codes = area_to_sigungu(area_code)
+        # 다중 관광지 카테고리 리스트로 변환
+        tour_cats = parse_comma_to_list(tour_cat)
+
+        params_base = {
+            "numOfRows": math.ceil(40 / (len(sigungu_codes) * len(tour_cats))),
             "pageNo": 1,
             "MobileOS": "ETC",
             "MobileApp": "bread-pilgrim",
             "areaCode": 6,
-            "cat1": tour_cat,
             "serviceKey": config.ORG_TOUR_SECRET_KEY,
             "_type": "json",
         }
 
         try:
-            r = await self.request_with_ssl(
-                method="GET",
-                url=f"{config.REQ_URL_DOMAIN}/areaBasedList2",
-                params=(
-                    params
-                    if area_code == 14
-                    else {
-                        **params,
-                        "sigunguCode": area_code,
-                    }
-                ),
-            )
+            task = []
+            for s in sigungu_codes:
+                for cat in tour_cats:
+                    param = {**params_base, "cat1": cat}
+                    if area_code != "14":
+                        param["sigunguCode"] = s
+                    task.append(
+                        self.request_with_ssl(
+                            method="GET",
+                            url=f"{config.REQ_URL_DOMAIN}/areaBasedList2",
+                            params=param,
+                        )
+                    )
 
-            transformed_r = transform_tour_response(r)
+            res = await asyncio.gather(*task)
+            transformed_r = transform_tour_response(response=res, transformed_r=[])
             return self.__proceed_tour_data(transformed_r) if transformed_r else []
 
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))

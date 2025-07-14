@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.core.auth import verify_token
 from app.core.base import BaseResponse
@@ -40,9 +40,13 @@ router = APIRouter(
     """,
 )
 async def show_area_event_popup(
-    area_code: str, db=Depends(get_db), _: None = Depends(verify_token)
+    area_code: str = Query(
+        description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
+    ),
+    db=Depends(get_db),
+    _: None = Depends(verify_token),
 ):
-    return BaseResponse(data=await TourService(db=db).get_area_event(int(area_code)))
+    return BaseResponse(data=await TourService(db=db).get_area_event(area_code))
 
 
 @router.get(
@@ -78,9 +82,15 @@ async def show_area_event_popup(
     """,
 )
 async def get(
-    area_code: str, tour_cat: str, db=Depends(get_db), _: None = Depends(verify_token)
+    area_code: str = Query(
+        description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
+    ),
+    tour_cat: str = Query(
+        description="관광지 카테고리 코드 (쉼표로 여러 개 전달 가능)"
+    ),
+    db=Depends(get_db),
+    _: None = Depends(verify_token),
 ):
-
     return BaseResponse(
-        data=await TourService(db=db).get_area_tour(int(area_code), tour_cat)
+        data=await TourService(db=db).get_area_tour(area_code, tour_cat)
     )

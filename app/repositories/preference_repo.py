@@ -33,7 +33,7 @@ class PreferenceRepository:
             res = self.db.query(Preferences).all()
             return self.convert_list_to_model(res)
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))
 
     async def get_preference_option(self, option_type: str):
         """특정 취향항목 조회하는 쿼리."""
@@ -47,4 +47,4 @@ class PreferenceRepository:
             return [PreferenceType(id=r.id, name=r.name) for r in res]
 
         except Exception as e:
-            raise UnknownExceptionError(str(e))
+            raise UnknownExceptionError(detail=str(e))
