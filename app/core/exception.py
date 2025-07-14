@@ -69,6 +69,14 @@ class DuplicateException(CustomException):
     DEFAULT_MESSAGE = "중복된 데이터 입니다."
 
 
+class NotFoundException(CustomException):
+    """데이터 못찾음 Exception"""
+
+    STATUS_CODE = status.HTTP_404_NOT_FOUND
+    ERROR_CODE = ErrorCode.NOT_FOUND_DATA
+    DEFAULT_MESSAGE = "해당 데이터를 찾을 수 없습니다."
+
+
 async def exception_handler(_, exc: Exception):
     """CustomException 예외 발생 시 처리"""
 
@@ -108,3 +116,4 @@ ERROR_EXPIRED_TOKEN = build_error_response(TokenExpiredException)
 ERROR_INVALID_TOKEN = build_error_response(InvalidTokenException)
 ERROR_DATA_MISSING = build_error_response(RequestDataMissingException)
 ERROR_DUPLE = build_error_response(DuplicateException)
+ERROR_NOT_FOUND = build_error_response(NotFoundException)

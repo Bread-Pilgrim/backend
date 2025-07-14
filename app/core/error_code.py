@@ -7,3 +7,5 @@ class ErrorCode:
     REQUEST_MISSING = 1002
     # 중복데이터
     DUPLICATE_DATA = 1009
+    # not found
+    NOT_FOUND_DATA = 1004

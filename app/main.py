@@ -6,6 +6,7 @@ from app.api import auth, bakery, common, preferences, test, tour, users
 from app.core.exception import (
     DuplicateException,
     InvalidTokenException,
+    NotFoundException,
     RequestDataMissingException,
     TokenExpiredException,
     UnknownExceptionError,
@@ -44,5 +45,6 @@ app.add_exception_handler(TokenExpiredException, exception_handler)
 app.add_exception_handler(RequestDataMissingException, exception_handler)
 app.add_exception_handler(InvalidTokenException, exception_handler)
 app.add_exception_handler(DuplicateException, exception_handler)
+app.add_exception_handler(NotFoundException, exception_handler)
 
 Instrumentator().instrument(app).expose(app)
