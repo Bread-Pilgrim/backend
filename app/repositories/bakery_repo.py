@@ -71,6 +71,7 @@ class BakeryRepository:
             return [
                 RecommendBakery(
                     bakery_id=r.id,
+                    commercial_area_id=r.commercial_area_id,
                     bakery_name=r.name,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
@@ -106,6 +107,7 @@ class BakeryRepository:
                 Bakery.dong,
                 Bakery.avg_rating,
                 Bakery.review_count,
+                Bakery.commercial_area_id,
                 OperatingHour.is_opened,
                 BakeryThumbnail.img_url,
             )
@@ -140,6 +142,7 @@ class BakeryRepository:
             LoadMoreBakery(
                 bakery_id=r.id,
                 bakery_name=r.name,
+                commercial_area_id=r.commercial_area_id,
                 avg_rating=r.avg_rating,
                 review_count=r.review_count,
                 is_opened=r.is_opened,
@@ -203,6 +206,7 @@ class BakeryRepository:
                 RecommendBakery(
                     bakery_id=r.id,
                     bakery_name=r.name,
+                    commercial_area_id=r.commercial_area_id,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
                     is_opened=r.is_opened,
@@ -233,6 +237,7 @@ class BakeryRepository:
                 Bakery.name,
                 Bakery.gu,
                 Bakery.dong,
+                Bakery.commercial_area_id,
                 Bakery.avg_rating,
                 Bakery.review_count,
                 OperatingHour.is_opened,
@@ -263,6 +268,7 @@ class BakeryRepository:
         return [
             LoadMoreBakery(
                 bakery_id=r.id,
+                commercial_area_id=r.commercial_area_id,
                 bakery_name=r.name,
                 avg_rating=r.avg_rating,
                 review_count=r.review_count,
