@@ -51,3 +51,12 @@ class Preferences(Base, DateTimeMixin):
     class Config:
         orm_mode = True
         from_attributes = True
+
+
+class UserBakeryLikes(Base):
+    """베이커리 찜 테이블."""
+
+    __tablename__ = "user_bakery_likes"
+
+    user_id = Column(Integer, primary_key=True, comment="유저 ID")
+    bakery_id = Column(Integer, primary_key=True, comment="베이커리 ID")
