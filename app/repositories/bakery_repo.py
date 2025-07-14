@@ -10,7 +10,7 @@ from app.model.bakery import (
     BakeryThumbnail,
     OperatingHour,
 )
-from app.model.users import UserPreferences
+from app.model.users import UserBakeryLikes, UserPreferences
 from app.schema.bakery import LoadMoreBakery, RecommendBakery
 
 
@@ -38,7 +38,9 @@ class BakeryRepository:
                     Bakery.id,
                     Bakery.name,
                     Bakery.avg_rating,
+                    Bakery.commercial_area_id,
                     Bakery.review_count,
+                    UserBakeryLikes.bakery_id.label("is_like"),
                     OperatingHour.is_opened,
                     BakeryThumbnail.img_url,
                 )
@@ -63,6 +65,14 @@ class BakeryRepository:
                         BakeryThumbnail.is_signature.is_(True),
                     ),
                 )
+                .join(
+                    UserBakeryLikes,
+                    and_(
+                        UserBakeryLikes.bakery_id == Bakery.id,
+                        UserBakeryLikes.user_id == user_id,
+                    ),
+                    isouter=True,
+                )
                 .where(and_(*conditions))
                 .limit(page_size)
             )
@@ -72,6 +82,7 @@ class BakeryRepository:
                 RecommendBakery(
                     bakery_id=r.id,
                     commercial_area_id=r.commercial_area_id,
+                    is_like=True if r.is_like else False,
                     bakery_name=r.name,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
@@ -110,6 +121,7 @@ class BakeryRepository:
                 Bakery.commercial_area_id,
                 OperatingHour.is_opened,
                 BakeryThumbnail.img_url,
+                UserBakeryLikes.bakery_id.label("is_like"),
             )
             .distinct()
             .select_from(UserPreferences)
@@ -132,6 +144,14 @@ class BakeryRepository:
                     BakeryThumbnail.is_signature.is_(True),
                 ),
             )
+            .join(
+                UserBakeryLikes,
+                and_(
+                    UserBakeryLikes.bakery_id == Bakery.id,
+                    UserBakeryLikes.user_id == user_id,
+                ),
+                isouter=True,
+            )
             .where(and_(*conditions))
             .order_by(Bakery.id.asc())
             .limit(page_size)
@@ -146,6 +166,7 @@ class BakeryRepository:
                 avg_rating=r.avg_rating,
                 review_count=r.review_count,
                 is_opened=r.is_opened,
+                is_like=True if r.is_like else False,
                 img_url=r.img_url,
                 gu=r.gu,
                 dong=r.dong,
@@ -187,14 +208,23 @@ class BakeryRepository:
                     b.id,
                     b.name,
                     b.avg_rating,
+                    b.commercial_area_id,
                     b.review_count,
                     OperatingHour.is_opened,
                     BakeryThumbnail.img_url,
+                    UserBakeryLikes.bakery_id.label("is_like"),
                 )
                 .distinct(b.id)
                 .select_from(b)
                 .join(OperatingHour, OperatingHour.bakery_id == b.id)
                 .join(BakeryThumbnail, BakeryThumbnail.bakery_id == b.id)
+                .join(
+                    UserBakeryLikes,
+                    and_(
+                        UserBakeryLikes.bakery_id == b.id,
+                    ),
+                    isouter=True,
+                )
                 .where(and_(*conditions))
                 .order_by(b.id, b.avg_rating.desc())
                 .limit(20)
@@ -206,6 +236,7 @@ class BakeryRepository:
                 RecommendBakery(
                     bakery_id=r.id,
                     bakery_name=r.name,
+                    is_like=True if r.is_like else False,
                     commercial_area_id=r.commercial_area_id,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
@@ -242,6 +273,7 @@ class BakeryRepository:
                 Bakery.review_count,
                 OperatingHour.is_opened,
                 BakeryThumbnail.img_url,
+                UserBakeryLikes.bakery_id.label("is_like"),
             )
             .distinct()
             .select_from(Bakery)
@@ -259,6 +291,11 @@ class BakeryRepository:
                     BakeryThumbnail.is_signature.is_(True),
                 ),
             )
+            .join(
+                UserBakeryLikes,
+                and_(UserBakeryLikes.bakery_id == Bakery.id),
+                isouter=True,
+            )
             .where(and_(*conditions))
             .order_by(Bakery.avg_rating.desc())
             .limit(page_size)
@@ -274,6 +311,7 @@ class BakeryRepository:
                 review_count=r.review_count,
                 is_opened=r.is_opened,
                 img_url=r.img_url,
+                is_like=True if r.is_like else False,
                 gu=r.gu,
                 dong=r.dong,
             )

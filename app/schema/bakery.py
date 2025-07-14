@@ -18,6 +18,7 @@ class RecommendBakery(BaseModel):
     review_count: int = Field(..., description="리뷰 개수")
     is_opened: bool = Field(..., description="영업 여부")
     img_url: str = Field(..., description="베이커리 썸네일")
+    is_like: bool = Field(default=False, description="찜여부")
 
 
 class BakeryMenuModel(BaseModel):
@@ -39,6 +40,7 @@ class LoadMoreBakery(BaseModel):
     img_url: str = Field(..., description="베이커리 썸네일")
     gu: str = Field(..., description="베이커리 자치구")
     dong: str = Field(..., description="베이커리 동")
+    is_like: bool = Field(default=False, description="찜여부")
     signature_menus: Optional[List[BakeryMenuModel]] = Field(
         default=[], description="시그니처 메뉴"
     )
