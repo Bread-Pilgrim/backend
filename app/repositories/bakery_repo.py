@@ -18,6 +18,7 @@ from app.schema.bakery import (
     LoadMoreBakery,
     RecommendBakery,
 )
+from app.utils.conveter import operating_hours_to_open_status
 
 
 class BakeryRepository:
@@ -48,6 +49,8 @@ class BakeryRepository:
                     Bakery.review_count,
                     UserBakeryLikes.bakery_id.label("is_like"),
                     OperatingHour.is_opened,
+                    OperatingHour.close_time,
+                    OperatingHour.open_time,
                     BakeryThumbnail.img_url,
                 )
                 .distinct()
@@ -92,7 +95,11 @@ class BakeryRepository:
                     bakery_name=r.name,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
-                    is_opened=r.is_opened,
+                    open_status=operating_hours_to_open_status(
+                        is_opened=r.is_opened,
+                        close_time=r.close_time,
+                        open_time=r.open_time,
+                    ),
                     img_url=r.img_url,
                 )
                 for r in res
@@ -126,6 +133,8 @@ class BakeryRepository:
                 Bakery.review_count,
                 Bakery.commercial_area_id,
                 OperatingHour.is_opened,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
                 BakeryThumbnail.img_url,
                 UserBakeryLikes.bakery_id.label("is_like"),
             )
@@ -171,7 +180,11 @@ class BakeryRepository:
                 commercial_area_id=r.commercial_area_id,
                 avg_rating=r.avg_rating,
                 review_count=r.review_count,
-                is_opened=r.is_opened,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
                 is_like=True if r.is_like else False,
                 img_url=r.img_url,
                 gu=r.gu,
@@ -217,6 +230,8 @@ class BakeryRepository:
                     b.commercial_area_id,
                     b.review_count,
                     OperatingHour.is_opened,
+                    OperatingHour.close_time,
+                    OperatingHour.open_time,
                     BakeryThumbnail.img_url,
                     UserBakeryLikes.bakery_id.label("is_like"),
                 )
@@ -246,7 +261,11 @@ class BakeryRepository:
                     commercial_area_id=r.commercial_area_id,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
-                    is_opened=r.is_opened,
+                    open_status=operating_hours_to_open_status(
+                        is_opened=r.is_opened,
+                        close_time=r.close_time,
+                        open_time=r.open_time,
+                    ),
                     img_url=r.img_url,
                 )
                 for r in res
@@ -278,6 +297,8 @@ class BakeryRepository:
                 Bakery.avg_rating,
                 Bakery.review_count,
                 OperatingHour.is_opened,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
                 BakeryThumbnail.img_url,
                 UserBakeryLikes.bakery_id.label("is_like"),
             )
@@ -315,7 +336,11 @@ class BakeryRepository:
                 bakery_name=r.name,
                 avg_rating=r.avg_rating,
                 review_count=r.review_count,
-                is_opened=r.is_opened,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
                 img_url=r.img_url,
                 is_like=True if r.is_like else False,
                 gu=r.gu,

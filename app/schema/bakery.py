@@ -16,7 +16,15 @@ class RecommendBakery(BaseModel):
     )
     avg_rating: float = Field(..., description="평균별점")
     review_count: int = Field(..., description="리뷰 개수")
-    is_opened: bool = Field(..., description="영업 여부")
+    open_status: str = Field(
+        ...,
+        description="""
+    영업상태\n
+    O : 영업중
+    C : 영업종료
+    D : 휴무일                       
+    """,
+    )
     img_url: str = Field(..., description="베이커리 썸네일")
     is_like: bool = Field(default=False, description="찜여부")
 
@@ -36,7 +44,15 @@ class LoadMoreBakery(BaseModel):
     )
     avg_rating: float = Field(..., description="평균 별점")
     review_count: float = Field(..., description="리뷰 개수")
-    is_opened: bool = Field(..., description="영업 여부")
+    open_status: str = Field(
+        ...,
+        description="""
+    영업상태\n
+    O : 영업중
+    C : 영업종료
+    D : 휴무일                       
+    """,
+    )
     img_url: str = Field(..., description="베이커리 썸네일")
     gu: str = Field(..., description="베이커리 자치구")
     dong: str = Field(..., description="베이커리 동")
