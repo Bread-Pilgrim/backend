@@ -20,6 +20,10 @@ AREA_TO_SIGUNGU = {
     "13": [4, 5, 9, 11],
 }
 
+read_more_link_domain = (
+    "https://search.daum.net/search?w=tot&DA=YZR&t__nil_searchbox=btn&q="
+)
+
 
 def user_info_to_id(user_info) -> int:
     """유저정보에서 user_id 추출/반환하는 메소드."""
@@ -75,3 +79,9 @@ def operating_hours_to_open_status(
             return "C"
 
     return "O"
+
+
+def replace_space_with_plus(title: str) -> str:
+    """다음 사이트에서 검색화면으로 넘어갈 수 있는 링크로 변환하는 메소드."""
+
+    return read_more_link_domain + title.replace(" ", "+")

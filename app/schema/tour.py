@@ -14,6 +14,7 @@ class EventPopupResponseModel(BaseModel):
     mapx: float = Field(..., description="x좌표")
     mapy: float = Field(..., description="y좌표")
     tel: str = Field(..., description="행사장 전화번호")
+    read_more_link: str = Field(..., description="행사정보 더보기 링크")
 
 
 class TourResponseModel(BaseModel):
