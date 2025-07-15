@@ -8,7 +8,7 @@ from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
 from app.services.user_service import UserService
 from app.utils.conveter import user_info_to_id
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["user"])
 
 
 @router.post(
@@ -49,3 +49,10 @@ async def modify_user_info(
 
     await UserService(db=db).modify_user_info(user_id=user_id, req=req)
     return BaseResponse(message="유저정보 수정 성공")
+
+
+@router.get("/me/reviews")
+async def get_my_reviews():
+    """내가 작성한 리뷰 조회하는 API."""
+
+    pass

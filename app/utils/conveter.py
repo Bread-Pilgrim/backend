@@ -1,3 +1,6 @@
+from datetime import datetime, time
+from typing import Optional
+
 from app.core.exception import UnknownExceptionError
 from app.utils.parser import parse_comma_to_list
 
@@ -52,3 +55,23 @@ def area_to_sigungu(area_code: str):
     area_codes = parse_comma_to_list(area_code)
     sigungu_codes = [AREA_TO_SIGUNGU.get(a) for a in area_codes]
     return set([y for s in sigungu_codes for y in s])
+
+
+def operating_hours_to_open_status(
+    is_opened: Optional[bool] = None,
+    close_time: Optional[time] = None,
+    open_time: Optional[time] = None,
+):
+    """영업시간 데이터 기반으로 영업상태 ENUM 반환하는 메소드."""
+
+    now = datetime.now().time()
+
+    if not is_opened:
+        return "D"
+    if open_time and close_time:
+        if open_time < now < close_time:
+            return "O"
+        else:
+            return "C"
+
+    return "O"
