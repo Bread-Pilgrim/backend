@@ -1,17 +1,23 @@
-from sqlalchemy import and_, literal_column, select
+from sqlalchemy import and_, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import UnknownExceptionError
+from app.core.exception import NotFoundException, UnknownExceptionError
 from app.model.bakery import (
     Bakery,
     BakeryMenu,
     BakeryPreference,
     BakeryThumbnail,
+    MenuThumbnail,
     OperatingHour,
 )
 from app.model.users import UserBakeryLikes, UserPreferences
-from app.schema.bakery import LoadMoreBakery, RecommendBakery
+from app.schema.bakery import (
+    BakeryDetailModel,
+    BakeryDetailResponseModel,
+    LoadMoreBakery,
+    RecommendBakery,
+)
 
 
 class BakeryRepository:
@@ -317,3 +323,90 @@ class BakeryRepository:
             )
             for r in res
         ]
+
+    async def get_bakery_detail(self, bakery_id: int, target_day_of_week: int):
+        """베이커리 상세정보 조회하는 쿼리."""
+
+        try:
+            res = (
+                self.db.query(
+                    Bakery.id,
+                    Bakery.name,
+                    Bakery.address,
+                    Bakery.review_count,
+                    Bakery.avg_rating,
+                    Bakery.phone,
+                    OperatingHour.is_opened,
+                    UserBakeryLikes.bakery_id.label("is_like"),
+                )
+                .select_from(Bakery)
+                .join(
+                    OperatingHour,
+                    and_(
+                        OperatingHour.bakery_id == Bakery.id,
+                        OperatingHour.day_of_week == target_day_of_week,
+                    ),
+                )
+                .join(
+                    UserBakeryLikes,
+                    and_(UserBakeryLikes.bakery_id == Bakery.id),
+                    isouter=True,
+                )
+                .filter(Bakery.id == bakery_id)
+                .first()
+            )
+
+            if res:
+                return BakeryDetailResponseModel(
+                    bakery_id=res.id,
+                    bakery_name=res.name,
+                    address=res.address,
+                    phone=res.phone,
+                    avg_rating=res.avg_rating,
+                    review_count=res.review_count,
+                    is_opened=res.is_opened,
+                    is_like=True if res.is_like else False,
+                )
+            else:
+                raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
+        except NotFoundException as e:
+            raise e
+        except Exception as e:
+            raise UnknownExceptionError(detail=str(e))
+
+    async def get_bakery_menu_detail(self, bakery_id: int):
+        """베이커리 메뉴 정보 조회하는 쿼리"""
+
+        stmt = (
+            self.db.query(
+                BakeryMenu.name,
+                BakeryMenu.price,
+                BakeryMenu.is_signature,
+                MenuThumbnail.img_url,
+            )
+            .select_from(BakeryMenu)
+            .outerjoin(MenuThumbnail, MenuThumbnail.menu_id == BakeryMenu.id)
+            .filter(BakeryMenu.bakery_id == bakery_id)
+        )
+
+        res = self.db.execute(stmt).mappings().all()
+
+        return [
+            BakeryDetailModel(
+                menu_name=r.name,
+                price=r.price,
+                is_signature=r.is_signature,
+                img_url=r.img_url,
+            )
+            for r in res
+        ]
+
+    async def get_bakery_thumbnails(self, bakery_id: int):
+        """베이커리 썸네일 조회하는 메소드."""
+        res = (
+            self.db.query(BakeryThumbnail.img_url)
+            .filter(BakeryThumbnail.bakery_id == bakery_id)
+            .all()
+        )
+
+        return [r.img_url for r in res if r.img_url] if res else []

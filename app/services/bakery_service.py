@@ -4,7 +4,11 @@ from datetime import datetime
 from sqlalchemy.orm.session import Session
 
 from app.repositories.bakery_repo import BakeryRepository
-from app.schema.bakery import LoadMoreBakery, LoadMoreBakeryResponseModel
+from app.schema.bakery import (
+    BakeryDetailResponseModel,
+    LoadMoreBakery,
+    LoadMoreBakeryResponseModel,
+)
 from app.schema.common import CursorModel, PagingModel
 from app.utils.parser import parse_comma_to_list
 
@@ -133,4 +137,25 @@ class BakeryService:
                     after=bakeries[-1].bakery_id if bakeries else 0,
                 )
             ),
+        )
+
+    async def get_bakery_detail(self, bakery_id: int):
+        bakery_repo = BakeryRepository(db=self.db)
+        target_day_of_week = datetime.today().weekday()
+
+        # 1. 베이커리 정보 가져오기
+        bakery = await bakery_repo.get_bakery_detail(
+            bakery_id=bakery_id, target_day_of_week=target_day_of_week
+        )
+
+        # 2. 베이커리 메뉴 가져오기
+        menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)
+
+        # 3. 베이커리 썸네일 가져오기
+        thumbnails = await bakery_repo.get_bakery_thumbnails(bakery_id=bakery_id)
+
+        return BakeryDetailResponseModel(
+            **bakery.model_dump(exclude={"menus", "bakery_img_urls"}),
+            menus=menus,
+            bakery_img_urls=thumbnails,
         )
