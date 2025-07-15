@@ -5,11 +5,11 @@ from fastapi import APIRouter, Depends, Query
 from app.core.auth import get_user_id, verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
-from app.core.exception import ERROR_UNKNOWN
+from app.core.exception import ERROR_NOT_FOUND, ERROR_UNKNOWN
 from app.schema.bakery import LoadMoreBakeryResponseModel, RecommendBakery
 from app.services.bakery_service import BakeryService
 
-router = APIRouter(prefix="/bakery", tags=["bakery"])
+router = APIRouter(prefix="/bakeries", tags=["bakery"])
 
 
 @router.get(
@@ -115,3 +115,12 @@ async def get_hot_bakeries(
             area_code=area_code, cursor_id=cursor_id, page_size=page_size
         )
     )
+
+
+@router.get("/{bakery_id}")
+async def get_bakery_detail(
+    bakery_id: int, _: None = Depends(get_user_id), db=Depends(get_db)
+):
+    """베이커리 상세 조회 API."""
+
+    return await BakeryService(db=db).get_bakery_detail(bakery_id=bakery_id)

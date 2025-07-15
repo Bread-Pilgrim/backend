@@ -71,3 +71,11 @@ class OperatingHour(Base):
     close_time = Column(Time, comment="종료시간")
     is_opened = Column(Boolean, default=True, comment="오픈여부")
     occasion = Column(String(128), comment="공휴일, 설날 등의 텍스트 상황")
+
+
+class MenuThumbnail(Base, DateTimeMixin):
+    __tablename__ = "menu_thumbnails"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    menu_id = Column(Integer, nullable=False)
+    img_url = Column(Text, comment="이미지 경로")

@@ -11,7 +11,11 @@ from sqlalchemy.orm import Session
 from app.core.config import Configs
 from app.core.exception import UnknownExceptionError
 from app.schema.tour import EventPopupResponseModel, TourResponseModel
-from app.utils.conveter import area_to_sigungu, transform_tour_response
+from app.utils.conveter import (
+    area_to_sigungu,
+    replace_space_with_plus,
+    transform_tour_response,
+)
 from app.utils.parser import parse_comma_to_list
 
 config = Configs()
@@ -63,6 +67,7 @@ class TourService:
                         mapx=float(e.get("mapx")),
                         mapy=float(e.get("mapy")),
                         tel=e.get("tel"),
+                        read_more_link=replace_space_with_plus(e.get("title")),
                     )
                 )
         return random.choice(filtered_events) if filtered_events else None
@@ -108,7 +113,7 @@ class TourService:
                     url=f"{config.REQ_URL_DOMAIN}/searchFestival2",
                     params=(
                         param_base
-                        if area_code == 14
+                        if area_code == "14"
                         else {
                             **param_base,
                             "sigunguCode": s,

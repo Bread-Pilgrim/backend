@@ -10,7 +10,7 @@ from app.schema.tour import EventPopupResponseModel, TourResponseModel
 from app.services.tour_service import TourService
 
 router = APIRouter(
-    prefix="/tour",
+    prefix="/tours",
     tags=["tour"],
 )
 
