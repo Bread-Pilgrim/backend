@@ -113,7 +113,7 @@ class TourService:
                     url=f"{config.REQ_URL_DOMAIN}/searchFestival2",
                     params=(
                         param_base
-                        if area_code == 14
+                        if area_code == "14"
                         else {
                             **param_base,
                             "sigunguCode": s,
