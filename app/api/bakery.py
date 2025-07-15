@@ -9,7 +9,7 @@ from app.core.exception import ERROR_NOT_FOUND, ERROR_UNKNOWN
 from app.schema.bakery import LoadMoreBakeryResponseModel, RecommendBakery
 from app.services.bakery_service import BakeryService
 
-router = APIRouter(prefix="/bakery", tags=["bakery"])
+router = APIRouter(prefix="/bakeries", tags=["bakery"])
 
 
 @router.get(
