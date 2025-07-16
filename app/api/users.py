@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends
 
-from app.core.auth import get_user_id, verify_token
+from app.core.auth import get_user_id
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
 from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
 from app.services.user_service import UserService
-from app.utils.conveter import user_info_to_id
 
 router = APIRouter(prefix="/users", tags=["user"])
 

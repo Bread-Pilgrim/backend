@@ -18,7 +18,7 @@ from app.schema.bakery import (
     LoadMoreBakery,
     RecommendBakery,
 )
-from app.utils.conveter import operating_hours_to_open_status
+from app.utils.converter import operating_hours_to_open_status
 
 
 class BakeryRepository:
@@ -35,7 +35,10 @@ class BakeryRepository:
         """(홈) 유저의 취향이 반영된 빵집 조회하는 쿼리."""
 
         try:
-            conditions = [UserPreferences.user_id == user_id]
+            conditions = [
+                UserPreferences.user_id == user_id,
+                BakeryThumbnail.is_signature == True,
+            ]
 
             if area_codes != ["14"]:
                 conditions.append(Bakery.commercial_area_id.in_(area_codes))
@@ -118,7 +121,11 @@ class BakeryRepository:
     ):
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 쿼리"""
 
-        conditions = [UserPreferences.user_id == user_id, Bakery.id > cursor_id]
+        conditions = [
+            UserPreferences.user_id == user_id,
+            Bakery.id > cursor_id,
+            BakeryThumbnail.is_signature == True,
+        ]
 
         if area_codes != ["14"]:
             conditions.append(Bakery.commercial_area_id.in_(area_codes))
@@ -217,9 +224,12 @@ class BakeryRepository:
 
             b = aliased(Bakery)
 
-            conditions = [OperatingHour.day_of_week == target_day_of_week]
+            conditions = [
+                OperatingHour.day_of_week == target_day_of_week,
+                BakeryThumbnail.is_signature == True,
+            ]
             if area_codes != ["14"]:
-                conditions.append(Bakery.commercial_area_id.in_(area_codes))
+                conditions.append(b.commercial_area_id.in_(area_codes))
 
             stmt = (
                 select(
@@ -282,7 +292,7 @@ class BakeryRepository:
     ):
         """(더보기) hot한 빵집 조회하는 쿼리"""
 
-        conditions = [Bakery.id > cursor_id]
+        conditions = [Bakery.id > cursor_id, BakeryThumbnail.is_signature == True]
 
         if area_codes != ["14"]:
             conditions.append(Bakery.commercial_area_id.in_(area_codes))
