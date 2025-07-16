@@ -1,6 +1,8 @@
 from datetime import datetime, time
 from typing import Optional
 
+import pytz
+
 from app.core.exception import UnknownExceptionError
 from app.utils.parser import parse_comma_to_list
 
@@ -68,7 +70,8 @@ def operating_hours_to_open_status(
 ):
     """영업시간 데이터 기반으로 영업상태 ENUM 반환하는 메소드."""
 
-    now = datetime.now().time()
+    seoul_tz = pytz.timezone("Asia/Seoul")
+    now = datetime.now(seoul_tz).time()
 
     if not is_opened:
         # 휴무일
