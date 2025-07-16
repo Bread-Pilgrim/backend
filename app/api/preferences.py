@@ -8,7 +8,6 @@ from app.core.database import get_db
 from app.core.exception import ERROR_UNKNOWN
 from app.schema.preferences import PreferenceResponseModel, PreferenceType
 from app.services.preference_service import PreferenceService
-from app.utils.conveter import user_info_to_id
 
 router = APIRouter(prefix="/preferences", tags=["preference"])
 

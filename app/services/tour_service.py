@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Configs
 from app.core.exception import UnknownExceptionError
 from app.schema.tour import EventPopupResponseModel, TourResponseModel
-from app.utils.conveter import (
+from app.utils.converter import (
     area_to_sigungu,
     replace_space_with_plus,
     transform_tour_response,
