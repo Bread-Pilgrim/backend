@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy.orm.session import Session
 
+from app.core.exception import NotFoundException
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
     BakeryDetailResponseModel,
@@ -88,10 +89,7 @@ class BakeryService:
         return LoadMoreBakeryResponseModel(
             items=bakery_infos,
             paging=PagingModel(
-                cursor=CursorModel(
-                    before=cursor_id,
-                    after=bakeries[-1].bakery_id if bakeries else 0,
-                )
+                cursor=CursorModel(before=cursor_id, after=bakeries[-1].bakery_id)
             ),
         )
 
@@ -122,6 +120,18 @@ class BakeryService:
             target_day_of_week=target_day_of_week,
             page_size=page_size,
         )
+
+        if not bakeries:
+            return LoadMoreBakeryResponseModel(
+                items=[],
+                paging=PagingModel(
+                    cursor=CursorModel(
+                        before=cursor_id,
+                        after=-1,  # 다음 페이지 없을 때,
+                    )
+                ),
+            )
+
         # 빵 시그니처 메뉴 정보
         menus = await bakery_repo.get_signature_menus(
             bakery_ids=[b.bakery_id for b in bakeries]
@@ -132,10 +142,7 @@ class BakeryService:
         return LoadMoreBakeryResponseModel(
             items=bakery_infos,
             paging=PagingModel(
-                cursor=CursorModel(
-                    before=cursor_id,
-                    after=bakeries[-1].bakery_id if bakeries else 0,
-                )
+                cursor=CursorModel(before=cursor_id, after=bakeries[-1].bakery_id)
             ),
         )
 
@@ -147,6 +154,9 @@ class BakeryService:
         bakery = await bakery_repo.get_bakery_detail(
             bakery_id=bakery_id, target_day_of_week=target_day_of_week
         )
+
+        if bakery:
+            raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
 
         # 2. 베이커리 메뉴 가져오기
         menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)
