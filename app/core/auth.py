@@ -11,7 +11,6 @@ from app.core.exception import (
     TokenExpiredException,
 )
 from app.schema.auth import AuthToken
-from app.utils.conveter import user_info_to_id
 
 configs = Configs()
 
