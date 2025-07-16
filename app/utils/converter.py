@@ -71,14 +71,19 @@ def operating_hours_to_open_status(
     now = datetime.now().time()
 
     if not is_opened:
+        # 휴무일
         return "D"
-    if open_time and close_time:
-        if open_time < now < close_time:
-            return "O"
+    else:
+        if open_time and close_time:
+            # 현재 영업중인 경우
+            if open_time < now < close_time:
+                return "O"
+            # 현재 영업시간이 초과된 경우
+            else:
+                return "C"
         else:
-            return "C"
-
-    return "O"
+            # 그냥 요일 오픈 여부만 있는 경우
+            return "O"
 
 
 def replace_space_with_plus(title: str) -> str:
