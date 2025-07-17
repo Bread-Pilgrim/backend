@@ -1,7 +1,6 @@
 from datetime import datetime, time
 from typing import Optional
-
-import pytz
+from zoneinfo import ZoneInfo
 
 from app.core.exception import UnknownError
 from app.utils.parser import parse_comma_to_list
@@ -25,6 +24,12 @@ AREA_TO_SIGUNGU = {
 read_more_link_domain = (
     "https://search.daum.net/search?w=tot&DA=YZR&t__nil_searchbox=btn&q="
 )
+
+
+def convert_timezone_now():
+    """국가에 맞게 타임존 반영해서 오늘 날짜 반환하는 메소드."""
+
+    return datetime.now(ZoneInfo("Asia/Seoul"))
 
 
 def user_info_to_id(user_info) -> int:
@@ -69,9 +74,7 @@ def operating_hours_to_open_status(
     open_time: Optional[time] = None,
 ):
     """영업시간 데이터 기반으로 영업상태 ENUM 반환하는 메소드."""
-
-    seoul_tz = pytz.timezone("Asia/Seoul")
-    now = datetime.now(seoul_tz).time()
+    now = convert_timezone_now().time()
 
     if not is_opened:
         # 휴무일
