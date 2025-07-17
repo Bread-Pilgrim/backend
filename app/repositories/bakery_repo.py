@@ -463,13 +463,15 @@ class BakeryRepository:
 
         try:
             res = (
-                self.db.query(BakeryMenu.name, BakeryMenu.is_signature)
+                self.db.query(BakeryMenu.id, BakeryMenu.name, BakeryMenu.is_signature)
                 .filter(BakeryMenu.bakery_id == bakery_id)
                 .all()
             )
 
             return [
-                SimpleBakeryMenu(menu_name=r.name, is_signature=r.is_signature)
+                SimpleBakeryMenu(
+                    menu_id=r.id, menu_name=r.name, is_signature=r.is_signature
+                )
                 for r in res
             ]
         except Exception as e:

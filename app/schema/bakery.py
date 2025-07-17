@@ -97,5 +97,6 @@ class BakeryDetailResponseDTO(BaseModel):
 class SimpleBakeryMenu(BaseModel):
     """리뷰 작성할 때, 조회되는 베이커리 메뉴"""
 
-    menu_name: str = Field(..., description="대표메뉴 이름")
+    menu_id: int = Field(..., description="메뉴 ID")
+    menu_name: str = Field(..., description="메뉴 이름")
     is_signature: bool = Field(..., description="대표메뉴 여부")
