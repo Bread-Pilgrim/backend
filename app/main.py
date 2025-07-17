@@ -5,6 +5,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app.api import auth, bakery, common, preferences, review, test, tour, users
 from app.core.exception import (
     DuplicateError,
+    InvalidAreaCodeError,
     InvalidSortParameterError,
     InvalidTokenError,
     NotFoundError,
@@ -48,6 +49,7 @@ app.add_exception_handler(RequestDataMissingError, exception_handler)
 app.add_exception_handler(InvalidTokenError, exception_handler)
 app.add_exception_handler(DuplicateError, exception_handler)
 app.add_exception_handler(NotFoundError, exception_handler)
+app.add_exception_handler(InvalidAreaCodeError, exception_handler)
 app.add_exception_handler(InvalidSortParameterError, exception_handler)
 
 Instrumentator().instrument(app).expose(app)

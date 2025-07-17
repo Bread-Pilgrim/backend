@@ -12,6 +12,7 @@ from app.schema.bakery import (
 )
 from app.schema.common import Cursor, Paging
 from app.utils.parser import parse_comma_to_list
+from app.utils.validator import validate_area_code
 
 
 class BakeryService:
@@ -36,6 +37,10 @@ class BakeryService:
 
         # 구분자로 받은 지역코드 list로 반환
         area_codes = parse_comma_to_list(area_code)
+
+        # 지역코드 유효성 체크
+        validate_area_code(area_codes=area_codes)
+
         # 오늘 요일
         target_day_of_week = datetime.today().weekday()
 
@@ -53,6 +58,8 @@ class BakeryService:
 
         # 구분자로 받은 지역코드 list로 반환
         area_codes = parse_comma_to_list(area_code)
+        # 지역코드 유효성 체크
+        validate_area_code(area_codes=area_codes)
         # 오늘 요일
         target_day_of_week = datetime.today().weekday()
 
@@ -97,6 +104,9 @@ class BakeryService:
         """(홈탭용)hot한 빵집 조회하는 비즈니스 로직."""
 
         area_codes = parse_comma_to_list(area_code)
+        # 지역코드 유효성 체크
+        validate_area_code(area_codes=area_codes)
+
         target_day_of_week = datetime.today().weekday()
 
         return await BakeryRepository(self.db).get_bakery_by_area(
@@ -109,6 +119,9 @@ class BakeryService:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
         area_codes = parse_comma_to_list(area_code)
+        # 지역코드 유효성 체크
+        validate_area_code(area_codes=area_codes)
+
         target_day_of_week = datetime.today().weekday()
 
         bakery_repo = BakeryRepository(self.db)

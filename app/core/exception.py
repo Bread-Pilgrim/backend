@@ -77,6 +77,12 @@ class NotFoundError(CustomException):
     DEFAULT_MESSAGE = "해당 데이터를 찾을 수 없습니다."
 
 
+class InvalidAreaCodeError(CustomException):
+    STATUS_CODE = status.HTTP_400_BAD_REQUEST
+    ERROR_CODE = ErrorCode.INVALID_AREA_CODE
+    DEFAULT_MESSAGE = "잘못된 지역코드를 입력했습니다."
+
+
 class InvalidSortParameterError(CustomException):
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
     ERROR_CODE = ErrorCode.INVALID_SORT_PARAM
