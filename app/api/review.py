@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, Query
 from app.core.auth import get_user_id
 from app.core.base import BaseResponse
 from app.core.database import get_db
-from app.schema.review import MyBakeryReview
+from app.schema.review import BakeryReview, MyBakeryReview
 from app.services.review_service import Review
 
 router = APIRouter(prefix="/reviews", tags=["review"])
 
 
-@router.get("/bakery/{bakery_id}")
+@router.get("/bakery/{bakery_id}", response_model=BaseResponse[List[BakeryReview]])
 async def get_reviews_by_bakery_id(
     bakery_id: int,
     cursor_id: int = Query(
@@ -19,22 +19,30 @@ async def get_reviews_by_bakery_id(
         description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.cursor.after 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=5),
-    sort_by: str = Query(
-        default="LIKE.DESC",
+    sort_clause: str = Query(
+        default="LIKE_COUNT.DESC",
         description="""
     원래는 '필드' '정렬방향' 다르게 하려고 했는데, 일단 통합으로 가겠음. \n
-    좋아요순 : LIKE.DESC 
+    좋아요순 : LIKE_COUNT.DESC 
     최신 작성순 : CREATED_AT.DESC 
-    높은 평가순 : AVG_RATING.DESC 
-    낮은 평가순 : AVG_RATING.ASC 
+    높은 평가순 : RATING.DESC 
+    낮은 평가순 : RATING.ASC 
     """,
     ),
-    _: None = Depends(get_user_id),
+    user_id=Depends(get_user_id),
     db=Depends(get_db),
 ):
     """특정 베이커리의 리뷰 조회하는 API."""
 
-    pass
+    return BaseResponse(
+        data=await Review(db=db).get_reviews_by_bakery_id(
+            user_id=user_id,
+            bakery_id=bakery_id,
+            cursor_id=cursor_id,
+            page_size=page_size,
+            sort_clause=sort_clause,
+        )
+    )
 
 
 @router.get(
