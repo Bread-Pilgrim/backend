@@ -45,8 +45,8 @@ class BakeryMenu(Base, DateTimeMixin):
     bakery_id = Column(Integer, nullable=False)
 
 
-class BakeryThumbnail(Base, DateTimeMixin):
-    __tablename__ = "bakery_thumbnails"
+class BakeryPhoto(Base, DateTimeMixin):
+    __tablename__ = "bakery_photos"
 
     id = Column(Integer, primary_key=True, index=True)
     bakery_id = Column(Integer, nullable=False)
@@ -73,8 +73,8 @@ class OperatingHour(Base):
     occasion = Column(String(128), comment="공휴일, 설날 등의 텍스트 상황")
 
 
-class MenuThumbnail(Base, DateTimeMixin):
-    __tablename__ = "menu_thumbnails"
+class MenuPhoto(Base, DateTimeMixin):
+    __tablename__ = "menu_photos"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     menu_id = Column(Integer, nullable=False)

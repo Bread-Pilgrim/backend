@@ -6,9 +6,9 @@ from app.core.exception import NotFoundException, UnknownExceptionError
 from app.model.bakery import (
     Bakery,
     BakeryMenu,
+    BakeryPhoto,
     BakeryPreference,
-    BakeryThumbnail,
-    MenuThumbnail,
+    MenuPhoto,
     OperatingHour,
 )
 from app.model.users import UserBakeryLikes, UserPreferences
@@ -37,7 +37,7 @@ class BakeryRepository:
         try:
             conditions = [
                 UserPreferences.user_id == user_id,
-                BakeryThumbnail.is_signature == True,
+                BakeryPhoto.is_signature == True,
             ]
 
             if area_codes != ["14"]:
@@ -54,7 +54,7 @@ class BakeryRepository:
                     OperatingHour.is_opened,
                     OperatingHour.close_time,
                     OperatingHour.open_time,
-                    BakeryThumbnail.img_url,
+                    BakeryPhoto.img_url,
                 )
                 .distinct()
                 .select_from(UserPreferences)
@@ -71,10 +71,10 @@ class BakeryRepository:
                     ),
                 )
                 .join(
-                    BakeryThumbnail,
+                    BakeryPhoto,
                     and_(
-                        BakeryThumbnail.bakery_id == Bakery.id,
-                        BakeryThumbnail.is_signature.is_(True),
+                        BakeryPhoto.bakery_id == Bakery.id,
+                        BakeryPhoto.is_signature.is_(True),
                     ),
                 )
                 .join(
@@ -124,7 +124,7 @@ class BakeryRepository:
         conditions = [
             UserPreferences.user_id == user_id,
             Bakery.id > cursor_id,
-            BakeryThumbnail.is_signature == True,
+            BakeryPhoto.is_signature == True,
         ]
 
         if area_codes != ["14"]:
@@ -142,7 +142,7 @@ class BakeryRepository:
                 OperatingHour.is_opened,
                 OperatingHour.close_time,
                 OperatingHour.open_time,
-                BakeryThumbnail.img_url,
+                BakeryPhoto.img_url,
                 UserBakeryLikes.bakery_id.label("is_like"),
             )
             .distinct()
@@ -160,10 +160,10 @@ class BakeryRepository:
                 ),
             )
             .join(
-                BakeryThumbnail,
+                BakeryPhoto,
                 and_(
-                    BakeryThumbnail.bakery_id == Bakery.id,
-                    BakeryThumbnail.is_signature.is_(True),
+                    BakeryPhoto.bakery_id == Bakery.id,
+                    BakeryPhoto.is_signature.is_(True),
                 ),
             )
             .join(
@@ -226,7 +226,7 @@ class BakeryRepository:
 
             conditions = [
                 OperatingHour.day_of_week == target_day_of_week,
-                BakeryThumbnail.is_signature == True,
+                BakeryPhoto.is_signature == True,
             ]
             if area_codes != ["14"]:
                 conditions.append(b.commercial_area_id.in_(area_codes))
@@ -242,13 +242,13 @@ class BakeryRepository:
                     OperatingHour.is_opened,
                     OperatingHour.close_time,
                     OperatingHour.open_time,
-                    BakeryThumbnail.img_url,
+                    BakeryPhoto.img_url,
                     UserBakeryLikes.bakery_id.label("is_like"),
                 )
                 .distinct(b.id)
                 .select_from(b)
                 .join(OperatingHour, OperatingHour.bakery_id == b.id)
-                .join(BakeryThumbnail, BakeryThumbnail.bakery_id == b.id)
+                .join(BakeryPhoto, BakeryPhoto.bakery_id == b.id)
                 .join(
                     UserBakeryLikes,
                     and_(
@@ -292,7 +292,7 @@ class BakeryRepository:
     ):
         """(더보기) hot한 빵집 조회하는 쿼리"""
 
-        conditions = [Bakery.id > cursor_id, BakeryThumbnail.is_signature == True]
+        conditions = [Bakery.id > cursor_id, BakeryPhoto.is_signature == True]
 
         if area_codes != ["14"]:
             conditions.append(Bakery.commercial_area_id.in_(area_codes))
@@ -309,7 +309,7 @@ class BakeryRepository:
                 OperatingHour.is_opened,
                 OperatingHour.close_time,
                 OperatingHour.open_time,
-                BakeryThumbnail.img_url,
+                BakeryPhoto.img_url,
                 UserBakeryLikes.bakery_id.label("is_like"),
             )
             .distinct()
@@ -322,10 +322,10 @@ class BakeryRepository:
                 ),
             )
             .join(
-                BakeryThumbnail,
+                BakeryPhoto,
                 and_(
-                    BakeryThumbnail.bakery_id == Bakery.id,
-                    BakeryThumbnail.is_signature.is_(True),
+                    BakeryPhoto.bakery_id == Bakery.id,
+                    BakeryPhoto.is_signature.is_(True),
                 ),
             )
             .join(
@@ -417,10 +417,10 @@ class BakeryRepository:
                 BakeryMenu.name,
                 BakeryMenu.price,
                 BakeryMenu.is_signature,
-                MenuThumbnail.img_url,
+                MenuPhoto.img_url,
             )
             .select_from(BakeryMenu)
-            .outerjoin(MenuThumbnail, MenuThumbnail.menu_id == BakeryMenu.id)
+            .outerjoin(MenuPhoto, MenuPhoto.menu_id == BakeryMenu.id)
             .filter(BakeryMenu.bakery_id == bakery_id)
         )
 
@@ -436,11 +436,11 @@ class BakeryRepository:
             for r in res
         ]
 
-    async def get_bakery_thumbnails(self, bakery_id: int):
+    async def get_bakery_photos(self, bakery_id: int):
         """베이커리 썸네일 조회하는 메소드."""
         res = (
-            self.db.query(BakeryThumbnail.img_url)
-            .filter(BakeryThumbnail.bakery_id == bakery_id)
+            self.db.query(BakeryPhoto.img_url)
+            .filter(BakeryPhoto.bakery_id == bakery_id)
             .all()
         )
 

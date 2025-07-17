@@ -162,10 +162,10 @@ class BakeryService:
         menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)
 
         # 3. 베이커리 썸네일 가져오기
-        thumbnails = await bakery_repo.get_bakery_thumbnails(bakery_id=bakery_id)
+        photos = await bakery_repo.get_bakery_photos(bakery_id=bakery_id)
 
         return BakeryDetailResponseModel(
             **bakery.model_dump(exclude={"menus", "bakery_img_urls"}),
             menus=menus,
-            bakery_img_urls=thumbnails,
+            bakery_img_urls=photos,
         )
