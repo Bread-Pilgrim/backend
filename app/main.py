@@ -2,14 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api import auth, bakery, common, preferences, test, tour, users
+from app.api import auth, bakery, common, preferences, review, test, tour, users
 from app.core.exception import (
-    DuplicateException,
-    InvalidTokenException,
-    NotFoundException,
-    RequestDataMissingException,
-    TokenExpiredException,
-    UnknownExceptionError,
+    DuplicateError,
+    InvalidSortParameterError,
+    InvalidTokenError,
+    NotFoundError,
+    RequestDataMissingError,
+    TokenExpiredError,
+    UnknownError,
     exception_handler,
 )
 
@@ -38,13 +39,15 @@ app.include_router(preferences.router)
 app.include_router(bakery.router)
 app.include_router(tour.router)
 app.include_router(common.router)
+app.include_router(review.router)
 
 # Exception
-app.add_exception_handler(UnknownExceptionError, exception_handler)
-app.add_exception_handler(TokenExpiredException, exception_handler)
-app.add_exception_handler(RequestDataMissingException, exception_handler)
-app.add_exception_handler(InvalidTokenException, exception_handler)
-app.add_exception_handler(DuplicateException, exception_handler)
-app.add_exception_handler(NotFoundException, exception_handler)
+app.add_exception_handler(UnknownError, exception_handler)
+app.add_exception_handler(TokenExpiredError, exception_handler)
+app.add_exception_handler(RequestDataMissingError, exception_handler)
+app.add_exception_handler(InvalidTokenError, exception_handler)
+app.add_exception_handler(DuplicateError, exception_handler)
+app.add_exception_handler(NotFoundError, exception_handler)
+app.add_exception_handler(InvalidSortParameterError, exception_handler)
 
 Instrumentator().instrument(app).expose(app)

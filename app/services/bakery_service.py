@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import NotFoundException
+from app.core.exception import NotFoundError
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
     BakeryDetailResponseModel,
@@ -156,7 +156,7 @@ class BakeryService:
         )
 
         if bakery:
-            raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
+            raise NotFoundError(detail="해당 베이커리를 찾을 수 없습니다.")
 
         # 2. 베이커리 메뉴 가져오기
         menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)

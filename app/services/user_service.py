@@ -1,6 +1,6 @@
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import DuplicateException
+from app.core.exception import DuplicateError
 from app.repositories.user_repo import UserRepository
 from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
 
@@ -29,7 +29,7 @@ class UserService:
             nickname=nickname, user_id=user_id
         )
         if is_exist:
-            raise DuplicateException(
+            raise DuplicateError(
                 detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
                 error_code="DUPLICATE_NICKNAME",
             )

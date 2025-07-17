@@ -3,7 +3,7 @@ from typing import Optional
 
 import pytz
 
-from app.core.exception import UnknownExceptionError
+from app.core.exception import UnknownError
 from app.utils.parser import parse_comma_to_list
 
 AREA_TO_SIGUNGU = {
@@ -49,7 +49,7 @@ def transform_tour_response(response: list, transformed_r: list):
                     transformed_r.extend(item)
         return transformed_r
     except Exception as e:
-        raise UnknownExceptionError(str(e))
+        raise UnknownError(str(e))
 
 
 def area_to_sigungu(area_code: str):

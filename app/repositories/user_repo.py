@@ -1,7 +1,7 @@
 from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import DuplicateException, UnknownExceptionError
+from app.core.exception import DuplicateError, UnknownError
 from app.model.users import UserPreferences, Users
 
 
@@ -30,7 +30,7 @@ class UserRepository:
             self.db.commit()
 
         except Exception as e:
-            raise DuplicateException(
+            raise DuplicateError(
                 detail="이미 취향이 설정되어 있습니다. 취향을 수정하시려면 변경 요청을 해주세요.",
                 error_code="ALREADY_ONBOARDED",
             )
@@ -45,7 +45,7 @@ class UserRepository:
                 setattr(user, key, value)
             self.db.commit()
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))
 
     async def modify_preference_state(self, user_id: int):
         """취향설정 완료 상태 변경하는 쿼리."""
@@ -57,4 +57,4 @@ class UserRepository:
                 self.db.commit()
 
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))
