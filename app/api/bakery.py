@@ -10,6 +10,7 @@ from app.schema.bakery import (
     BakeryDetailResponseDTO,
     LoadMoreBakeryResponseDTO,
     RecommendBakery,
+    SimpleBakeryMenu,
 )
 from app.services.bakery_service import BakeryService
 
@@ -133,4 +134,15 @@ async def get_bakery_detail(
 
     return BaseResponse(
         data=await BakeryService(db=db).get_bakery_detail(bakery_id=bakery_id)
+    )
+
+
+@router.get("/{bakery_id}/menus", response_model=BaseResponse[List[SimpleBakeryMenu]])
+async def get_bakery_menus(
+    bakery_id: int, _: None = Depends(get_user_id), db=Depends(get_db)
+):
+    """베이커리 메뉴 조회 API."""
+
+    return BaseResponse(
+        data=await BakeryService(db=db).get_bakery_menus(bakery_id=bakery_id)
     )

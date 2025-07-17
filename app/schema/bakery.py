@@ -92,3 +92,10 @@ class BakeryDetailResponseDTO(BaseModel):
         default=[], description="썸네일 리스트"
     )
     menus: Optional[List[BakeryDetail]] = Field(default=[], description="베이커리 메뉴")
+
+
+class SimpleBakeryMenu(BaseModel):
+    """리뷰 작성할 때, 조회되는 베이커리 메뉴"""
+
+    menu_name: str = Field(..., description="대표메뉴 이름")
+    is_signature: bool = Field(..., description="대표메뉴 여부")

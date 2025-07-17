@@ -161,6 +161,8 @@ class BakeryService:
         )
 
     async def get_bakery_detail(self, bakery_id: int):
+        """베이커리 상세 조회하는 비즈니스 로직."""
+
         bakery_repo = BakeryRepository(db=self.db)
         target_day_of_week = convert_timezone_now().weekday()
 
@@ -183,3 +185,6 @@ class BakeryService:
             menus=menus,
             bakery_img_urls=photos,
         )
+
+    async def get_bakery_menus(self, bakery_id: int):
+        return await BakeryRepository(db=self.db).get_bakery_menus(bakery_id=bakery_id)
