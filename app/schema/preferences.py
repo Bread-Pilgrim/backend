@@ -10,7 +10,7 @@ class PreferenceType(BaseModel):
     name: str
 
 
-class PreferenceResponseModel(BaseModel):
+class PreferenceResponseDTO(BaseModel):
     """취향항목 분류모델."""
 
     atmosphere: List[PreferenceType] = Field(..., description="분위기 항목")

@@ -10,7 +10,7 @@ class AuthToken(BaseModel):
     refresh_token: str
 
 
-class LoginRequestModel(BaseModel):
+class LoginRequestDTO(BaseModel):
     """로그인/회원가입 요청 모델."""
 
     login_type: str = Field(..., description="로그인 타입 (KAKAO | EMAIL)")
@@ -18,13 +18,13 @@ class LoginRequestModel(BaseModel):
     # pass_word: Optional[str] = Field(default=None, description="비밀번호")
 
 
-class LoginResponseModel(BaseModel):
+class LoginResponseDTO(BaseModel):
     """로그인/회원가입 응답 모델."""
 
     onboarding_completed: bool = Field(..., description="온보딩 취향설정 완료여부")
 
 
-class KakaoUserInfoModel(BaseModel):
+class KakaoUserInfo(BaseModel):
     """카카오 유저정보 모델"""
 
     social_id: str

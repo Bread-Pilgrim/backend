@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-class UserOnboardRequestModel(BaseModel):
+class UserOnboardRequestDTO(BaseModel):
     """유저 취향등록 요청 모델."""
 
     nickname: str = Field(..., description="닉네임")
@@ -13,7 +13,7 @@ class UserOnboardRequestModel(BaseModel):
     commercial_areas: List[int] = Field(..., description="상권지역 ID")
 
 
-class ModifyUserInfoRequestModel(BaseModel):
+class ModifyUserInfoRequestDTO(BaseModel):
     """유저 정보 수정 요청모델."""
 
     is_preferences_set: Optional[bool] = Field(None, description="취향설정 완료 여부")

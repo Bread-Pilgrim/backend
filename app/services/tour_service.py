@@ -9,10 +9,11 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import Configs
-from app.core.exception import UnknownExceptionError
-from app.schema.tour import EventPopupResponseModel, TourResponseModel
+from app.core.exception import UnknownError
+from app.schema.tour import EventPopupResponseDTO, TourResponseDTO
 from app.utils.converter import (
     area_to_sigungu,
+    convert_timezone_now,
     replace_space_with_plus,
     transform_tour_response,
 )
@@ -50,7 +51,7 @@ class TourService:
         """오늘 진행하는 행사만 반환하는 메소드."""
 
         filtered_events = []
-        today = datetime.now().date()
+        today = convert_timezone_now().date()
 
         for e in events:
             start_date = datetime.strptime(e.get("eventstartdate"), "%Y%m%d")
@@ -58,7 +59,7 @@ class TourService:
 
             if start_date.date() <= today <= end_date.date():
                 filtered_events.append(
-                    EventPopupResponseModel(
+                    EventPopupResponseDTO(
                         title=e.get("title"),
                         address=e.get("addr1"),
                         start_date=start_date,
@@ -77,7 +78,7 @@ class TourService:
         """관광지 데이터 가공하는 메소드."""
 
         only_img_exist = [
-            TourResponseModel(
+            TourResponseDTO(
                 title=t.get("title"),
                 tour_type=CAT_CODE.get(t.get("cat1"), "기타"),
                 address=t.get("addr1"),
@@ -127,7 +128,7 @@ class TourService:
             transformed_r = transform_tour_response(response=res, transformed_r=[])
             return self.__filter_events_today(transformed_r) if transformed_r else None
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))
 
     async def get_area_tour(self, area_code: str, tour_cat: str):
         """주변 관광지 가져오는 API (자연, 인문, 레포츠)"""
@@ -167,4 +168,4 @@ class TourService:
             return self.__proceed_tour_data(transformed_r) if transformed_r else []
 
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))

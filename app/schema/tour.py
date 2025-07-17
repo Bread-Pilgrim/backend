@@ -3,7 +3,7 @@ from datetime import date
 from pydantic import BaseModel, Field
 
 
-class EventPopupResponseModel(BaseModel):
+class EventPopupResponseDTO(BaseModel):
     """행사 팝업 정보"""
 
     title: str = Field(..., description="행사 제목")
@@ -17,7 +17,7 @@ class EventPopupResponseModel(BaseModel):
     read_more_link: str = Field(..., description="행사정보 더보기 링크")
 
 
-class TourResponseModel(BaseModel):
+class TourResponseDTO(BaseModel):
     """관광지 정보"""
 
     title: str = Field(..., description="관광지명")

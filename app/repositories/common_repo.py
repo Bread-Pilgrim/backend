@@ -1,7 +1,7 @@
 from sqlalchemy.orm.session import Session
 
 from app.model.area import CommercialAreas
-from app.schema.common import AreaCodeModel
+from app.schema.common import AreaCode
 
 
 class CommonRepository:
@@ -12,8 +12,4 @@ class CommonRepository:
         """지역코드 조회하는 쿼리."""
         res = self.db.query(CommercialAreas).order_by(CommercialAreas.ordering).all()
 
-        return (
-            [AreaCodeModel(area_code=r.id, area_name=r.name) for r in res]
-            if res
-            else []
-        )
+        return [AreaCode(area_code=r.id, area_name=r.name) for r in res] if res else []

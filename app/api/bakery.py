@@ -5,8 +5,12 @@ from fastapi import APIRouter, Depends, Query
 from app.core.auth import get_user_id, verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
-from app.core.exception import ERROR_NOT_FOUND, ERROR_UNKNOWN
-from app.schema.bakery import LoadMoreBakeryResponseModel, RecommendBakery
+from app.core.exception import ERROR_INVALID_AREA_CODE, ERROR_NOT_FOUND, ERROR_UNKNOWN
+from app.schema.bakery import (
+    BakeryDetailResponseDTO,
+    LoadMoreBakeryResponseDTO,
+    RecommendBakery,
+)
 from app.services.bakery_service import BakeryService
 
 router = APIRouter(prefix="/bakeries", tags=["bakery"])
@@ -15,7 +19,7 @@ router = APIRouter(prefix="/bakeries", tags=["bakery"])
 @router.get(
     "/recommend/preference",
     response_model=BaseResponse[List[RecommendBakery]],
-    responses=ERROR_UNKNOWN,
+    responses={**ERROR_UNKNOWN, **ERROR_INVALID_AREA_CODE},
     response_description="""
     1. 500 에러 예시 : DB 이슈
     """,
@@ -38,8 +42,8 @@ async def get_bakeries_by_preference(
 
 @router.get(
     "/preference",
-    response_model=BaseResponse[LoadMoreBakeryResponseModel],
-    responses=ERROR_UNKNOWN,
+    response_model=BaseResponse[LoadMoreBakeryResponseDTO],
+    responses={**ERROR_UNKNOWN, **ERROR_INVALID_AREA_CODE},
     response_description="""
     paging.cursor.after값이 -1이면 더이상 요청할 수 있는 다음 페이지가 없다는 뜻.
     """,
@@ -71,7 +75,7 @@ async def get_preference_bakery(
 @router.get(
     "/recommend/hot",
     response_model=BaseResponse[List[RecommendBakery]],
-    responses=ERROR_UNKNOWN,
+    responses={**ERROR_UNKNOWN, **ERROR_INVALID_AREA_CODE},
     response_description="""
     1. 500 에러 예시 : DB 이슈
     """,
@@ -90,8 +94,8 @@ async def get_recommend_bakery_by_area(
 
 @router.get(
     "/hot",
-    response_model=BaseResponse[LoadMoreBakeryResponseModel],
-    responses=ERROR_UNKNOWN,
+    response_model=BaseResponse[LoadMoreBakeryResponseDTO],
+    responses={**ERROR_UNKNOWN, **ERROR_INVALID_AREA_CODE},
     response_description="""
     1. 500 에러 예시 : DB 이슈
     """,
@@ -117,7 +121,11 @@ async def get_hot_bakeries(
     )
 
 
-@router.get("/{bakery_id}")
+@router.get(
+    "/{bakery_id}",
+    response_model=BaseResponse[BakeryDetailResponseDTO],
+    responses={**ERROR_UNKNOWN, **ERROR_NOT_FOUND},
+)
 async def get_bakery_detail(
     bakery_id: int, _: None = Depends(get_user_id), db=Depends(get_db)
 ):

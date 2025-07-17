@@ -2,7 +2,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import NotFoundException, UnknownExceptionError
+from app.core.exception import NotFoundError, UnknownError
 from app.model.bakery import (
     Bakery,
     BakeryMenu,
@@ -13,8 +13,8 @@ from app.model.bakery import (
 )
 from app.model.users import UserBakeryLikes, UserPreferences
 from app.schema.bakery import (
-    BakeryDetailModel,
-    BakeryDetailResponseModel,
+    BakeryDetail,
+    BakeryDetailResponseDTO,
     LoadMoreBakery,
     RecommendBakery,
 )
@@ -109,7 +109,7 @@ class BakeryRepository:
             ]
 
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))
 
     async def get_more_bakeries_by_preference(
         self,
@@ -130,75 +130,78 @@ class BakeryRepository:
         if area_codes != ["14"]:
             conditions.append(Bakery.commercial_area_id.in_(area_codes))
 
-        stmt = (
-            select(
-                Bakery.id,
-                Bakery.name,
-                Bakery.gu,
-                Bakery.dong,
-                Bakery.avg_rating,
-                Bakery.review_count,
-                Bakery.commercial_area_id,
-                OperatingHour.is_opened,
-                OperatingHour.close_time,
-                OperatingHour.open_time,
-                BakeryPhoto.img_url,
-                UserBakeryLikes.bakery_id.label("is_like"),
+        try:
+            stmt = (
+                select(
+                    Bakery.id,
+                    Bakery.name,
+                    Bakery.gu,
+                    Bakery.dong,
+                    Bakery.avg_rating,
+                    Bakery.review_count,
+                    Bakery.commercial_area_id,
+                    OperatingHour.is_opened,
+                    OperatingHour.close_time,
+                    OperatingHour.open_time,
+                    BakeryPhoto.img_url,
+                    UserBakeryLikes.bakery_id.label("is_like"),
+                )
+                .distinct()
+                .select_from(UserPreferences)
+                .join(
+                    BakeryPreference,
+                    BakeryPreference.preference_id == UserPreferences.preference_id,
+                )
+                .join(Bakery, Bakery.id == BakeryPreference.bakery_id)
+                .join(
+                    OperatingHour,
+                    and_(
+                        OperatingHour.bakery_id == Bakery.id,
+                        OperatingHour.day_of_week == target_day_of_week,
+                    ),
+                )
+                .join(
+                    BakeryPhoto,
+                    and_(
+                        BakeryPhoto.bakery_id == Bakery.id,
+                        BakeryPhoto.is_signature.is_(True),
+                    ),
+                )
+                .join(
+                    UserBakeryLikes,
+                    and_(
+                        UserBakeryLikes.bakery_id == Bakery.id,
+                        UserBakeryLikes.user_id == user_id,
+                    ),
+                    isouter=True,
+                )
+                .where(and_(*conditions))
+                .order_by(Bakery.id.asc())
+                .limit(page_size)
             )
-            .distinct()
-            .select_from(UserPreferences)
-            .join(
-                BakeryPreference,
-                BakeryPreference.preference_id == UserPreferences.preference_id,
-            )
-            .join(Bakery, Bakery.id == BakeryPreference.bakery_id)
-            .join(
-                OperatingHour,
-                and_(
-                    OperatingHour.bakery_id == Bakery.id,
-                    OperatingHour.day_of_week == target_day_of_week,
-                ),
-            )
-            .join(
-                BakeryPhoto,
-                and_(
-                    BakeryPhoto.bakery_id == Bakery.id,
-                    BakeryPhoto.is_signature.is_(True),
-                ),
-            )
-            .join(
-                UserBakeryLikes,
-                and_(
-                    UserBakeryLikes.bakery_id == Bakery.id,
-                    UserBakeryLikes.user_id == user_id,
-                ),
-                isouter=True,
-            )
-            .where(and_(*conditions))
-            .order_by(Bakery.id.asc())
-            .limit(page_size)
-        )
 
-        res = self.db.execute(stmt).mappings().all()
-        return [
-            LoadMoreBakery(
-                bakery_id=r.id,
-                bakery_name=r.name,
-                commercial_area_id=r.commercial_area_id,
-                avg_rating=r.avg_rating,
-                review_count=r.review_count,
-                open_status=operating_hours_to_open_status(
-                    is_opened=r.is_opened,
-                    close_time=r.close_time,
-                    open_time=r.open_time,
-                ),
-                is_like=True if r.is_like else False,
-                img_url=r.img_url,
-                gu=r.gu,
-                dong=r.dong,
-            )
-            for r in res
-        ]
+            res = self.db.execute(stmt).mappings().all()
+            return [
+                LoadMoreBakery(
+                    bakery_id=r.id,
+                    bakery_name=r.name,
+                    commercial_area_id=r.commercial_area_id,
+                    avg_rating=r.avg_rating,
+                    review_count=r.review_count,
+                    open_status=operating_hours_to_open_status(
+                        is_opened=r.is_opened,
+                        close_time=r.close_time,
+                        open_time=r.open_time,
+                    ),
+                    is_like=True if r.is_like else False,
+                    img_url=r.img_url,
+                    gu=r.gu,
+                    dong=r.dong,
+                )
+                for r in res
+            ]
+        except Exception as e:
+            raise UnknownError(detail=str(e))
 
     async def get_signature_menus(self, bakery_ids: list[int]):
         """베이커리 내 대표메뉴 조회하는 쿼리."""
@@ -215,7 +218,7 @@ class BakeryRepository:
 
             return [{"bakery_id": m.bakery_id, "menu_name": m.name} for m in menus]
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))
 
     async def get_bakery_by_area(self, area_codes: list[str], target_day_of_week: int):
         """지역코드로 베이터리 조회하는 쿼리."""
@@ -281,7 +284,7 @@ class BakeryRepository:
                 for r in res
             ]
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))
 
     async def get_more_hot_bakeries(
         self,
@@ -339,6 +342,7 @@ class BakeryRepository:
         )
 
         res = self.db.execute(stmt).mappings().all()
+
         return [
             LoadMoreBakery(
                 bakery_id=r.id,
@@ -392,7 +396,7 @@ class BakeryRepository:
             )
 
             if res:
-                return BakeryDetailResponseModel(
+                return BakeryDetailResponseDTO(
                     bakery_id=res.id,
                     bakery_name=res.name,
                     address=res.address,
@@ -403,45 +407,52 @@ class BakeryRepository:
                     is_like=True if res.is_like else False,
                 )
             else:
-                raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
-        except NotFoundException as e:
+                raise NotFoundError(detail="해당 베이커리를 찾을 수 없습니다.")
+        except NotFoundError as e:
             raise e
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))
 
     async def get_bakery_menu_detail(self, bakery_id: int):
         """베이커리 메뉴 정보 조회하는 쿼리"""
 
-        stmt = (
-            self.db.query(
-                BakeryMenu.name,
-                BakeryMenu.price,
-                BakeryMenu.is_signature,
-                MenuPhoto.img_url,
+        try:
+            stmt = (
+                self.db.query(
+                    BakeryMenu.name,
+                    BakeryMenu.price,
+                    BakeryMenu.is_signature,
+                    MenuPhoto.img_url,
+                )
+                .select_from(BakeryMenu)
+                .outerjoin(MenuPhoto, MenuPhoto.menu_id == BakeryMenu.id)
+                .filter(BakeryMenu.bakery_id == bakery_id)
             )
-            .select_from(BakeryMenu)
-            .outerjoin(MenuPhoto, MenuPhoto.menu_id == BakeryMenu.id)
-            .filter(BakeryMenu.bakery_id == bakery_id)
-        )
 
-        res = self.db.execute(stmt).mappings().all()
+            res = self.db.execute(stmt).mappings().all()
 
-        return [
-            BakeryDetailModel(
-                menu_name=r.name,
-                price=r.price,
-                is_signature=r.is_signature,
-                img_url=r.img_url,
-            )
-            for r in res
-        ]
+            return [
+                BakeryDetail(
+                    menu_name=r.name,
+                    price=r.price,
+                    is_signature=r.is_signature,
+                    img_url=r.img_url,
+                )
+                for r in res
+            ]
+        except Exception as e:
+            raise UnknownError(detail=str(e))
 
     async def get_bakery_photos(self, bakery_id: int):
         """베이커리 썸네일 조회하는 메소드."""
-        res = (
-            self.db.query(BakeryPhoto.img_url)
-            .filter(BakeryPhoto.bakery_id == bakery_id)
-            .all()
-        )
 
-        return [r.img_url for r in res if r.img_url] if res else []
+        try:
+            res = (
+                self.db.query(BakeryPhoto.img_url)
+                .filter(BakeryPhoto.bakery_id == bakery_id)
+                .all()
+            )
+
+            return [r.img_url for r in res if r.img_url] if res else []
+        except Exception as e:
+            raise UnknownError(detail=str(e))

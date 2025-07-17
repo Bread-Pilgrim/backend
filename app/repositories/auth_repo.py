@@ -1,4 +1,4 @@
-from app.core.exception import UnknownExceptionError
+from app.core.exception import UnknownError
 from app.model.users import Users
 
 
@@ -33,7 +33,7 @@ class AuthRepository:
             return user.id
         except Exception as e:
             self.db.rollback()
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))
 
     async def check_completed_onboarding(self, user_id: int) -> bool:
         """온보딩 완료사항여부 반환하는 메소드."""
@@ -48,4 +48,4 @@ class AuthRepository:
             return res.is_preferences_set
 
         except Exception as e:
-            raise UnknownExceptionError(detail=str(e))
+            raise UnknownError(detail=str(e))

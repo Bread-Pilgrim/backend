@@ -3,15 +3,17 @@ from datetime import datetime
 
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import NotFoundException
+from app.core.exception import NotFoundError
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
-    BakeryDetailResponseModel,
+    BakeryDetailResponseDTO,
     LoadMoreBakery,
-    LoadMoreBakeryResponseModel,
+    LoadMoreBakeryResponseDTO,
 )
-from app.schema.common import CursorModel, PagingModel
+from app.schema.common import Cursor, Paging
+from app.utils.converter import convert_timezone_now
 from app.utils.parser import parse_comma_to_list
+from app.utils.validator import validate_area_code
 
 
 class BakeryService:
@@ -36,8 +38,12 @@ class BakeryService:
 
         # 구분자로 받은 지역코드 list로 반환
         area_codes = parse_comma_to_list(area_code)
+
+        # 지역코드 유효성 체크
+        validate_area_code(area_codes=area_codes)
+
         # 오늘 요일
-        target_day_of_week = datetime.today().weekday()
+        target_day_of_week = convert_timezone_now().weekday()
 
         # 유저 취향 + 지역 기반으로 빵집 조회
         return await BakeryRepository(self.db).get_bakeries_by_preference(
@@ -53,8 +59,10 @@ class BakeryService:
 
         # 구분자로 받은 지역코드 list로 반환
         area_codes = parse_comma_to_list(area_code)
+        # 지역코드 유효성 체크
+        validate_area_code(area_codes=area_codes)
         # 오늘 요일
-        target_day_of_week = datetime.today().weekday()
+        target_day_of_week = convert_timezone_now().weekday()
 
         # 베이커리 정보 조회
         bakery_repo = BakeryRepository(db=self.db)
@@ -68,10 +76,10 @@ class BakeryService:
 
         # 베이커리 조회결과 없을 때, 반환값
         if not bakeries:
-            return LoadMoreBakeryResponseModel(
+            return LoadMoreBakeryResponseDTO(
                 items=[],
-                paging=PagingModel(
-                    cursor=CursorModel(
+                paging=Paging(
+                    cursor=Cursor(
                         before=cursor_id,
                         after=-1,  # 다음 페이지 없을 때,
                     )
@@ -86,10 +94,10 @@ class BakeryService:
         # 베이커리 정보 + 시그니처 메뉴 정보 병합
         bakery_infos = self.__merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return LoadMoreBakeryResponseModel(
+        return LoadMoreBakeryResponseDTO(
             items=bakery_infos,
-            paging=PagingModel(
-                cursor=CursorModel(before=cursor_id, after=bakeries[-1].bakery_id)
+            paging=Paging(
+                cursor=Cursor(before=cursor_id, after=bakeries[-1].bakery_id)
             ),
         )
 
@@ -97,7 +105,10 @@ class BakeryService:
         """(홈탭용)hot한 빵집 조회하는 비즈니스 로직."""
 
         area_codes = parse_comma_to_list(area_code)
-        target_day_of_week = datetime.today().weekday()
+        # 지역코드 유효성 체크
+        validate_area_code(area_codes=area_codes)
+
+        target_day_of_week = convert_timezone_now().weekday()
 
         return await BakeryRepository(self.db).get_bakery_by_area(
             area_codes, target_day_of_week
@@ -105,11 +116,14 @@ class BakeryService:
 
     async def get_hot_bakeries(
         self, cursor_id: int, page_size: int, area_code: str
-    ) -> LoadMoreBakeryResponseModel:
+    ) -> LoadMoreBakeryResponseDTO:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
         area_codes = parse_comma_to_list(area_code)
-        target_day_of_week = datetime.today().weekday()
+        # 지역코드 유효성 체크
+        validate_area_code(area_codes=area_codes)
+
+        target_day_of_week = convert_timezone_now().weekday()
 
         bakery_repo = BakeryRepository(self.db)
 
@@ -122,10 +136,10 @@ class BakeryService:
         )
 
         if not bakeries:
-            return LoadMoreBakeryResponseModel(
+            return LoadMoreBakeryResponseDTO(
                 items=[],
-                paging=PagingModel(
-                    cursor=CursorModel(
+                paging=Paging(
+                    cursor=Cursor(
                         before=cursor_id,
                         after=-1,  # 다음 페이지 없을 때,
                     )
@@ -139,16 +153,16 @@ class BakeryService:
 
         bakery_infos = self.__merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return LoadMoreBakeryResponseModel(
+        return LoadMoreBakeryResponseDTO(
             items=bakery_infos,
-            paging=PagingModel(
-                cursor=CursorModel(before=cursor_id, after=bakeries[-1].bakery_id)
+            paging=Paging(
+                cursor=Cursor(before=cursor_id, after=bakeries[-1].bakery_id)
             ),
         )
 
     async def get_bakery_detail(self, bakery_id: int):
         bakery_repo = BakeryRepository(db=self.db)
-        target_day_of_week = datetime.today().weekday()
+        target_day_of_week = convert_timezone_now().weekday()
 
         # 1. 베이커리 정보 가져오기
         bakery = await bakery_repo.get_bakery_detail(
@@ -156,7 +170,7 @@ class BakeryService:
         )
 
         if bakery:
-            raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
+            raise NotFoundError(detail="해당 베이커리를 찾을 수 없습니다.")
 
         # 2. 베이커리 메뉴 가져오기
         menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)
@@ -164,7 +178,7 @@ class BakeryService:
         # 3. 베이커리 썸네일 가져오기
         photos = await bakery_repo.get_bakery_photos(bakery_id=bakery_id)
 
-        return BakeryDetailResponseModel(
+        return BakeryDetailResponseDTO(
             **bakery.model_dump(exclude={"menus", "bakery_img_urls"}),
             menus=menus,
             bakery_img_urls=photos,

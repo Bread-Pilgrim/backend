@@ -6,7 +6,7 @@ from app.core.auth import verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_UNKNOWN
-from app.schema.tour import EventPopupResponseModel, TourResponseModel
+from app.schema.tour import EventPopupResponseDTO, TourResponseDTO
 from app.services.tour_service import TourService
 
 router = APIRouter(
@@ -17,7 +17,7 @@ router = APIRouter(
 
 @router.get(
     "/events/area",
-    response_model=BaseResponse[Optional[EventPopupResponseModel]],
+    response_model=BaseResponse[Optional[EventPopupResponseDTO]],
     responses=ERROR_UNKNOWN,
     response_description="""
     1. 500 에러 예시 : DB 이슈
@@ -51,7 +51,7 @@ async def show_area_event_popup(
 
 @router.get(
     "/area",
-    response_model=BaseResponse[List[TourResponseModel]],
+    response_model=BaseResponse[List[TourResponseDTO]],
     responses=ERROR_UNKNOWN,
     response_description="""
     1. 500 에러 예시 : DB 이슈
