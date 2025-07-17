@@ -169,7 +169,7 @@ class BakeryService:
             bakery_id=bakery_id, target_day_of_week=target_day_of_week
         )
 
-        if bakery:
+        if not bakery:
             raise NotFoundError(detail="해당 베이커리를 찾을 수 없습니다.")
 
         # 2. 베이커리 메뉴 가져오기

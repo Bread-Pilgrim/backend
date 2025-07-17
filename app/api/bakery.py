@@ -131,4 +131,6 @@ async def get_bakery_detail(
 ):
     """베이커리 상세 조회 API."""
 
-    return await BakeryService(db=db).get_bakery_detail(bakery_id=bakery_id)
+    return BaseResponse(
+        data=await BakeryService(db=db).get_bakery_detail(bakery_id=bakery_id)
+    )
