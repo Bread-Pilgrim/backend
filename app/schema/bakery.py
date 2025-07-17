@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from app.schema.common import PagingModel
+from app.schema.common import Paging
 
 
 class RecommendBakery(BaseModel):
@@ -29,7 +29,7 @@ class RecommendBakery(BaseModel):
     is_like: bool = Field(default=False, description="찜여부")
 
 
-class BakeryMenuModel(BaseModel):
+class BakeryMenu(BaseModel):
     menu_name: str = Field(..., description="대표메뉴 이름")
 
 
@@ -57,19 +57,19 @@ class LoadMoreBakery(BaseModel):
     gu: str = Field(..., description="베이커리 자치구")
     dong: str = Field(..., description="베이커리 동")
     is_like: bool = Field(default=False, description="찜여부")
-    signature_menus: Optional[List[BakeryMenuModel]] = Field(
+    signature_menus: Optional[List[BakeryMenu]] = Field(
         default=[], description="시그니처 메뉴"
     )
 
 
-class LoadMoreBakeryResponseModel(BaseModel):
+class LoadMoreBakeryResponseDTO(BaseModel):
     """더보기 빵집 응답모델."""
 
     items: List[LoadMoreBakery] = Field(default=[], description="조회된 빵집 데이터.")
-    paging: PagingModel = Field(..., description="페이징 정보")
+    paging: Paging = Field(..., description="페이징 정보")
 
 
-class BakeryDetailModel(BakeryMenuModel):
+class BakeryDetail(BakeryMenu):
     """베이커리 메뉴 상세 정보 모델."""
 
     price: int = Field(..., description="가격")
@@ -77,7 +77,7 @@ class BakeryDetailModel(BakeryMenuModel):
     img_url: Optional[str] = Field(default=None, description="메뉴 이미지 url")
 
 
-class BakeryDetailResponseModel(BaseModel):
+class BakeryDetailResponseDTO(BaseModel):
     """베이커리 상세조회 응답 모델."""
 
     bakery_id: int = Field(..., description="베이커리 id")
@@ -91,6 +91,4 @@ class BakeryDetailResponseModel(BaseModel):
     bakery_img_urls: Optional[List[str]] = Field(
         default=[], description="썸네일 리스트"
     )
-    menus: Optional[List[BakeryDetailModel]] = Field(
-        default=[], description="베이커리 메뉴"
-    )
+    menus: Optional[List[BakeryDetail]] = Field(default=[], description="베이커리 메뉴")

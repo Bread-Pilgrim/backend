@@ -1,15 +1,15 @@
 from typing import Optional
 
-from app.schema.auth import KakaoUserInfoModel
+from app.schema.auth import KakaoUserInfo
 
 
-def parse_kakao_user_info(data: dict) -> KakaoUserInfoModel:
+def parse_kakao_user_info(data: dict) -> KakaoUserInfo:
     """카카오 유저정보 가공해서 반환하는 메소드."""
 
     account = data.get("kakao_account", {})
     profile = account.get("profile", {})
 
-    return KakaoUserInfoModel(
+    return KakaoUserInfo(
         social_id=f"{data.get("id")}",
         email=account.get("email"),
         name=account.get("name"),

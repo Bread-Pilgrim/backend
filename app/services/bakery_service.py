@@ -6,11 +6,11 @@ from sqlalchemy.orm.session import Session
 from app.core.exception import NotFoundError
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
-    BakeryDetailResponseModel,
+    BakeryDetailResponseDTO,
     LoadMoreBakery,
-    LoadMoreBakeryResponseModel,
+    LoadMoreBakeryResponseDTO,
 )
-from app.schema.common import CursorModel, PagingModel
+from app.schema.common import Cursor, Paging
 from app.utils.parser import parse_comma_to_list
 
 
@@ -68,10 +68,10 @@ class BakeryService:
 
         # 베이커리 조회결과 없을 때, 반환값
         if not bakeries:
-            return LoadMoreBakeryResponseModel(
+            return LoadMoreBakeryResponseDTO(
                 items=[],
-                paging=PagingModel(
-                    cursor=CursorModel(
+                paging=Paging(
+                    cursor=Cursor(
                         before=cursor_id,
                         after=-1,  # 다음 페이지 없을 때,
                     )
@@ -86,10 +86,10 @@ class BakeryService:
         # 베이커리 정보 + 시그니처 메뉴 정보 병합
         bakery_infos = self.__merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return LoadMoreBakeryResponseModel(
+        return LoadMoreBakeryResponseDTO(
             items=bakery_infos,
-            paging=PagingModel(
-                cursor=CursorModel(before=cursor_id, after=bakeries[-1].bakery_id)
+            paging=Paging(
+                cursor=Cursor(before=cursor_id, after=bakeries[-1].bakery_id)
             ),
         )
 
@@ -105,7 +105,7 @@ class BakeryService:
 
     async def get_hot_bakeries(
         self, cursor_id: int, page_size: int, area_code: str
-    ) -> LoadMoreBakeryResponseModel:
+    ) -> LoadMoreBakeryResponseDTO:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
         area_codes = parse_comma_to_list(area_code)
@@ -122,10 +122,10 @@ class BakeryService:
         )
 
         if not bakeries:
-            return LoadMoreBakeryResponseModel(
+            return LoadMoreBakeryResponseDTO(
                 items=[],
-                paging=PagingModel(
-                    cursor=CursorModel(
+                paging=Paging(
+                    cursor=Cursor(
                         before=cursor_id,
                         after=-1,  # 다음 페이지 없을 때,
                     )
@@ -139,10 +139,10 @@ class BakeryService:
 
         bakery_infos = self.__merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return LoadMoreBakeryResponseModel(
+        return LoadMoreBakeryResponseDTO(
             items=bakery_infos,
-            paging=PagingModel(
-                cursor=CursorModel(before=cursor_id, after=bakeries[-1].bakery_id)
+            paging=Paging(
+                cursor=Cursor(before=cursor_id, after=bakeries[-1].bakery_id)
             ),
         )
 
@@ -164,7 +164,7 @@ class BakeryService:
         # 3. 베이커리 썸네일 가져오기
         photos = await bakery_repo.get_bakery_photos(bakery_id=bakery_id)
 
-        return BakeryDetailResponseModel(
+        return BakeryDetailResponseDTO(
             **bakery.model_dump(exclude={"menus", "bakery_img_urls"}),
             menus=menus,
             bakery_img_urls=photos,

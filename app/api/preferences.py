@@ -6,7 +6,7 @@ from app.core.auth import verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_UNKNOWN
-from app.schema.preferences import PreferenceResponseModel, PreferenceType
+from app.schema.preferences import PreferenceResponseDTO, PreferenceType
 from app.services.preference_service import PreferenceService
 
 router = APIRouter(prefix="/preferences", tags=["preference"])
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/preferences", tags=["preference"])
 
 @router.get(
     "/options",
-    response_model=BaseResponse[PreferenceResponseModel],
+    response_model=BaseResponse[PreferenceResponseDTO],
     responses=ERROR_UNKNOWN,
     response_description="""
     1. 500 에러 예시 : DB 이슈

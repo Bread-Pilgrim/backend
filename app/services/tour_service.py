@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Configs
 from app.core.exception import UnknownError
-from app.schema.tour import EventPopupResponseModel, TourResponseModel
+from app.schema.tour import EventPopupResponseDTO, TourResponseDTO
 from app.utils.converter import (
     area_to_sigungu,
     replace_space_with_plus,
@@ -58,7 +58,7 @@ class TourService:
 
             if start_date.date() <= today <= end_date.date():
                 filtered_events.append(
-                    EventPopupResponseModel(
+                    EventPopupResponseDTO(
                         title=e.get("title"),
                         address=e.get("addr1"),
                         start_date=start_date,
@@ -77,7 +77,7 @@ class TourService:
         """관광지 데이터 가공하는 메소드."""
 
         only_img_exist = [
-            TourResponseModel(
+            TourResponseDTO(
                 title=t.get("title"),
                 tour_type=CAT_CODE.get(t.get("cat1"), "기타"),
                 address=t.get("addr1"),

@@ -13,8 +13,8 @@ from app.model.bakery import (
 )
 from app.model.users import UserBakeryLikes, UserPreferences
 from app.schema.bakery import (
-    BakeryDetailModel,
-    BakeryDetailResponseModel,
+    BakeryDetail,
+    BakeryDetailResponseDTO,
     LoadMoreBakery,
     RecommendBakery,
 )
@@ -392,7 +392,7 @@ class BakeryRepository:
             )
 
             if res:
-                return BakeryDetailResponseModel(
+                return BakeryDetailResponseDTO(
                     bakery_id=res.id,
                     bakery_name=res.name,
                     address=res.address,
@@ -427,7 +427,7 @@ class BakeryRepository:
         res = self.db.execute(stmt).mappings().all()
 
         return [
-            BakeryDetailModel(
+            BakeryDetail(
                 menu_name=r.name,
                 price=r.price,
                 is_signature=r.is_signature,

@@ -9,7 +9,7 @@ from app.core.config import Configs
 from app.core.exception import UnknownError
 from app.model.users import Users
 from app.repositories.auth_repo import AuthRepository
-from app.schema.auth import AuthToken, LoginRequestModel, LoginResponseModel
+from app.schema.auth import AuthToken, LoginRequestDTO, LoginResponseDTO
 from app.utils.kakao import parse_kakao_user_info
 
 configs = Configs()
@@ -54,7 +54,7 @@ class AuthService:
             except httpx.RequestError as e:
                 raise UnknownError(detail=f"카카오 API 요청 중 오류 발생: {str(e)}")
 
-    async def login_and_signup(self, req: LoginRequestModel, social_access_token: str):
+    async def login_and_signup(self, req: LoginRequestDTO, social_access_token: str):
         """로그인/회원가입 비즈니스 로직."""
 
         login_type = req.login_type
@@ -81,4 +81,4 @@ class AuthService:
 
         return AuthToken(
             access_token=access_token, refresh_token=refresh_token
-        ), LoginResponseModel(onboarding_completed=onboarding_completed)
+        ), LoginResponseDTO(onboarding_completed=onboarding_completed)

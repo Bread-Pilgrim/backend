@@ -2,7 +2,7 @@ from sqlalchemy.orm.session import Session
 
 from app.core.exception import DuplicateError
 from app.repositories.user_repo import UserRepository
-from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
+from app.schema.users import ModifyUserInfoRequestDTO, UserOnboardRequestDTO
 
 
 class UserService:
@@ -10,7 +10,7 @@ class UserService:
         self.db = db
 
     async def set_user_preference_onboarding(
-        self, user_id: int, req: UserOnboardRequestModel
+        self, user_id: int, req: UserOnboardRequestDTO
     ):
         """온보딩에서 유저의 취향설정을 완료처리하는 비즈니스 로직"""
 
@@ -48,7 +48,7 @@ class UserService:
         # 4. 취향설정 완료여부 변경
         await user_repo.modify_preference_state(user_id=user_id)
 
-    async def modify_user_info(self, user_id: int, req: ModifyUserInfoRequestModel):
+    async def modify_user_info(self, user_id: int, req: ModifyUserInfoRequestDTO):
         """유저 정보 수정하는 비즈니스 로직."""
 
         target_field = req.model_dump(exclude_unset=True, exclude_none=True)

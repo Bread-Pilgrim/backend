@@ -4,7 +4,7 @@ from app.core.auth import get_user_id
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
-from app.schema.users import ModifyUserInfoRequestModel, UserOnboardRequestModel
+from app.schema.users import ModifyUserInfoRequestDTO, UserOnboardRequestDTO
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["user"])
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/users", tags=["user"])
     """,
 )
 async def complete_onboarding(
-    req: UserOnboardRequestModel,
+    req: UserOnboardRequestDTO,
     user_id=Depends(get_user_id),
     db=Depends(get_db),
 ):
@@ -42,7 +42,7 @@ async def complete_onboarding(
     """,
 )
 async def modify_user_info(
-    req: ModifyUserInfoRequestModel, user_id=Depends(get_user_id), db=Depends(get_db)
+    req: ModifyUserInfoRequestDTO, user_id=Depends(get_user_id), db=Depends(get_db)
 ):
     """유저 정보 수정하는 API"""
 

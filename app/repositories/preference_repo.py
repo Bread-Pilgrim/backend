@@ -5,7 +5,7 @@ from sqlalchemy.orm.session import Session
 
 from app.core.exception import UnknownError
 from app.model.users import Preferences
-from app.schema.preferences import PreferenceResponseModel, PreferenceType
+from app.schema.preferences import PreferenceResponseDTO, PreferenceType
 
 
 class PreferenceRepository:
@@ -13,14 +13,14 @@ class PreferenceRepository:
         self.db = db
 
     @staticmethod
-    def convert_list_to_model(rows) -> PreferenceResponseModel:
-        """SQL Row Result PreferenceResponseModel에 맞게 변환하는 메소드."""
+    def convert_list_to_model(rows) -> PreferenceResponseDTO:
+        """SQL Row Result PreferenceResponseDTO에 맞게 변환하는 메소드."""
 
         buckets: dict[str, List[PreferenceType]] = defaultdict(list)
         for row in rows:
             buckets[row.type].append(PreferenceType(id=row.id, name=row.name))
 
-        return PreferenceResponseModel(
+        return PreferenceResponseDTO(
             atmosphere=buckets.get("atmosphere", []),
             bread_type=buckets.get("bread_type", []),
             flavor=buckets.get("flavor", []),

@@ -5,7 +5,7 @@ from app.core.base import BaseResponse
 from app.core.config import Configs
 from app.core.database import get_db
 from app.core.exception import ERROR_DATA_MISSING, ERROR_UNKNOWN
-from app.schema.auth import LoginRequestModel, LoginResponseModel
+from app.schema.auth import LoginRequestDTO, LoginResponseDTO
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -24,13 +24,13 @@ async def kakao_callback(req: Request):
 
 @router.post(
     "/login",
-    response_model=BaseResponse[LoginResponseModel],
+    response_model=BaseResponse[LoginResponseDTO],
     responses=ERROR_UNKNOWN,
     response_description="""
     1. 500 에러 예시 : DB 이슈""",
 )
 async def login_and_signup(
-    req: LoginRequestModel,
+    req: LoginRequestDTO,
     access_token: str = Header(),
     db=Depends(get_db),
 ):

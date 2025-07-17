@@ -6,7 +6,7 @@ from app.core.auth import get_user_id, verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_NOT_FOUND, ERROR_UNKNOWN
-from app.schema.bakery import LoadMoreBakeryResponseModel, RecommendBakery
+from app.schema.bakery import LoadMoreBakeryResponseDTO, RecommendBakery
 from app.services.bakery_service import BakeryService
 
 router = APIRouter(prefix="/bakeries", tags=["bakery"])
@@ -38,7 +38,7 @@ async def get_bakeries_by_preference(
 
 @router.get(
     "/preference",
-    response_model=BaseResponse[LoadMoreBakeryResponseModel],
+    response_model=BaseResponse[LoadMoreBakeryResponseDTO],
     responses=ERROR_UNKNOWN,
     response_description="""
     paging.cursor.after값이 -1이면 더이상 요청할 수 있는 다음 페이지가 없다는 뜻.
@@ -90,7 +90,7 @@ async def get_recommend_bakery_by_area(
 
 @router.get(
     "/hot",
-    response_model=BaseResponse[LoadMoreBakeryResponseModel],
+    response_model=BaseResponse[LoadMoreBakeryResponseDTO],
     responses=ERROR_UNKNOWN,
     response_description="""
     1. 500 에러 예시 : DB 이슈
