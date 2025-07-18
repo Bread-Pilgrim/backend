@@ -57,7 +57,7 @@ class BakeryRepository:
                     OperatingHour.open_time,
                     BakeryPhoto.img_url,
                 )
-                .distinct()
+                .distinct(Bakery.id)
                 .select_from(UserPreferences)
                 .join(
                     BakeryPreference,
@@ -147,7 +147,7 @@ class BakeryRepository:
                     BakeryPhoto.img_url,
                     UserBakeryLikes.bakery_id.label("is_like"),
                 )
-                .distinct()
+                .distinct(Bakery.id)
                 .select_from(UserPreferences)
                 .join(
                     BakeryPreference,
@@ -316,7 +316,7 @@ class BakeryRepository:
                 BakeryPhoto.img_url,
                 UserBakeryLikes.bakery_id.label("is_like"),
             )
-            .distinct()
+            .distinct(Bakery.id)
             .select_from(Bakery)
             .join(
                 OperatingHour,
