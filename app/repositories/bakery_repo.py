@@ -495,3 +495,22 @@ class BakeryRepository:
             )
         except Exception as e:
             raise UnknownError(detail=str(e))
+
+    async def get_bakery_menus(self, bakery_id):
+        """베이커리 메뉴 조회하는 쿼리."""
+
+        try:
+            res = (
+                self.db.query(BakeryMenu.id, BakeryMenu.name, BakeryMenu.is_signature)
+                .filter(BakeryMenu.bakery_id == bakery_id)
+                .all()
+            )
+
+            return [
+                SimpleBakeryMenu(
+                    menu_id=r.id, menu_name=r.name, is_signature=r.is_signature
+                )
+                for r in res
+            ]
+        except Exception as e:
+            raise UnknownError(detail=str(e))
