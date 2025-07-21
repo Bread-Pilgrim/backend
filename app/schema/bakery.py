@@ -82,8 +82,8 @@ class BakeryOperatingHour(BaseModel):
     day_of_week: Optional[int] = Field(
         default=None, description="요일 0 : 월  ~ 6 : 일"
     )
-    open_time: Optional[datetime] = Field(default=None, description="오픈시간")  # type: ignore
-    close_time: Optional[datetime] = Field(default=None, description="종료시간")
+    open_time: Optional[time] = Field(default=None, description="오픈시간")  # type: ignore
+    close_time: Optional[time] = Field(default=None, description="종료시간")
     is_opened: Optional[bool] = Field(default=None, description="오픈여부")
 
 
