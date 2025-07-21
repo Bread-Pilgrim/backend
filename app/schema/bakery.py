@@ -86,7 +86,15 @@ class BakeryDetailResponseDTO(BaseModel):
     phone: Optional[str] = Field(default=None, description="빵집 전화번호")
     avg_rating: float = Field(..., description="평균별점")
     review_count: int = Field(..., description="리뷰 개수")
-    is_opened: bool = Field(..., description="영업 여부")
+    open_status: str = Field(
+        ...,
+        description="""
+    영업상태\n
+    O : 영업중
+    C : 영업종료
+    D : 휴무일                       
+    """,
+    )
     is_like: bool = Field(default=False, description="찜여부")
     bakery_img_urls: Optional[List[str]] = Field(
         default=[], description="썸네일 리스트"

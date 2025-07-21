@@ -376,6 +376,8 @@ class BakeryRepository:
                     Bakery.avg_rating,
                     Bakery.phone,
                     OperatingHour.is_opened,
+                    OperatingHour.close_time,
+                    OperatingHour.open_time,
                     UserBakeryLikes.bakery_id.label("is_like"),
                 )
                 .select_from(Bakery)
@@ -403,7 +405,11 @@ class BakeryRepository:
                     phone=res.phone,
                     avg_rating=res.avg_rating,
                     review_count=res.review_count,
-                    is_opened=res.is_opened,
+                    open_status=operating_hours_to_open_status(
+                        is_opened=res.is_opened,
+                        close_time=res.close_time,
+                        open_time=res.open_time,
+                    ),
                     is_like=True if res.is_like else False,
                 )
             else:
