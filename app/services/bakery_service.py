@@ -178,8 +178,16 @@ class BakeryService:
         # 3. 베이커리 썸네일 가져오기
         photos = await bakery_repo.get_bakery_photos(bakery_id=bakery_id)
 
+        # 4. 베이커리 영업시간 가져오기
+        operating_hours = await bakery_repo.get_bakery_operating_hours(
+            bakery_id=bakery_id
+        )
+
         return BakeryDetailResponseDTO(
-            **bakery.model_dump(exclude={"menus", "bakery_img_urls"}),
+            **bakery.model_dump(
+                exclude={"menus", "bakery_img_urls", "operating_hours"}
+            ),
             menus=menus,
             bakery_img_urls=photos,
+            operating_hours=operating_hours,
         )

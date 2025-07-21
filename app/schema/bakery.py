@@ -1,3 +1,4 @@
+from datetime import datetime, time
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -77,6 +78,15 @@ class BakeryDetail(BakeryMenu):
     img_url: Optional[str] = Field(default=None, description="메뉴 이미지 url")
 
 
+class BakeryOperatingHour(BaseModel):
+    day_of_week: Optional[int] = Field(
+        default=None, description="요일 0 : 월  ~ 6 : 일"
+    )
+    open_time: Optional[datetime] = Field(default=None, description="오픈시간")  # type: ignore
+    close_time: Optional[datetime] = Field(default=None, description="종료시간")
+    is_opened: Optional[bool] = Field(default=None, description="오픈여부")
+
+
 class BakeryDetailResponseDTO(BaseModel):
     """베이커리 상세조회 응답 모델."""
 
@@ -94,6 +104,9 @@ class BakeryDetailResponseDTO(BaseModel):
     C : 영업종료
     D : 휴무일                       
     """,
+    )
+    operating_hours: Optional[List[BakeryOperatingHour]] = Field(
+        default=[], description="영업시간 리스트"
     )
     is_like: bool = Field(default=False, description="찜여부")
     bakery_img_urls: Optional[List[str]] = Field(

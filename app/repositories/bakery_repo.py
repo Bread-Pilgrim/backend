@@ -15,6 +15,7 @@ from app.model.users import UserBakeryLikes, UserPreferences
 from app.schema.bakery import (
     BakeryDetail,
     BakeryDetailResponseDTO,
+    BakeryOperatingHour,
     LoadMoreBakery,
     RecommendBakery,
 )
@@ -460,5 +461,36 @@ class BakeryRepository:
             )
 
             return [r.img_url for r in res if r.img_url] if res else []
+        except Exception as e:
+            raise UnknownError(detail=str(e))
+
+    async def get_bakery_operating_hours(self, bakery_id: int):
+        """베이커리 전체 영업시간 가져오는 쿼리."""
+
+        try:
+            res = (
+                self.db.query(
+                    OperatingHour.day_of_week,
+                    OperatingHour.open_time,
+                    OperatingHour.close_time,
+                    OperatingHour.is_opened,
+                )
+                .filter(OperatingHour.bakery_id == bakery_id)
+                .all()
+            )
+
+            return (
+                [
+                    BakeryOperatingHour(
+                        day_of_week=r.day_of_week,
+                        open_time=r.open_time,
+                        close_time=r.close_time,
+                        is_opened=r.is_opened,
+                    )
+                    for r in res
+                ]
+                if res
+                else []
+            )
         except Exception as e:
             raise UnknownError(detail=str(e))
