@@ -389,6 +389,7 @@ class BakeryRepository:
                         OperatingHour.bakery_id == Bakery.id,
                         OperatingHour.day_of_week == target_day_of_week,
                     ),
+                    isouter=True,
                 )
                 .join(
                     UserBakeryLikes,
