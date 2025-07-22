@@ -339,7 +339,7 @@ class BakeryRepository:
                 isouter=True,
             )
             .where(and_(*conditions))
-            .order_by(Bakery.avg_rating.desc())
+            .order_by(Bakery.id, Bakery.avg_rating.desc())
             .limit(page_size)
         )
 
