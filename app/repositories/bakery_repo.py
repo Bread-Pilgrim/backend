@@ -339,7 +339,7 @@ class BakeryRepository:
                 isouter=True,
             )
             .where(and_(*conditions))
-            .order_by(Bakery.avg_rating.desc())
+            .order_by(Bakery.id, Bakery.avg_rating.desc())
             .limit(page_size)
         )
 
@@ -484,8 +484,8 @@ class BakeryRepository:
                 [
                     BakeryOperatingHour(
                         day_of_week=r.day_of_week,
-                        open_time=r.open_time,
-                        close_time=r.close_time,
+                        open_time=(r.open_time).strftime("%H:%M"),
+                        close_time=(r.close_time).strftime("%H:%M"),
                         is_opened=r.is_opened,
                     )
                     for r in res
