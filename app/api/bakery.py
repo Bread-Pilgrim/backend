@@ -12,11 +12,7 @@ from app.schema.bakery import (
     RecommendBakery,
     SimpleBakeryMenu,
 )
-from app.schema.review import (
-    BakeryReviewReponseDTO,
-    MyBakeryReview,
-    ReviewCreateRequestDTO,
-)
+from app.schema.review import BakeryReviewReponseDTO, MyBakeryReview
 from app.services.bakery_service import BakeryService
 from app.services.review_service import Review
 
