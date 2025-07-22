@@ -3,7 +3,14 @@ from collections import defaultdict
 from sqlalchemy.orm.session import Session
 
 from app.repositories.review_repo import ReviewRepository
-from app.schema.review import BakeryReview, MyBakeryReview, ReviewMenu, ReviewPhoto
+from app.schema.common import Cursor, Paging
+from app.schema.review import (
+    BakeryReview,
+    BakeryReviewReponseDTO,
+    MyBakeryReview,
+    ReviewMenu,
+    ReviewPhoto,
+)
 from app.utils.parser import build_sort_clause
 
 
@@ -53,16 +60,22 @@ class Review:
             for r in review_menus:
                 review_menu_maps[r.review_id].append(ReviewMenu(menu_name=r.name))
 
-            return [
-                BakeryReview(
-                    **r.model_dump(exclude={"review_photos", "review_menus"}),
-                    review_photos=photo_maps.get(r.review_id, []),
-                    review_menus=review_menu_maps.get(r.review_id, []),
-                )
-                for r in review_infos
-            ]
+            return BakeryReviewReponseDTO(
+                items=[
+                    BakeryReview(
+                        **r.model_dump(exclude={"review_photos", "review_menus"}),
+                        review_photos=photo_maps.get(r.review_id, []),
+                        review_menus=review_menu_maps.get(r.review_id, []),
+                    )
+                    for r in review_infos
+                ],
+                paging=Paging(cursor=Cursor(before=cursor_id, after=revies_ids[-1])),
+            )
 
-        return []
+        return BakeryReviewReponseDTO(
+            items=[],
+            paging=Paging(cursor=Cursor(before=cursor_id, after=-1)),
+        )
 
     async def get_my_reviews_by_bakery_id(
         self, bakery_id: int, user_id: int, cursor_id: int, page_size: int

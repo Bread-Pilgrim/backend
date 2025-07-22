@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, Query
 from app.core.auth import get_user_id
 from app.core.base import BaseResponse
 from app.core.database import get_db
-from app.schema.review import BakeryReview, MyBakeryReview
+from app.schema.review import BakeryReviewReponseDTO, MyBakeryReview
 from app.services.review_service import Review
 
 router = APIRouter(prefix="/reviews", tags=["review"])
 
 
-@router.get("/bakery/{bakery_id}", response_model=BaseResponse[List[BakeryReview]])
+@router.get("/bakery/{bakery_id}", response_model=BaseResponse[BakeryReviewReponseDTO])
 async def get_reviews_by_bakery_id(
     bakery_id: int,
     cursor_id: int = Query(

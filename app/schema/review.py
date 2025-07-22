@@ -2,6 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from app.schema.common import Paging
+
 
 class ReviewMenu(BaseModel):
     menu_name: str = Field(..., description="메뉴 이름")
@@ -42,3 +44,8 @@ class BakeryReview(BaseModel):
     review_photos: Optional[List[ReviewPhoto]] = Field(
         default=[], description="리뷰 사진"
     )
+
+
+class BakeryReviewReponseDTO(BaseModel):
+    items: List[BakeryReview] = Field(default=[], description="조회된 리뷰 데이터.")
+    paging: Paging = Field(..., description="페이징 정보")
