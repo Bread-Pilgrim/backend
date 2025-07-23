@@ -113,6 +113,7 @@ class ReviewRepository:
             )
             .filter(
                 Review.bakery_id == bakery_id,
+                Review.is_private == False,
                 Review.id > cursor_id,
             )
         )
