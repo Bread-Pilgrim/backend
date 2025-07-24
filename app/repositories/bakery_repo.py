@@ -2,6 +2,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
+from app.core.const import ETC_MENU_NAME
 from app.core.exception import NotFoundError, UnknownError
 from app.model.bakery import (
     Bakery,
@@ -507,11 +508,20 @@ class BakeryRepository:
                 .all()
             )
 
-            return [
+            menus = [
                 SimpleBakeryMenu(
                     menu_id=r.id, menu_name=r.name, is_signature=r.is_signature
                 )
                 for r in res
             ]
+
+            if all(menu.menu_name != ETC_MENU_NAME for menu in menus):
+
+                menus.append(
+                    SimpleBakeryMenu(
+                        menu_id=-1, menu_name=ETC_MENU_NAME, is_signature=False
+                    )
+                )
+            return menus
         except Exception as e:
             raise UnknownError(detail=str(e))
