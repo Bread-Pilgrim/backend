@@ -11,7 +11,7 @@ from app.schema.bakery import (
     LoadMoreBakeryResponseDTO,
 )
 from app.schema.common import Cursor, Paging
-from app.utils.converter import convert_timezone_now
+from app.utils.date import get_now_by_timezone
 from app.utils.parser import parse_comma_to_list
 from app.utils.validator import validate_area_code
 
@@ -43,7 +43,7 @@ class BakeryService:
         validate_area_code(area_codes=area_codes)
 
         # 오늘 요일
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         # 유저 취향 + 지역 기반으로 빵집 조회
         return await BakeryRepository(self.db).get_bakeries_by_preference(
@@ -62,7 +62,7 @@ class BakeryService:
         # 지역코드 유효성 체크
         validate_area_code(area_codes=area_codes)
         # 오늘 요일
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         # 베이커리 정보 조회
         bakery_repo = BakeryRepository(db=self.db)
@@ -108,7 +108,7 @@ class BakeryService:
         # 지역코드 유효성 체크
         validate_area_code(area_codes=area_codes)
 
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         return await BakeryRepository(self.db).get_bakery_by_area(
             area_codes, target_day_of_week
@@ -123,7 +123,7 @@ class BakeryService:
         # 지역코드 유효성 체크
         validate_area_code(area_codes=area_codes)
 
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         bakery_repo = BakeryRepository(self.db)
 
@@ -164,7 +164,7 @@ class BakeryService:
         """베이커리 상세 조회하는 비즈니스 로직."""
 
         bakery_repo = BakeryRepository(db=self.db)
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         # 1. 베이커리 정보 가져오기
         bakery = await bakery_repo.get_bakery_detail(
