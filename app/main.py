@@ -4,14 +4,14 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api import auth, bakery, common, preferences, review, test, tour, users
 from app.core.exception import (
-    DuplicateError,
-    InvalidAreaCodeError,
-    InvalidSortParameterError,
-    InvalidTokenError,
-    NotFoundError,
-    RequestDataMissingError,
-    TokenExpiredError,
-    UnknownError,
+    DuplicateException,
+    InvalidAreaCodeException,
+    InvalidSortParameterException,
+    InvalidTokenException,
+    NotFoundException,
+    RequestDataMissingException,
+    TokenExpiredException,
+    UnknownException,
     exception_handler,
 )
 
@@ -43,13 +43,13 @@ app.include_router(common.router)
 app.include_router(review.router)
 
 # Exception
-app.add_exception_handler(UnknownError, exception_handler)
-app.add_exception_handler(TokenExpiredError, exception_handler)
-app.add_exception_handler(RequestDataMissingError, exception_handler)
-app.add_exception_handler(InvalidTokenError, exception_handler)
-app.add_exception_handler(DuplicateError, exception_handler)
-app.add_exception_handler(NotFoundError, exception_handler)
-app.add_exception_handler(InvalidAreaCodeError, exception_handler)
-app.add_exception_handler(InvalidSortParameterError, exception_handler)
+app.add_exception_handler(UnknownException, exception_handler)
+app.add_exception_handler(TokenExpiredException, exception_handler)
+app.add_exception_handler(RequestDataMissingException, exception_handler)
+app.add_exception_handler(InvalidTokenException, exception_handler)
+app.add_exception_handler(DuplicateException, exception_handler)
+app.add_exception_handler(NotFoundException, exception_handler)
+app.add_exception_handler(InvalidAreaCodeException, exception_handler)
+app.add_exception_handler(InvalidSortParameterException, exception_handler)
 
 Instrumentator().instrument(app).expose(app)

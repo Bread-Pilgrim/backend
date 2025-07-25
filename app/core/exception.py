@@ -29,7 +29,7 @@ class CustomException(Exception):
         self.headers = headers
 
 
-class UnknownError(CustomException):
+class UnknownException(CustomException):
     """알 수 없는 에러"""
 
     STATUS_CODE = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -37,7 +37,7 @@ class UnknownError(CustomException):
     DEFAULT_MESSAGE = "알 수 없는 오류가 발생했습니다."
 
 
-class TokenExpiredError(CustomException):
+class TokenExpiredException(CustomException):
     """토큰 만료 오류"""
 
     STATUS_CODE = status.HTTP_401_UNAUTHORIZED
@@ -45,7 +45,7 @@ class TokenExpiredError(CustomException):
     DEFAULT_MESSAGE = "토큰이 만료되었습니다."
 
 
-class InvalidTokenError(CustomException):
+class InvalidTokenException(CustomException):
     """유효하지 않은 토큰 Exception"""
 
     STATUS_CODE = status.HTTP_401_UNAUTHORIZED
@@ -53,7 +53,7 @@ class InvalidTokenError(CustomException):
     DEFAULT_MESSAGE = "유효하지 않은 토큰입니다."
 
 
-class RequestDataMissingError(CustomException):
+class RequestDataMissingException(CustomException):
     """요청데이터 누락 Exception"""
 
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
@@ -61,7 +61,7 @@ class RequestDataMissingError(CustomException):
     DEFAULT_MESSAGE = "요청데이터가 누락되었습니다."
 
 
-class DuplicateError(CustomException):
+class DuplicateException(CustomException):
     """중복데이터 Exception"""
 
     STATUS_CODE = status.HTTP_409_CONFLICT
@@ -69,7 +69,7 @@ class DuplicateError(CustomException):
     DEFAULT_MESSAGE = "중복된 데이터 입니다."
 
 
-class NotFoundError(CustomException):
+class NotFoundException(CustomException):
     """데이터 못찾음 Exception"""
 
     STATUS_CODE = status.HTTP_404_NOT_FOUND
@@ -77,13 +77,13 @@ class NotFoundError(CustomException):
     DEFAULT_MESSAGE = "해당 데이터를 찾을 수 없습니다."
 
 
-class InvalidAreaCodeError(CustomException):
+class InvalidAreaCodeException(CustomException):
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
     ERROR_CODE = ErrorCode.INVALID_AREA_CODE
     DEFAULT_MESSAGE = "잘못된 지역코드를 입력했습니다."
 
 
-class InvalidSortParameterError(CustomException):
+class InvalidSortParameterException(CustomException):
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
     ERROR_CODE = ErrorCode.INVALID_SORT_PARAM
     DEFAULT_MESSAGE = "정렬 기준이나 방향이 누락되거나 잘못되었습니다."
@@ -123,11 +123,12 @@ def build_error_response(exc_cls) -> dict:
     }
 
 
-ERROR_UNKNOWN = build_error_response(UnknownError)
-ERROR_EXPIRED_TOKEN = build_error_response(TokenExpiredError)
-ERROR_INVALID_TOKEN = build_error_response(InvalidTokenError)
-ERROR_DATA_MISSING = build_error_response(RequestDataMissingError)
-ERROR_DUPLE = build_error_response(DuplicateError)
-ERROR_NOT_FOUND = build_error_response(NotFoundError)
-ERROR_INVALID_AREA_CODE = build_error_response(InvalidAreaCodeError)
-ERROR_INVALID_SORT_PARAM = build_error_response(InvalidSortParameterError)
+ERROR_UNKNOWN = build_error_response(UnknownException)
+ERROR_EXPIRED_TOKEN = build_error_response(TokenExpiredException)
+ERROR_INVALID_TOKEN = build_error_response(InvalidTokenException)
+ERROR_DATA_MISSING = build_error_response(RequestDataMissingException)
+ERROR_DUPLE = build_error_response(DuplicateException)
+ERROR_NOT_FOUND = build_error_response(NotFoundException)
+ERROR_INVALID_AREA_CODE = build_error_response(InvalidAreaCodeException)
+ERROR_INVALID_SORT_PARAM = build_error_response(InvalidSortParameterException)
+ERROR_INVALID_FILE_CONTENT_TYPE = build_error_response(InvalidImageFileException)

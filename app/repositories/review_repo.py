@@ -1,13 +1,14 @@
+from datetime import datetime
 from typing import List
 
 from sqlalchemy import and_, select
 
-from app.core.exception import UnknownError
+from app.core.exception import UnknownException
 from app.model.bakery import Bakery, BakeryMenu
 from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
 from app.schema.review import BakeryReview, MyBakeryReview
-from app.utils.date import get_today_end, get_today_start
+from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
 from app.utils.pagination import build_cursor_filter, build_order_by, parse_cursor_value
 
 
@@ -109,8 +110,6 @@ class ReviewRepository:
         )
         order_by = build_order_by(sort_column, direction)
 
-        print("cursor_filter ------> ", cursor_filter)
-
         filters = [Review.bakery_id == bakery_id]
         if cursor_filter is not None:
             filters.append(cursor_filter)
@@ -139,6 +138,8 @@ class ReviewRepository:
             .order_by(*order_by)
             .limit(page_size + 1)
         )
+
+        print("stmt : ", stmt)
 
         res = self.db.execute(stmt).mappings().all()
         has_next = len(res) > page_size
@@ -176,40 +177,3 @@ class ReviewRepository:
         )
 
         return review
-
-    async def insert_review_infos(
-        self,
-        bakery_id: int,
-        rating: float,
-        content: str,
-        is_private: bool,
-        user_id: int,
-    ):
-        """리뷰 정보 insert하는 쿼리"""
-
-        try:
-            review_info = Review(
-                bakery_id=bakery_id,
-                rating=rating,
-                content=content,
-                is_private=is_private,
-                user_id=user_id,
-            )
-
-            self.db.add(review_info)
-            self.db.flush()
-            return review_info.id
-
-        except Exception as e:
-            raise UnknownError(detail=str(e))
-
-    # async def insert_review_menus(
-    #     self,
-    #     review_id :int,
-    #     consumed_menus:dict
-    # ):
-    #     try:
-
-    async def bucket_insert_review_imgs(self, bakery_id: int, filenames: List[str]):
-        """리뷰 이미지 한 번에 저장하는 쿼리."""
-        pass

@@ -6,9 +6,9 @@ from jose import ExpiredSignatureError, JWTError, jwt
 from app.core.base import BaseResponse, BaseTokenHeader
 from app.core.config import Configs
 from app.core.exception import (
-    InvalidTokenError,
-    RequestDataMissingError,
-    TokenExpiredError,
+    InvalidTokenException,
+    RequestDataMissingException,
+    TokenExpiredException,
 )
 from app.schema.auth import AuthToken
 
@@ -54,13 +54,13 @@ def decode_jwt_payload(access_token: str, refresh_token: str):
     """token decoding 후 user_id값 반환"""
     try:
         if not access_token or not refresh_token:
-            raise RequestDataMissingError(detail="토큰이 필요합니다.")
+            raise RequestDataMissingException(detail="토큰이 필요합니다.")
         # access_token 디코딩
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=ALGORITHM)
         user_id = int(payload.get("sub"))
         return BaseResponse(data=dict(user_id=user_id))
     except JWTError:
-        raise InvalidTokenError("유효하지 않은 토큰입니다.")
+        raise InvalidTokenException("유효하지 않은 토큰입니다.")
     except ExpiredSignatureError:
         try:
             payload = jwt.decode(
@@ -79,7 +79,7 @@ def decode_jwt_payload(access_token: str, refresh_token: str):
             )
 
         except ExpiredSignatureError:
-            raise TokenExpiredError() from None
+            raise TokenExpiredException() from None
 
 
 def verify_token(headers: BaseTokenHeader = Header()):
@@ -89,7 +89,7 @@ def verify_token(headers: BaseTokenHeader = Header()):
     refresh_token = headers.refresh_token
 
     if access_token is None or refresh_token is None:
-        raise RequestDataMissingError(detail="토큰값이 누락되었습니다!")
+        raise RequestDataMissingException(detail="토큰값이 누락되었습니다!")
 
     return decode_jwt_payload(access_token=access_token, refresh_token=refresh_token)
 
@@ -103,4 +103,4 @@ def get_user_id(user_info: dict = Depends(verify_token)):
         user_id = data.get("user_id")
         return int(user_id) if user_id else None
     else:
-        raise InvalidTokenError("유효하지 않은 회원입니다.")
+        raise InvalidTokenException("유효하지 않은 회원입니다.")
