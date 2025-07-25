@@ -1,5 +1,3 @@
-## 📌 Related Issue
-
 ## 🚀 Description
 
 ## 📸 Screenshot
