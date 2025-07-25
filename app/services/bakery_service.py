@@ -10,8 +10,9 @@ from app.schema.bakery import (
     LoadMoreBakery,
     LoadMoreBakeryResponseDTO,
 )
-from app.schema.common import Cursor, Paging
-from app.utils.converter import convert_timezone_now
+from app.schema.common import Paging
+from app.utils.converter import to_cursor_str
+from app.utils.date import get_now_by_timezone
 from app.utils.parser import parse_comma_to_list
 from app.utils.validator import validate_area_code
 
@@ -43,7 +44,7 @@ class BakeryService:
         validate_area_code(area_codes=area_codes)
 
         # 오늘 요일
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         # 유저 취향 + 지역 기반으로 빵집 조회
         return await BakeryRepository(self.db).get_bakeries_by_preference(
@@ -53,7 +54,7 @@ class BakeryService:
         )
 
     async def get_more_bakeries_by_preference(
-        self, cursor_id: int, page_size: int, area_code: str, user_id: int
+        self, cursor_value: str, page_size: int, area_code: str, user_id: int
     ):
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
 
@@ -62,12 +63,12 @@ class BakeryService:
         # 지역코드 유효성 체크
         validate_area_code(area_codes=area_codes)
         # 오늘 요일
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         # 베이커리 정보 조회
         bakery_repo = BakeryRepository(db=self.db)
-        bakeries = await bakery_repo.get_more_bakeries_by_preference(
-            cursor_id=cursor_id,
+        bakeries, has_next = await bakery_repo.get_more_bakeries_by_preference(
+            cursor_value=cursor_value,
             page_size=page_size,
             area_codes=area_codes,
             user_id=user_id,
@@ -78,12 +79,7 @@ class BakeryService:
         if not bakeries:
             return LoadMoreBakeryResponseDTO(
                 items=[],
-                paging=Paging(
-                    cursor=Cursor(
-                        before=cursor_id,
-                        after=-1,  # 다음 페이지 없을 때,
-                    )
-                ),
+                paging=Paging(next_cursor=None, has_next=False),
             )
 
         # 베이커리 시그니처 메뉴 정보 조회
@@ -97,7 +93,7 @@ class BakeryService:
         return LoadMoreBakeryResponseDTO(
             items=bakery_infos,
             paging=Paging(
-                cursor=Cursor(before=cursor_id, after=bakeries[-1].bakery_id)
+                next_cursor=to_cursor_str(bakeries[-1].bakery_id), has_next=has_next
             ),
         )
 
@@ -108,14 +104,14 @@ class BakeryService:
         # 지역코드 유효성 체크
         validate_area_code(area_codes=area_codes)
 
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         return await BakeryRepository(self.db).get_bakery_by_area(
             area_codes, target_day_of_week
         )
 
     async def get_hot_bakeries(
-        self, cursor_id: int, page_size: int, area_code: str
+        self, cursor_value: str, page_size: int, area_code: str
     ) -> LoadMoreBakeryResponseDTO:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
@@ -123,13 +119,13 @@ class BakeryService:
         # 지역코드 유효성 체크
         validate_area_code(area_codes=area_codes)
 
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         bakery_repo = BakeryRepository(self.db)
 
         # 빵집 정보
-        bakeries = await bakery_repo.get_more_hot_bakeries(
-            cursor_id=cursor_id,
+        bakeries, has_next = await bakery_repo.get_more_hot_bakeries(
+            cursor_value=cursor_value,
             area_codes=area_codes,
             target_day_of_week=target_day_of_week,
             page_size=page_size,
@@ -138,12 +134,7 @@ class BakeryService:
         if not bakeries:
             return LoadMoreBakeryResponseDTO(
                 items=[],
-                paging=Paging(
-                    cursor=Cursor(
-                        before=cursor_id,
-                        after=-1,  # 다음 페이지 없을 때,
-                    )
-                ),
+                paging=Paging(next_cursor=None, has_next=False),
             )
 
         # 빵 시그니처 메뉴 정보
@@ -156,7 +147,7 @@ class BakeryService:
         return LoadMoreBakeryResponseDTO(
             items=bakery_infos,
             paging=Paging(
-                cursor=Cursor(before=cursor_id, after=bakeries[-1].bakery_id)
+                next_cursor=to_cursor_str(bakeries[-1].bakery_id), has_next=has_next
             ),
         )
 
@@ -164,7 +155,7 @@ class BakeryService:
         """베이커리 상세 조회하는 비즈니스 로직."""
 
         bakery_repo = BakeryRepository(db=self.db)
-        target_day_of_week = convert_timezone_now().weekday()
+        target_day_of_week = get_now_by_timezone().weekday()
 
         # 1. 베이커리 정보 가져오기
         bakery = await bakery_repo.get_bakery_detail(

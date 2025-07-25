@@ -47,4 +47,3 @@ class ReviewBakeryMenu(Base, DateTimeMixin):
     review_id = Column(Integer, nullable=False, comment="리뷰 ID")
     menu_id = Column(Integer, nullable=False, comment="메뉴 ID")
     quantity = Column(Integer, nullable=False, comment="수량")
-    unit_price = Column(Float, comment="단위 가격")
