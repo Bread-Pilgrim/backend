@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -38,6 +39,7 @@ class BakeryReview(BaseModel):
     review_content: str = Field(..., description="작성한 리뷰 내용")
     review_rating: float = Field(..., description="별점")
     review_like_count: int = Field(default=0, description="리뷰 좋아요개수")
+    review_created_at: datetime = Field(..., description="리뷰 작성날짜.")
     review_menus: Optional[List[ReviewMenu]] = Field(
         default=[], description="리뷰한 메뉴"
     )
@@ -48,4 +50,9 @@ class BakeryReview(BaseModel):
 
 class BakeryReviewReponseDTO(BaseModel):
     items: List[BakeryReview] = Field(default=[], description="조회된 리뷰 데이터.")
+    paging: Paging = Field(..., description="페이징 정보")
+
+
+class BakeryMyReviewReponseDTO(BaseModel):
+    items: List[MyBakeryReview] = Field(default=[], description="조회된 리뷰 데이터.")
     paging: Paging = Field(..., description="페이징 정보")

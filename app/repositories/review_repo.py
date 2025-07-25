@@ -1,11 +1,14 @@
-from typing import List, Optional
+from typing import List
 
-from sqlalchemy import and_, asc, desc, select
+from sqlalchemy import and_, select
 
+from app.core.exception import UnknownError
 from app.model.bakery import Bakery, BakeryMenu
 from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
 from app.schema.review import BakeryReview, MyBakeryReview
+from app.utils.date import get_today_end, get_today_start
+from app.utils.pagination import build_cursor_filter, build_order_by, parse_cursor_value
 
 
 class ReviewRepository:
@@ -13,9 +16,19 @@ class ReviewRepository:
         self.db = db
 
     async def get_my_reviews_by_bakery_id(
-        self, bakery_id: int, user_id: int, cursor_id: int, page_size: int
+        self, bakery_id: int, user_id: int, cursor_value: str, page_size: int
     ):
         """리뷰 주요데이터 조회하는 쿼리."""
+
+        filters = [
+            Users.id == user_id,
+            Review.bakery_id == bakery_id,
+        ]
+
+        if cursor_value != "0":
+            filters.append(
+                Review.id < cursor_value,
+            )
 
         stmt = (
             select(
@@ -34,16 +47,13 @@ class ReviewRepository:
                 and_(ReviewLike.review_id == Review.id, ReviewLike.user_id == user_id),
                 isouter=True,
             )
-            .filter(
-                Users.id == user_id,
-                Review.bakery_id == bakery_id,
-                Review.id > cursor_id,
-            )
-            .order_by(Review.created_at.desc())
-            .limit(page_size)
+            .filter(*filters)
+            .order_by(Review.id.desc())
+            .limit(page_size + 1)
         )
 
         res = self.db.execute(stmt).mappings().all()
+        has_next = len(res) > page_size
 
         return [
             MyBakeryReview(
@@ -55,8 +65,8 @@ class ReviewRepository:
                 review_rating=r.rating,
                 review_like_count=r.like_count,
             )
-            for r in res
-        ]
+            for r in res[:page_size]
+        ], has_next
 
     async def get_my_review_photos_by_bakery_id(self, review_ids: List[int]):
         """리뷰 내 사진 조회하는 쿼리."""
@@ -83,14 +93,27 @@ class ReviewRepository:
         self,
         user_id: int,
         bakery_id: int,
-        cursor_id: int,
+        cursor_value: str,
         sort_by: str,
         direction: str,
         page_size: int,
     ):
         """리뷰 주요데이터 조회하는 쿼리."""
 
+        # 정렬할 필드 추출 (Review.like_count 이런식)
         sort_column = getattr(Review, sort_by)
+        # sort_value:review_id 형태의 요청 파라미터를 조건절에 들어갈 수 있는 형태로 파싱
+        sort_value, cursor_id = parse_cursor_value(cursor_value, sort_by)
+        cursor_filter = build_cursor_filter(
+            sort_column, sort_value, cursor_id, direction
+        )
+        order_by = build_order_by(sort_column, direction)
+
+        print("cursor_filter ------> ", cursor_filter)
+
+        filters = [Review.bakery_id == bakery_id]
+        if cursor_filter is not None:
+            filters.append(cursor_filter)
 
         stmt = (
             select(
@@ -100,6 +123,7 @@ class ReviewRepository:
                 Review.id,
                 Review.content,
                 Review.rating,
+                Review.created_at,
                 Review.like_count,
                 ReviewLike.user_id,
             )
@@ -111,30 +135,81 @@ class ReviewRepository:
                 and_(ReviewLike.review_id == Review.id, ReviewLike.user_id == user_id),
                 isouter=True,
             )
-            .filter(
-                Review.bakery_id == bakery_id,
-                Review.is_private == False,
-                Review.id > cursor_id,
-            )
+            .filter(*filters)
+            .order_by(*order_by)
+            .limit(page_size + 1)
         )
 
-        if direction == "desc":
-            stmt = stmt.order_by(desc(sort_column)).limit(page_size)
-        else:
-            stmt = stmt.order_by(asc(sort_column)).limit(page_size)
-
         res = self.db.execute(stmt).mappings().all()
+        has_next = len(res) > page_size
 
-        return [
-            BakeryReview(
-                avg_rating=r.avg_rating,
-                review_id=r.id,
-                user_name=r.name,
-                profile_img=r.profile_img,
-                is_like=True if r.user_id else False,
-                review_content=r.content,
-                review_rating=r.rating,
-                review_like_count=r.like_count,
+        return (
+            [
+                BakeryReview(
+                    avg_rating=r.avg_rating,
+                    review_id=r.id,
+                    user_name=r.name,
+                    profile_img=r.profile_img,
+                    is_like=bool(r.user_id),
+                    review_content=r.content,
+                    review_rating=r.rating,
+                    review_like_count=r.like_count,
+                    review_created_at=r.created_at,
+                )
+                for r in res[:page_size]
+            ],
+            has_next,
+        )
+
+    async def get_today_review(self, user_id: int, bakery_id: int):
+        """오늘 작성한 리뷰 있는 지 조회하는 쿼리."""
+
+        review = (
+            self.db.query(Review.id)
+            .filter(
+                Review.user_id == user_id,
+                Review.bakery_id == bakery_id,
+                Review.created_at >= get_today_start(),
+                Review.created_at <= get_today_end(),
             )
-            for r in res
-        ]
+            .first()
+        )
+
+        return review
+
+    async def insert_review_infos(
+        self,
+        bakery_id: int,
+        rating: float,
+        content: str,
+        is_private: bool,
+        user_id: int,
+    ):
+        """리뷰 정보 insert하는 쿼리"""
+
+        try:
+            review_info = Review(
+                bakery_id=bakery_id,
+                rating=rating,
+                content=content,
+                is_private=is_private,
+                user_id=user_id,
+            )
+
+            self.db.add(review_info)
+            self.db.flush()
+            return review_info.id
+
+        except Exception as e:
+            raise UnknownError(detail=str(e))
+
+    # async def insert_review_menus(
+    #     self,
+    #     review_id :int,
+    #     consumed_menus:dict
+    # ):
+    #     try:
+
+    async def bucket_insert_review_imgs(self, bakery_id: int, filenames: List[str]):
+        """리뷰 이미지 한 번에 저장하는 쿼리."""
+        pass

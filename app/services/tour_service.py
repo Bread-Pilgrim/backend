@@ -13,10 +13,10 @@ from app.core.exception import UnknownError
 from app.schema.tour import EventPopupResponseDTO, TourResponseDTO
 from app.utils.converter import (
     area_to_sigungu,
-    convert_timezone_now,
     replace_space_with_plus,
     transform_tour_response,
 )
+from app.utils.date import get_now_by_timezone
 from app.utils.parser import parse_comma_to_list
 
 config = Configs()
@@ -51,7 +51,7 @@ class TourService:
         """오늘 진행하는 행사만 반환하는 메소드."""
 
         filtered_events = []
-        today = convert_timezone_now().date()
+        today = get_now_by_timezone().date()
 
         for e in events:
             start_date = datetime.strptime(e.get("eventstartdate"), "%Y%m%d")

@@ -12,7 +12,7 @@ from app.schema.bakery import (
     RecommendBakery,
     SimpleBakeryMenu,
 )
-from app.schema.review import BakeryReviewReponseDTO, MyBakeryReview
+from app.schema.review import BakeryMyReviewReponseDTO, BakeryReviewReponseDTO
 from app.services.bakery_service import BakeryService
 from app.services.review_service import Review
 
@@ -48,16 +48,16 @@ async def get_bakeries_by_preference(
     response_model=BaseResponse[LoadMoreBakeryResponseDTO],
     responses={**ERROR_UNKNOWN, **ERROR_INVALID_AREA_CODE},
     response_description="""
-    paging.cursor.after값이 -1이면 더이상 요청할 수 있는 다음 페이지가 없다는 뜻.
+    paging.has_next가 False면 더이상 요청할 수 있는 다음 페이지가 없다는 뜻.
     """,
 )
 async def get_preference_bakery(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    cursor_id: int = Query(
-        default=0,
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.cursor.after 값을 사용해서 조회.",
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=15),
     user_id=Depends(get_user_id),
@@ -67,7 +67,7 @@ async def get_preference_bakery(
 
     return BaseResponse(
         data=await BakeryService(db=db).get_more_bakeries_by_preference(
-            cursor_id=cursor_id,
+            cursor_value=cursor_value,
             page_size=page_size,
             area_code=area_code,
             user_id=user_id,
@@ -100,16 +100,16 @@ async def get_recommend_bakery_by_area(
     response_model=BaseResponse[LoadMoreBakeryResponseDTO],
     responses={**ERROR_UNKNOWN, **ERROR_INVALID_AREA_CODE},
     response_description="""
-    1. 500 에러 예시 : DB 이슈
+    paging.has_next가 False면 더이상 요청할 수 있는 다음 페이지가 없다는 뜻.
     """,
 )
 async def get_hot_bakeries(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    cursor_id: int = Query(
-        default=0,
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.cursor.after 값을 사용해서 조회.",
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=15),
     _: None = Depends(get_user_id),
@@ -119,7 +119,7 @@ async def get_hot_bakeries(
 
     return BaseResponse(
         data=await BakeryService(db=db).get_hot_bakeries(
-            area_code=area_code, cursor_id=cursor_id, page_size=page_size
+            area_code=area_code, cursor_value=cursor_value, page_size=page_size
         )
     )
 
@@ -150,12 +150,21 @@ async def get_bakery_menus(
     )
 
 
-@router.get("/{bakery_id}/reviews", response_model=BaseResponse[BakeryReviewReponseDTO])
+@router.get(
+    "/{bakery_id}/reviews",
+    response_model=BaseResponse[BakeryReviewReponseDTO],
+    response_description="""
+    paging.has_next가 False면 더이상 요청할 수 있는 다음 페이지가 없다는 뜻.
+    """,
+)
 async def get_reviews_by_bakery_id(
     bakery_id: int,
-    cursor_id: int = Query(
-        default=0,
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.cursor.after 값을 사용해서 조회.",
+    cursor_value: str = Query(
+        default="0:0",
+        description="""
+    처음엔 0:0으로 넘겨주고, 
+    그 다음부턴 response 내 next_cursor값을 입력해주세요.
+        """,
     ),
     page_size: int = Query(default=5),
     sort_clause: str = Query(
@@ -177,19 +186,21 @@ async def get_reviews_by_bakery_id(
         data=await Review(db=db).get_reviews_by_bakery_id(
             user_id=user_id,
             bakery_id=bakery_id,
-            cursor_id=cursor_id,
+            cursor_value=cursor_value,
             page_size=page_size,
             sort_clause=sort_clause,
         )
     )
 
 
-@router.get("/{bakery_id}/my-review", response_model=BaseResponse[List[MyBakeryReview]])
+@router.get(
+    "/{bakery_id}/my-review", response_model=BaseResponse[BakeryMyReviewReponseDTO]
+)
 async def get_my_bakery_review(
     bakery_id: int,
-    cursor_id: int = Query(
+    cursor_value: str = Query(
         default=0,
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.cursor.after 값을 사용해서 조회.",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=5),
     user_id=Depends(get_user_id),
@@ -201,7 +212,7 @@ async def get_my_bakery_review(
         data=await Review(db=db).get_my_reviews_by_bakery_id(
             bakery_id=bakery_id,
             user_id=user_id,
-            cursor_id=cursor_id,
+            cursor_value=cursor_value,
             page_size=page_size,
         )
     )

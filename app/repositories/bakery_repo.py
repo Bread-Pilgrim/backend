@@ -2,6 +2,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
+from app.core.const import ETC_MENU_NAME
 from app.core.exception import NotFoundError, UnknownError
 from app.model.bakery import (
     Bakery,
@@ -115,7 +116,7 @@ class BakeryRepository:
 
     async def get_more_bakeries_by_preference(
         self,
-        cursor_id: int,
+        cursor_value: str,
         page_size: int,
         area_codes: list[str],
         user_id: int,
@@ -125,7 +126,7 @@ class BakeryRepository:
 
         conditions = [
             UserPreferences.user_id == user_id,
-            Bakery.id > cursor_id,
+            Bakery.id > cursor_value,
             BakeryPhoto.is_signature == True,
         ]
 
@@ -179,10 +180,13 @@ class BakeryRepository:
                 )
                 .where(and_(*conditions))
                 .order_by(Bakery.id.asc())
-                .limit(page_size)
+                .limit(page_size + 1)
             )
 
             res = self.db.execute(stmt).mappings().all()
+
+            has_next = len(res) > page_size
+
             return [
                 LoadMoreBakery(
                     bakery_id=r.id,
@@ -200,8 +204,8 @@ class BakeryRepository:
                     gu=r.gu,
                     dong=r.dong,
                 )
-                for r in res
-            ]
+                for r in res[:page_size]
+            ], has_next
         except Exception as e:
             raise UnknownError(detail=str(e))
 
@@ -290,17 +294,17 @@ class BakeryRepository:
 
     async def get_more_hot_bakeries(
         self,
-        cursor_id: int,
+        cursor_value: str,
         page_size: int,
         area_codes: list[str],
         target_day_of_week: int,
     ):
         """(더보기) hot한 빵집 조회하는 쿼리"""
 
-        conditions = [Bakery.id > cursor_id, BakeryPhoto.is_signature == True]
+        filters = [Bakery.id > cursor_value, BakeryPhoto.is_signature == True]
 
         if area_codes != ["14"]:
-            conditions.append(Bakery.commercial_area_id.in_(area_codes))
+            filters.append(Bakery.commercial_area_id.in_(area_codes))
 
         stmt = (
             select(
@@ -338,12 +342,13 @@ class BakeryRepository:
                 and_(UserBakeryLikes.bakery_id == Bakery.id),
                 isouter=True,
             )
-            .where(and_(*conditions))
+            .where(and_(*filters))
             .order_by(Bakery.id, Bakery.avg_rating.desc())
-            .limit(page_size)
+            .limit(page_size + 1)
         )
 
         res = self.db.execute(stmt).mappings().all()
+        has_next = len(res) > page_size
 
         return [
             LoadMoreBakery(
@@ -362,8 +367,8 @@ class BakeryRepository:
                 gu=r.gu,
                 dong=r.dong,
             )
-            for r in res
-        ]
+            for r in res[:page_size]
+        ], has_next
 
     async def get_bakery_detail(self, bakery_id: int, target_day_of_week: int):
         """베이커리 상세정보 조회하는 쿼리."""
@@ -507,11 +512,20 @@ class BakeryRepository:
                 .all()
             )
 
-            return [
+            menus = [
                 SimpleBakeryMenu(
                     menu_id=r.id, menu_name=r.name, is_signature=r.is_signature
                 )
                 for r in res
             ]
+
+            if all(menu.menu_name != ETC_MENU_NAME for menu in menus):
+
+                menus.append(
+                    SimpleBakeryMenu(
+                        menu_id=-1, menu_name=ETC_MENU_NAME, is_signature=False
+                    )
+                )
+            return menus
         except Exception as e:
             raise UnknownError(detail=str(e))
