@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from fastapi import UploadFile
 from PIL import Image
 
-from app.core.exception import ConvertImageError, UnknownError
+from app.core.exception import UnknownError
 from app.utils.date import get_now_by_timezone
 from app.utils.parser import parse_comma_to_list
 
@@ -96,3 +96,16 @@ def replace_space_with_plus(title: str) -> str:
     """다음 사이트에서 검색화면으로 넘어갈 수 있는 링크로 변환하는 메소드."""
 
     return read_more_link_domain + title.replace(" ", "+")
+
+
+def to_cursor_str(value) -> str:
+    """커서 데이터 str타입으로 변경해서 반환하는 메소드."""
+
+    if isinstance(value, (int, float)):
+        return str(value)
+    elif isinstance(value, datetime):
+        return value.isoformat()  # "2024-07-22T12:34:56.123Z"
+    elif isinstance(value, time):
+        return value.strftime("%H:%M:%S")
+    else:
+        raise ValueError(f"지원하지 않는 커서 타입입니다: {type(value)}")
