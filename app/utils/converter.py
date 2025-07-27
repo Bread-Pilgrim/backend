@@ -83,6 +83,9 @@ def operating_hours_to_open_status(
             # 현재 영업중인 경우
             if open_time < now < close_time:
                 return "O"
+            # 영업전
+            elif now < open_time:
+                return "B"
             # 현재 영업시간이 초과된 경우
             else:
                 return "C"
