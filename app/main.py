@@ -4,14 +4,18 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api import auth, bakery, common, preferences, review, test, tour, users
 from app.core.exception import (
+    ConvertImageException,
+    DailyReviewLimitExceededExecption,
     DuplicateException,
     InvalidAreaCodeException,
+    InvalidImageFileException,
     InvalidSortParameterException,
     InvalidTokenException,
     NotFoundException,
     RequestDataMissingException,
     TokenExpiredException,
     UnknownException,
+    UploadImageException,
     exception_handler,
 )
 
@@ -51,5 +55,9 @@ app.add_exception_handler(DuplicateException, exception_handler)
 app.add_exception_handler(NotFoundException, exception_handler)
 app.add_exception_handler(InvalidAreaCodeException, exception_handler)
 app.add_exception_handler(InvalidSortParameterException, exception_handler)
+app.add_exception_handler(InvalidImageFileException, exception_handler)
+app.add_exception_handler(ConvertImageException, exception_handler)
+app.add_exception_handler(UploadImageException, exception_handler)
+app.add_exception_handler(DailyReviewLimitExceededExecption, exception_handler)
 
 Instrumentator().instrument(app).expose(app)

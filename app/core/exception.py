@@ -89,6 +89,36 @@ class InvalidSortParameterException(CustomException):
     DEFAULT_MESSAGE = "정렬 기준이나 방향이 누락되거나 잘못되었습니다."
 
 
+class InvalidImageFileException(CustomException):
+    """유효하지 않은 이미지 확장자 에러."""
+
+    STATUS_CODE = status.HTTP_400_BAD_REQUEST
+    ERROR_CODE = ErrorCode.INVALID_FILE_CONTENT_TYPE
+    DEFAULT_MESSAGE = "잘못된 파일 형식입니다."
+
+
+class ConvertImageException(CustomException):
+    """이미지 변환 시 발생하는 에러."""
+
+    STATUS_CODE = status.HTTP_500_INTERNAL_SERVER_ERROR
+    ERROR_CODE = ErrorCode.CONVERT_IMAGE_EXT
+    DEFAULT_MESSAGE = "이미지 변환 실패"
+
+
+class UploadImageException(CustomException):
+    """이미지 업로드 에러"""
+
+    STATUS_CODE = status.HTTP_500_INTERNAL_SERVER_ERROR
+    ERROR_CODE = ErrorCode.CONVERT_IMAGE_EXT
+    DEFAULT_MESSAGE = "이미지 업로드 실패"
+
+
+class DailyReviewLimitExceededExecption(CustomException):
+    STATUS_CODE = status.HTTP_400_BAD_REQUEST
+    ERROR_CODE = ErrorCode.REVIEW_LIMIT_EXCEED
+    DEFAULT_MESSAGE = "오늘은 이미 리뷰를 작성하셨어요."
+
+
 async def exception_handler(_, exc: Exception):
     """CustomException 예외 발생 시 처리"""
 
@@ -132,3 +162,6 @@ ERROR_NOT_FOUND = build_error_response(NotFoundException)
 ERROR_INVALID_AREA_CODE = build_error_response(InvalidAreaCodeException)
 ERROR_INVALID_SORT_PARAM = build_error_response(InvalidSortParameterException)
 ERROR_INVALID_FILE_CONTENT_TYPE = build_error_response(InvalidImageFileException)
+ERROR_CONVERT_IMAGE = build_error_response(ConvertImageException)
+ERROR_UPLOAD_IMAGE = build_error_response(UploadImageException)
+ERROR_REVIEW_LIMIT_EXCEED = build_error_response(DailyReviewLimitExceededExecption)
