@@ -1,11 +1,5 @@
-import uuid
 from datetime import datetime, time
-from io import BytesIO
-from typing import List, Optional
-from zoneinfo import ZoneInfo
-
-from fastapi import UploadFile
-from PIL import Image
+from typing import Optional
 
 from app.core.exception import UnknownError
 from app.utils.date import get_now_by_timezone

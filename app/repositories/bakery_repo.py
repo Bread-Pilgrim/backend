@@ -169,6 +169,7 @@ class BakeryRepository:
                         BakeryPhoto.bakery_id == Bakery.id,
                         BakeryPhoto.is_signature.is_(True),
                     ),
+                    isouter=True,
                 )
                 .join(
                     UserBakeryLikes,

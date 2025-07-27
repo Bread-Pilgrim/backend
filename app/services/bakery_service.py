@@ -11,6 +11,7 @@ from app.schema.bakery import (
     LoadMoreBakeryResponseDTO,
 )
 from app.schema.common import Paging
+from app.utils.converter import to_cursor_str
 from app.utils.date import get_now_by_timezone
 from app.utils.parser import parse_comma_to_list
 from app.utils.validator import validate_area_code
