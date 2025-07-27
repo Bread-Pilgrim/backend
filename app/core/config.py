@@ -23,8 +23,10 @@ class Configs(BaseSettings):
     ENC_TOUR_SECRET_KEY: str
     ORG_TOUR_SECRET_KEY: str
 
-    # ====================== GCP AI VISION
-    GOOGLE_CREDENTIAL: str
+    # ====================== Supabase Bucket
+    SUPABASE_BUCKET: str
+    SUPABASE_ACCESS_KEY: str
+    SUPABASE_URL: str
 
     # ====================== GCP CI/CD
     GCP_RUN_PROJECT_ID: str

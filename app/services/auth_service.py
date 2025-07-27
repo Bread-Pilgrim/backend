@@ -6,7 +6,7 @@ from sqlalchemy.orm.session import Session
 
 from app.core.auth import create_jwt_token
 from app.core.config import Configs
-from app.core.exception import UnknownError
+from app.core.exception import UnknownException
 from app.model.users import Users
 from app.repositories.auth_repo import AuthRepository
 from app.schema.auth import AuthToken, LoginRequestDTO, LoginResponseDTO
@@ -50,9 +50,9 @@ class AuthService:
                 )
                 return res.json()
             except httpx.HTTPStatusError as e:
-                raise UnknownError(detail=f"카카오 API 호출 중 오류 발생: {str(e)}")
+                raise UnknownException(detail=f"카카오 API 호출 중 오류 발생: {str(e)}")
             except httpx.RequestError as e:
-                raise UnknownError(detail=f"카카오 API 요청 중 오류 발생: {str(e)}")
+                raise UnknownException(detail=f"카카오 API 요청 중 오류 발생: {str(e)}")
 
     async def login_and_signup(self, req: LoginRequestDTO, social_access_token: str):
         """로그인/회원가입 비즈니스 로직."""

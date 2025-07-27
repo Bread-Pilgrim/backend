@@ -5,6 +5,7 @@ from typing import List, Optional
 from fastapi import File, UploadFile
 from sqlalchemy.orm.session import Session
 
+from app.core.exception import DailyReviewLimitExceededExecption
 from app.repositories.review_repo import ReviewRepository
 from app.schema.common import Paging
 from app.schema.review import (
@@ -15,9 +16,11 @@ from app.schema.review import (
     ReviewMenu,
     ReviewPhoto,
 )
-from app.utils.converter import to_cursor_str
+from app.utils.converter import convert_img_to_webp, to_cursor_str
 from app.utils.pagination import build_cursor
 from app.utils.parser import build_sort_clause
+from app.utils.upload import upload_multiple_to_supabase_storage
+from app.utils.validator import upload_image_file_validation
 
 
 class Review:
@@ -143,3 +146,67 @@ class Review:
                 has_next=False,
             ),
         )
+
+    async def write_bakery_review(
+        self,
+        bakery_id: int,
+        rating: float,
+        content: str,
+        is_private: bool,
+        user_id: int,
+        consumed_menus: str,
+        review_imgs: Optional[List[UploadFile]] = File(default=None),
+    ):
+        """베이커리 리뷰 작성하는 비즈니스 로직."""
+
+        review_repo = ReviewRepository(db=self.db)
+
+        # TODO redis
+        # 1. 오늘 작성한 리뷰가 있는지 체크
+        reviewed_today = await review_repo.get_today_review(
+            user_id=user_id, bakery_id=bakery_id
+        )
+
+        if reviewed_today:
+            raise DailyReviewLimitExceededExecption()
+
+        # 2. consumed_menus 직렬화
+        consumed_menus_json = json.loads(consumed_menus)
+        # 3. menu_id값으로 -1이 있는 경우, 기타메뉴 insert
+        if any(c.get("menu_id") == -1 for c in consumed_menus_json):
+            consumed_menus_json = await review_repo.insert_extra_menu(
+                bakery_id=bakery_id, consumed_menus=consumed_menus_json
+            )
+
+        # 4. 리뷰 데이터 insert
+        review_id = await review_repo.insert_review_infos(
+            bakery_id=bakery_id,
+            rating=rating,
+            content=content,
+            is_private=is_private,
+            user_id=user_id,
+        )
+        # 5. 리뷰 메뉴 insert
+        await review_repo.bulk_insert_review_menus(
+            review_id=review_id, consumed_menus=consumed_menus_json
+        )
+
+        # 6. 리뷰 개수 및 평점 update
+        # TODO Redis로 처리할 것
+        await review_repo.update_avg_rating_and_review_count(
+            bakery_id=bakery_id, rating=rating
+        )
+
+        # 6. 리뷰 이미지 insert
+        if review_imgs:
+            # 5.1 파일 첨부 시, 올바른 이미지 확장자인지 체크
+            upload_image_file_validation(img_list=review_imgs)
+            # 5.2 이미지 파일 중 webp 이외의 파일들을 webp 확장자로 변환
+            uploaded_files = await convert_img_to_webp(img_list=review_imgs)
+            # 5.3 이미지 파일 bucket 업로드
+            await upload_multiple_to_supabase_storage(files=uploaded_files)
+            # 5.4 이미지 파일 DB에 insert
+            filenames = [filename for _, filename in uploaded_files]
+            await review_repo.bulk_insert_review_imgs(
+                review_id=review_id, filenames=filenames
+            )

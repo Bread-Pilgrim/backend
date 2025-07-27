@@ -3,7 +3,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
 from app.core.const import ETC_MENU_NAME
-from app.core.exception import NotFoundError, UnknownError
+from app.core.exception import NotFoundException, UnknownException
 from app.model.bakery import (
     Bakery,
     BakeryMenu,
@@ -112,7 +112,7 @@ class BakeryRepository:
             ]
 
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))
 
     async def get_more_bakeries_by_preference(
         self,
@@ -208,7 +208,7 @@ class BakeryRepository:
                 for r in res[:page_size]
             ], has_next
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))
 
     async def get_signature_menus(self, bakery_ids: list[int]):
         """베이커리 내 대표메뉴 조회하는 쿼리."""
@@ -225,7 +225,7 @@ class BakeryRepository:
 
             return [{"bakery_id": m.bakery_id, "menu_name": m.name} for m in menus]
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_by_area(self, area_codes: list[str], target_day_of_week: int):
         """지역코드로 베이터리 조회하는 쿼리."""
@@ -291,7 +291,7 @@ class BakeryRepository:
                 for r in res
             ]
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))
 
     async def get_more_hot_bakeries(
         self,
@@ -422,11 +422,11 @@ class BakeryRepository:
                     is_like=True if res.is_like else False,
                 )
             else:
-                raise NotFoundError(detail="해당 베이커리를 찾을 수 없습니다.")
-        except NotFoundError as e:
+                raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
+        except NotFoundException as e:
             raise e
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_menu_detail(self, bakery_id: int):
         """베이커리 메뉴 정보 조회하는 쿼리"""
@@ -456,7 +456,7 @@ class BakeryRepository:
                 for r in res
             ]
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_photos(self, bakery_id: int):
         """베이커리 썸네일 조회하는 메소드."""
@@ -470,7 +470,7 @@ class BakeryRepository:
 
             return [r.img_url for r in res if r.img_url] if res else []
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_operating_hours(self, bakery_id: int):
         """베이커리 전체 영업시간 가져오는 쿼리."""
@@ -501,7 +501,7 @@ class BakeryRepository:
                 else []
             )
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_menus(self, bakery_id):
         """베이커리 메뉴 조회하는 쿼리."""
@@ -529,4 +529,4 @@ class BakeryRepository:
                 )
             return menus
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            raise UnknownException(detail=str(e))

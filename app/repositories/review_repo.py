@@ -1,13 +1,14 @@
+from datetime import datetime
 from typing import List
 
 from sqlalchemy import and_, select
 
-from app.core.exception import UnknownError
+from app.core.exception import UnknownException
 from app.model.bakery import Bakery, BakeryMenu
 from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
 from app.schema.review import BakeryReview, MyBakeryReview
-from app.utils.date import get_today_end, get_today_start
+from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
 from app.utils.pagination import build_cursor_filter, build_order_by, parse_cursor_value
 
 
@@ -109,8 +110,6 @@ class ReviewRepository:
         )
         order_by = build_order_by(sort_column, direction)
 
-        print("cursor_filter ------> ", cursor_filter)
-
         filters = [Review.bakery_id == bakery_id]
         if cursor_filter is not None:
             filters.append(cursor_filter)
@@ -177,6 +176,30 @@ class ReviewRepository:
 
         return review
 
+    async def insert_extra_menu(self, bakery_id: int, consumed_menus: dict):
+        """기타 메뉴 추가하는 쿼리."""
+
+        try:
+            bakery_menu = BakeryMenu(
+                name="기타메뉴",
+                is_signature=False,
+                price=0,
+                bakery_id=bakery_id,
+            )
+
+            self.db.add(bakery_menu)
+            self.db.flush()
+
+            for c in consumed_menus:
+                if c["menu_id"] == -1:
+                    c["menu_id"] = bakery_menu.id
+
+            return consumed_menus
+
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
     async def insert_review_infos(
         self,
         bakery_id: int,
@@ -194,22 +217,64 @@ class ReviewRepository:
                 content=content,
                 is_private=is_private,
                 user_id=user_id,
+                visit_date=get_now_by_timezone(tz="UTC"),
             )
 
             self.db.add(review_info)
             self.db.flush()
             return review_info.id
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
+    async def bulk_insert_review_menus(self, review_id: int, consumed_menus: dict):
+        try:
+            add_data = [
+                ReviewBakeryMenu(
+                    review_id=review_id,
+                    menu_id=c.get("menu_id"),
+                    quantity=c.get("quantity"),
+                )
+                for c in consumed_menus
+            ]
+            self.db.add_all(add_data)
+            self.db.flush()
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
+    async def update_avg_rating_and_review_count(
+        self,
+        bakery_id: int,
+        rating: float,
+    ):
+        """베잌커리 평점 및 리뷰 개수 업데이트 하는 메소드."""
+
+        try:
+            # 1. 베이커리 조회
+            bakery_stat = self.db.query(Bakery).filter(Bakery.id == bakery_id).first()
+
+            # 2. 업데이트할 데이터 계산.
+            avg_rating, review_count = bakery_stat.avg_rating, bakery_stat.review_count
+            new_count = review_count + 1
+            new_rating = round(((avg_rating * review_count) + rating) / new_count, 1)
+
+            # 3. 업데이트
+            bakery_stat.review_count = new_count
+            bakery_stat.avg_rating = new_rating
+
+            self.db.flush()
 
         except Exception as e:
-            raise UnknownError(detail=str(e))
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
 
-    # async def insert_review_menus(
-    #     self,
-    #     review_id :int,
-    #     consumed_menus:dict
-    # ):
-    #     try:
-
-    async def bucket_insert_review_imgs(self, bakery_id: int, filenames: List[str]):
+    async def bulk_insert_review_imgs(self, review_id: int, filenames: List[str]):
         """리뷰 이미지 한 번에 저장하는 쿼리."""
-        pass
+        try:
+            add_data = [ReviewPhoto(review_id=review_id, img_url=f) for f in filenames]
+            self.db.add_all(add_data)
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
