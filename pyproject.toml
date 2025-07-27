@@ -6,7 +6,7 @@ authors = [
     {name = "chilln",email = "kimjihan77@naver.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "fastapi[standard] (>=0.115.12,<0.116.0)",
     "uvicorn (>=0.34.2,<0.35.0)",
@@ -26,6 +26,8 @@ dependencies = [
     "selenium (>=4.33.0,<5.0.0)",
     "pytest (>=8.4.1,<9.0.0)",
     "pytz (>=2025.2,<2026.0)",
+    "pillow (>=11.3.0,<12.0.0)",
+    "supabase (>=2.17.0,<3.0.0)",
 ]
 
 
