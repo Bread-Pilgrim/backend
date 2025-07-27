@@ -20,7 +20,7 @@ class Review(Base, DateTimeMixin):
         default=False,
         comment="나만보기 여부 (True : 나만공개 / False : 전체공개)",
     )
-    like_count = Column(Integer, nullable=False, comment="좋아요 개수")
+    like_count = Column(Integer, nullable=False, default=0, comment="좋아요 개수")
 
 
 class ReviewPhoto(Base):

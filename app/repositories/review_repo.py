@@ -217,6 +217,7 @@ class ReviewRepository:
                 content=content,
                 is_private=is_private,
                 user_id=user_id,
+                like_count=0,
                 visit_date=get_now_by_timezone(tz="UTC"),
             )
 
