@@ -176,6 +176,30 @@ class ReviewRepository:
 
         return review
 
+    async def insert_extra_menu(self, bakery_id: int, consumed_menus: dict):
+        """기타 메뉴 추가하는 쿼리."""
+
+        try:
+            bakery_menu = BakeryMenu(
+                name="기타메뉴",
+                is_signature=False,
+                price=0,
+                bakery_id=bakery_id,
+            )
+
+            self.db.add(bakery_menu)
+            self.db.flush()
+
+            for c in consumed_menus:
+                if c["menu_id"] == -1:
+                    c["menu_id"] = bakery_menu.id
+
+            return consumed_menus
+
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
     async def insert_review_infos(
         self,
         bakery_id: int,

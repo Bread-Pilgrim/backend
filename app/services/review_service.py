@@ -171,8 +171,14 @@ class Review:
             raise DailyReviewLimitExceededExecption()
 
         # 2. consumed_menus 직렬화
-        consumed_menus = json.loads(consumed_menus)
-        # 3. 리뷰 데이터 insert
+        consumed_menus_json = json.loads(consumed_menus)
+        # 3. menu_id값으로 -1이 있는 경우, 기타메뉴 insert
+        if any(c.get("menu_id") == -1 for c in consumed_menus_json):
+            consumed_menus_json = await review_repo.insert_extra_menu(
+                bakery_id=bakery_id, consumed_menus=consumed_menus_json
+            )
+
+        # 4. 리뷰 데이터 insert
         review_id = await review_repo.insert_review_infos(
             bakery_id=bakery_id,
             rating=rating,
@@ -180,12 +186,12 @@ class Review:
             is_private=is_private,
             user_id=user_id,
         )
-        # 4. 리뷰 메뉴 insert
+        # 5. 리뷰 메뉴 insert
         await review_repo.bulk_insert_review_menus(
-            review_id=review_id, consumed_menus=consumed_menus
+            review_id=review_id, consumed_menus=consumed_menus_json
         )
 
-        # 5. 리뷰 개수 및 평점 update
+        # 6. 리뷰 개수 및 평점 update
         # TODO Redis로 처리할 것
         await review_repo.update_avg_rating_and_review_count(
             bakery_id=bakery_id, rating=rating

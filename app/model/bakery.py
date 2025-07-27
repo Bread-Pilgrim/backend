@@ -43,7 +43,7 @@ class BakeryMenu(Base, DateTimeMixin):
     is_signature = Column(Boolean, default=False)
     price = Column(Integer, comment="가격")
     bakery_id = Column(Integer, nullable=False)
-    flavor_id = Column(Integer, nullable=False, comment="preference.type = flavor 번호")
+    flavor_id = Column(Integer, nullable=True, comment="preference.type = flavor 번호")
 
 
 class BakeryPhoto(Base, DateTimeMixin):
