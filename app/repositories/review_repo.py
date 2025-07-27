@@ -139,8 +139,6 @@ class ReviewRepository:
             .limit(page_size + 1)
         )
 
-        print("stmt : ", stmt)
-
         res = self.db.execute(stmt).mappings().all()
         has_next = len(res) > page_size
 
@@ -177,3 +175,82 @@ class ReviewRepository:
         )
 
         return review
+
+    async def insert_review_infos(
+        self,
+        bakery_id: int,
+        rating: float,
+        content: str,
+        is_private: bool,
+        user_id: int,
+    ):
+        """리뷰 정보 insert하는 쿼리"""
+
+        try:
+            review_info = Review(
+                bakery_id=bakery_id,
+                rating=rating,
+                content=content,
+                is_private=is_private,
+                user_id=user_id,
+                visit_date=get_now_by_timezone(tz="UTC"),
+            )
+
+            self.db.add(review_info)
+            self.db.flush()
+            return review_info.id
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
+    async def bulk_insert_review_menus(self, review_id: int, consumed_menus: dict):
+        try:
+            add_data = [
+                ReviewBakeryMenu(
+                    review_id=review_id,
+                    menu_id=c.get("menu_id"),
+                    quantity=c.get("quantity"),
+                )
+                for c in consumed_menus
+            ]
+            self.db.add_all(add_data)
+            self.db.flush()
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
+    async def update_avg_rating_and_review_count(
+        self,
+        bakery_id: int,
+        rating: float,
+    ):
+        """베잌커리 평점 및 리뷰 개수 업데이트 하는 메소드."""
+
+        try:
+            # 1. 베이커리 조회
+            bakery_stat = self.db.query(Bakery).filter(Bakery.id == bakery_id).first()
+
+            # 2. 업데이트할 데이터 계산.
+            avg_rating, review_count = bakery_stat.avg_rating, bakery_stat.review_count
+            new_count = review_count + 1
+            new_rating = round(((avg_rating * review_count) + rating) / new_count, 1)
+
+            # 3. 업데이트
+            bakery_stat.review_count = new_count
+            bakery_stat.avg_rating = new_rating
+
+            self.db.flush()
+
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
+    async def bulk_insert_review_imgs(self, review_id: int, filenames: List[str]):
+        """리뷰 이미지 한 번에 저장하는 쿼리."""
+        try:
+            add_data = [ReviewPhoto(review_id=review_id, img_url=f) for f in filenames]
+            self.db.add_all(add_data)
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))

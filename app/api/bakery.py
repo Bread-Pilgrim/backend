@@ -5,7 +5,15 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from app.core.auth import get_user_id, verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
-from app.core.exception import ERROR_INVALID_AREA_CODE, ERROR_NOT_FOUND, ERROR_UNKNOWN
+from app.core.exception import (
+    ERROR_CONVERT_IMAGE,
+    ERROR_INVALID_AREA_CODE,
+    ERROR_INVALID_FILE_CONTENT_TYPE,
+    ERROR_NOT_FOUND,
+    ERROR_REVIEW_LIMIT_EXCEED,
+    ERROR_UNKNOWN,
+    ERROR_UPLOAD_IMAGE,
+)
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
     LoadMoreBakeryResponseDTO,
@@ -216,3 +224,41 @@ async def get_my_bakery_review(
             page_size=page_size,
         )
     )
+
+
+@router.post(
+    "/{bakery_id}/reviews",
+    response_model=BaseResponse,
+    responses={
+        **ERROR_INVALID_FILE_CONTENT_TYPE,
+        **ERROR_CONVERT_IMAGE,
+        **ERROR_REVIEW_LIMIT_EXCEED,
+        **ERROR_UPLOAD_IMAGE,
+        **ERROR_UNKNOWN,
+    },
+)
+async def write_bakery_review(
+    bakery_id: int,
+    rating: int = Form(..., description="별점"),
+    content: str = Form(..., description="리뷰내용"),
+    is_private: bool = Form(..., description="나만보기 여부"),
+    consumed_menus: str = Form(..., description='[{"menu_id": 1, "quantity" : 20}]'),
+    review_imgs: Optional[List[UploadFile]] = File(
+        default=None, description="이미지 파일", max_length=5
+    ),
+    user_id=Depends(get_user_id),
+    db=Depends(get_db),
+):
+    """베이커리 리뷰 작성하는 API."""
+
+    await Review(db=db).write_bakery_review(
+        bakery_id=bakery_id,
+        rating=rating,
+        content=content,
+        is_private=is_private,
+        user_id=user_id,
+        consumed_menus=consumed_menus,
+        review_imgs=review_imgs,
+    )
+
+    return BaseResponse()
