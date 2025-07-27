@@ -239,7 +239,7 @@ async def get_my_bakery_review(
 )
 async def write_bakery_review(
     bakery_id: int,
-    rating: int = Form(..., description="별점"),
+    rating: float = Form(..., description="별점"),
     content: str = Form(..., description="리뷰내용"),
     is_private: bool = Form(..., description="나만보기 여부"),
     consumed_menus: str = Form(..., description='[{"menu_id": 1, "quantity" : 20}]'),
