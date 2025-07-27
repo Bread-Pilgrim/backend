@@ -1,7 +1,12 @@
+import uuid
 from datetime import datetime, time
-from typing import Optional
+from io import BytesIO
+from typing import List, Optional
 
-from app.core.exception import UnknownError
+from fastapi import UploadFile
+from PIL import Image
+
+from app.core.exception import ConvertImageException, UnknownException
 from app.utils.date import get_now_by_timezone
 from app.utils.parser import parse_comma_to_list
 
@@ -48,7 +53,7 @@ def transform_tour_response(response: list, transformed_r: list):
                     transformed_r.extend(item)
         return transformed_r
     except Exception as e:
-        raise UnknownError(str(e))
+        raise UnknownException(str(e))
 
 
 def area_to_sigungu(area_code: str):
@@ -103,3 +108,35 @@ def to_cursor_str(value) -> str:
         return value.strftime("%H:%M:%S")
     else:
         raise ValueError(f"지원하지 않는 커서 타입입니다: {type(value)}")
+
+
+async def convert_img_to_webp(img_list: List[UploadFile]):
+    """webp 외의 확장자를 가진 이미지파일 webp로 변환하는 메소드."""
+    upload_files = []
+
+    try:
+        for img in img_list:
+            # 1. 확장자 분류
+            org_ext = img.filename.split(".")[-1].lower()
+            img_data = await img.read()
+
+            # 2. webp가 아닌 확장자만 파일 변경
+            if org_ext == "webp":
+                upload_data = img_data
+            else:
+                try:
+                    target_img = Image.open(BytesIO(img_data)).convert("RGB")
+                    buffer = BytesIO()
+                    target_img.save(buffer, format="WEBP", quality=80)
+                    buffer.seek(0)
+                    upload_data = buffer.read()
+                except:
+                    raise ConvertImageException()
+
+            filename = f"{uuid.uuid4()}.webp"
+            upload_files.append((upload_data, filename))
+
+        return upload_files
+    except Exception as e:
+        print(str(e))
+    return upload_files
