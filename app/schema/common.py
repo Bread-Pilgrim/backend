@@ -13,6 +13,7 @@ class AreaCode(BaseModel):
 class Paging(BaseModel):
     """페이징 모델."""
 
+    prev_cursor: Optional[str] = Field(default=None, description="이전 cursor_value")
     next_cursor: Optional[str] = Field(
         default=None, description="다음 cursur_value에 위치할 데이터"
     )
