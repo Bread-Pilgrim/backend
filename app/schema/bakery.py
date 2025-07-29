@@ -6,15 +6,11 @@ from pydantic import BaseModel, Field
 from app.schema.common import Paging
 
 
-class RecommendBakery(BaseModel):
-    """추천 빵집 모델"""
+class CommonBakery(BaseModel):
+    """빵집 정보"""
 
     bakery_id: int = Field(..., description="베이커리 id")
     bakery_name: str = Field(..., description="베이커리 상호명")
-    commercial_area_id: int = Field(
-        ...,
-        description="베이커리 상권지역코드 - 상세보기 클릭시 근처 관광지 추천에 필요",
-    )
     avg_rating: float = Field(..., description="평균별점")
     review_count: int = Field(..., description="리뷰 개수")
     open_status: str = Field(
@@ -31,35 +27,26 @@ class RecommendBakery(BaseModel):
     is_like: bool = Field(default=False, description="찜여부")
 
 
-class BakeryMenu(BaseModel):
-    menu_name: str = Field(..., description="대표메뉴 이름")
+class RecommendBakery(CommonBakery):
+    """추천 빵집 모델"""
 
-
-class LoadMoreBakery(BaseModel):
-    """더보기 빵집 모델."""
-
-    bakery_id: int = Field(..., description="베이커리 id")
-    bakery_name: str = Field(..., description="베이커리 상호명")
     commercial_area_id: int = Field(
         ...,
         description="베이커리 상권지역코드 - 상세보기 클릭시 근처 관광지 추천에 필요",
     )
-    avg_rating: float = Field(..., description="평균 별점")
-    review_count: float = Field(..., description="리뷰 개수")
-    open_status: str = Field(
+
+
+class BakeryMenu(BaseModel):
+    menu_name: str = Field(..., description="대표메뉴 이름")
+
+
+class LoadMoreBakery(CommonBakery):
+    """더보기 빵집 모델."""
+
+    commercial_area_id: int = Field(
         ...,
-        description="""
-    영업상태\n
-    O : 영업중
-    C : 영업종료
-    D : 휴무일 
-    B : 영업전                      
-    """,
+        description="베이커리 상권지역코드 - 상세보기 클릭시 근처 관광지 추천에 필요",
     )
-    img_url: str = Field(..., description="베이커리 썸네일")
-    gu: str = Field(..., description="베이커리 자치구")
-    dong: str = Field(..., description="베이커리 동")
-    is_like: bool = Field(default=False, description="찜여부")
     signature_menus: Optional[List[BakeryMenu]] = Field(
         default=[], description="시그니처 메뉴"
     )
@@ -124,3 +111,11 @@ class SimpleBakeryMenu(BaseModel):
     menu_id: int = Field(..., description="메뉴 ID")
     menu_name: str = Field(..., description="메뉴 이름")
     is_signature: bool = Field(..., description="대표메뉴 여부")
+
+
+class VisitedBakery(CommonBakery):
+    """방문한 빵집"""
+
+    signature_menus: Optional[List[BakeryMenu]] = Field(
+        default=[], description="시그니처 메뉴"
+    )
