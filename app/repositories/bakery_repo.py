@@ -641,6 +641,7 @@ class BakeryRepository:
             self.db.add(like_bakery)
             self.db.commit()
         except Exception as e:
+            self.db.rollback()
             raise UnknownException(detail=str(e))
 
     async def check_already_disliked_bakery(self, user_id: int, bakery_id: int):
@@ -675,4 +676,5 @@ class BakeryRepository:
                 self.db.delete(like_bakery)
                 self.db.commit()
         except Exception as e:
+            self.db.rollback()
             raise UnknownException(detail=str(e))

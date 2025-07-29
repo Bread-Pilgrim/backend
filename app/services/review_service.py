@@ -216,3 +216,15 @@ class Review:
             await review_repo.bulk_insert_review_imgs(
                 review_id=review_id, filenames=filenames
             )
+
+    async def like_review(self, user_id: int, review_id: int):
+        """리뷰 좋아요를 하는 비즈니스 로직."""
+
+        review_repo = ReviewRepository(db=self.db)
+
+        # 1. 이미 리뷰에 대한 좋아요 여부 체크
+        await review_repo.check_like_review(user_id=user_id, review_id=review_id)
+        # 2. 리뷰 좋아여
+        await review_repo.like_review(user_id=user_id, review_id=review_id)
+        # 3. 베이커리의 리뷰 개수 update
+        await review_repo.update_like_review(review_id=review_id)

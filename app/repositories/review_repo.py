@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import List
 
 from sqlalchemy import and_, select
+from sqlalchemy.orm import Session
 
-from app.core.exception import UnknownException
+from app.core.exception import AlreadyLikedException, UnknownException
 from app.model.bakery import Bakery, BakeryMenu
 from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
@@ -13,7 +14,7 @@ from app.utils.pagination import build_cursor_filter, build_order_by, parse_curs
 
 
 class ReviewRepository:
-    def __init__(self, db) -> None:
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     async def get_my_reviews_by_bakery_id(
@@ -276,6 +277,46 @@ class ReviewRepository:
             add_data = [ReviewPhoto(review_id=review_id, img_url=f) for f in filenames]
             self.db.add_all(add_data)
             self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
+    async def check_like_review(self, user_id: int, review_id: int):
+        """리뷰에 대한 좋아요여부 체크하는 쿼리."""
+
+        try:
+            review = (
+                self.db.query(ReviewLike)
+                .filter(
+                    ReviewLike.review_id == review_id, ReviewLike.user_id == user_id
+                )
+                .first()
+            )
+
+            if review:
+                raise AlreadyLikedException()
+        except AlreadyLikedException:
+            raise
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def like_review(self, user_id: int, review_id: int):
+        """리뷰 좋아요 쿼리."""
+
+        try:
+            review = ReviewLike(user_id=user_id, review_id=review_id)
+            self.db.add(review)
+            self.db.flush()
+        except Exception as e:
+            self.db.rollback()
+            raise UnknownException(detail=str(e))
+
+    async def update_like_review(self, review_id: int):
+        try:
+            review = self.db.query(Review).filter(Review.id == review_id).first()
+            review.like_count += 1
+            self.db.commit()
+
         except Exception as e:
             self.db.rollback()
             raise UnknownException(detail=str(e))
