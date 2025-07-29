@@ -134,7 +134,7 @@ class AlreadyDislikedException(CustomException):
 
     STATUS_CODE = status.HTTP_409_CONFLICT
     ERROR_CODE = ErrorCode.ALREADY_DISLIKED
-    DEFAULT_MESSAGE = "이미 좋아요를 해제셨습니다."
+    DEFAULT_MESSAGE = "이미 좋아요를 해제하셨습니다."
 
 
 async def exception_handler(_, exc: Exception):
@@ -183,3 +183,5 @@ ERROR_INVALID_FILE_CONTENT_TYPE = build_error_response(InvalidImageFileException
 ERROR_CONVERT_IMAGE = build_error_response(ConvertImageException)
 ERROR_UPLOAD_IMAGE = build_error_response(UploadImageException)
 ERROR_REVIEW_LIMIT_EXCEED = build_error_response(DailyReviewLimitExceededExecption)
+ERROR_ALREADY_LIKED = build_error_response(AlreadyLikedException)
+ERROR_ALREADY_DISLIKED = build_error_response(AlreadyDislikedException)

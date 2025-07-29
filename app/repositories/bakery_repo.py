@@ -3,7 +3,12 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
 from app.core.const import ETC_MENU_NAME
-from app.core.exception import NotFoundException, UnknownException
+from app.core.exception import (
+    AlreadyDislikedException,
+    AlreadyLikedException,
+    NotFoundException,
+    UnknownException,
+)
 from app.model.bakery import (
     Bakery,
     BakeryMenu,
@@ -609,3 +614,65 @@ class BakeryRepository:
 
         except Exception as e:
             raise UnknownException(str(e))
+
+    async def check_already_liked_bakery(self, user_id: int, bakery_id: int):
+        try:
+            is_liked = (
+                self.db.query(UserBakeryLikes)
+                .filter(
+                    UserBakeryLikes.user_id == user_id,
+                    UserBakeryLikes.bakery_id == bakery_id,
+                )
+                .first()
+            )
+
+            if is_liked:
+                raise AlreadyLikedException()
+        except AlreadyDislikedException:
+            raise
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def like_bakery(self, user_id: int, bakery_id: int):
+        """베이커리 찜하는 쿼리."""
+        try:
+            like_bakery = UserBakeryLikes(user_id=user_id, bakery_id=bakery_id)
+
+            self.db.add(like_bakery)
+            self.db.commit()
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def check_already_disliked_bakery(self, user_id: int, bakery_id: int):
+        try:
+            is_liked = (
+                self.db.query(UserBakeryLikes)
+                .filter(
+                    UserBakeryLikes.user_id == user_id,
+                    UserBakeryLikes.bakery_id == bakery_id,
+                )
+                .first()
+            )
+
+            if not is_liked:
+                raise AlreadyDislikedException()
+        except AlreadyDislikedException:
+            raise
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def dislike_bakery(self, user_id: int, bakery_id: int):
+        """베이커리 찜 해제하는 쿼리."""
+
+        try:
+            like_bakery = (
+                self.db.query(UserBakeryLikes)
+                .filter_by(user_id=user_id, bakery_id=bakery_id)
+                .first()
+            )
+
+            if like_bakery:
+                self.db.delete(like_bakery)
+                self.db.commit()
+        except Exception as e:
+            raise UnknownException(detail=str(e))

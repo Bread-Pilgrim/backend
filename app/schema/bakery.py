@@ -128,3 +128,8 @@ class VisitedBakery(CommonBakery):
 class VisitedBakeryResponseDTO(BaseModel):
     items: List[VisitedBakery]
     paging: Paging
+
+
+class BakeryLikeResponseDTO(BaseModel):
+    is_like: bool = Field(..., description="찜여부")
+    bakery_id: int = Field(..., description="빵집 id")

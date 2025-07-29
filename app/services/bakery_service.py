@@ -219,3 +219,26 @@ class BakeryService:
                 has_next=has_next,
             ),
         )
+
+    async def like_bakery(self, user_id: int, bakery_id: int):
+        """베이커리 찜하는 비즈니스 로직."""
+        bakery_repo = BakeryRepository(db=self.db)
+
+        # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
+        await bakery_repo.check_already_liked_bakery(
+            user_id=user_id,
+            bakery_id=bakery_id,
+        )
+        # 2. 해당 베이커리 찜하기
+        await bakery_repo.like_bakery(user_id=user_id, bakery_id=bakery_id)
+
+    async def dislike_bakery(self, user_id: int, bakery_id: int):
+        """베이커리 찜하는 비즈니스 로직."""
+        bakery_repo = BakeryRepository(db=self.db)
+
+        # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
+        await bakery_repo.check_already_disliked_bakery(
+            user_id=user_id, bakery_id=bakery_id
+        )
+        # 2. 해당 베이커리 찜 삭제
+        await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)

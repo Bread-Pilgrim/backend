@@ -6,6 +6,8 @@ from app.core.auth import get_user_id, verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import (
+    ERROR_ALREADY_DISLIKED,
+    ERROR_ALREADY_LIKED,
     ERROR_CONVERT_IMAGE,
     ERROR_INVALID_AREA_CODE,
     ERROR_INVALID_FILE_CONTENT_TYPE,
@@ -16,6 +18,7 @@ from app.core.exception import (
 )
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
+    BakeryLikeResponseDTO,
     LoadMoreBakeryResponseDTO,
     RecommendBakery,
     SimpleBakeryMenu,
@@ -280,3 +283,36 @@ async def write_bakery_review(
     )
 
     return BaseResponse()
+
+
+@router.post(
+    "/{bakery_id}/like",
+    response_model=BaseResponse[BakeryLikeResponseDTO],
+    responses={**ERROR_UNKNOWN, **ERROR_ALREADY_LIKED},
+)
+async def like_bakery(
+    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """베이커리 찜하는 API"""
+
+    await BakeryService(db=db).like_bakery(
+        user_id=user_id,
+        bakery_id=bakery_id,
+    )
+
+    return BaseResponse(data=BakeryLikeResponseDTO(is_like=True, bakery_id=bakery_id))
+
+
+@router.delete(
+    "/{bakery_id}/like",
+    response_model=BaseResponse[BakeryLikeResponseDTO],
+    responses={**ERROR_UNKNOWN, **ERROR_ALREADY_DISLIKED},
+)
+async def dislike_bakery(
+    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """베이커리 찜취소 하는 API"""
+
+    await BakeryService(db=db).dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+
+    return BaseResponse(data=BakeryLikeResponseDTO(is_like=False, bakery_id=bakery_id))
