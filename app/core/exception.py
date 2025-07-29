@@ -129,6 +129,14 @@ class AlreadyLikedException(CustomException):
     DEFAULT_MESSAGE = "이미 좋아요를 누르셨습니다."
 
 
+class AlreadyDislikedException(CustomException):
+    """이미 좋아요 해제했을 때, 발생하는 Exception"""
+
+    STATUS_CODE = status.HTTP_409_CONFLICT
+    ERROR_CODE = ErrorCode.ALREADY_DISLIKED
+    DEFAULT_MESSAGE = "이미 좋아요를 해제셨습니다."
+
+
 async def exception_handler(_, exc: Exception):
     """CustomException 예외 발생 시 처리"""
 

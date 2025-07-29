@@ -23,3 +23,5 @@ class ErrorCode:
     REVIEW_LIMIT_EXCEED = 1011
     # 이미 좋아요 누름
     ALREADY_LIKED = 1012
+    # 이미 좋아요 해제함
+    ALREADY_DISLIKED = 1013

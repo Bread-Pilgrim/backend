@@ -4,6 +4,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api import auth, bakery, common, preferences, review, search, test, tour, users
 from app.core.exception import (
+    AlreadyDislikedException,
     AlreadyLikedException,
     ConvertImageException,
     DailyReviewLimitExceededExecption,
@@ -62,5 +63,6 @@ app.add_exception_handler(ConvertImageException, exception_handler)
 app.add_exception_handler(UploadImageException, exception_handler)
 app.add_exception_handler(DailyReviewLimitExceededExecption, exception_handler)
 app.add_exception_handler(AlreadyLikedException, exception_handler)
+app.add_exception_handler(AlreadyDislikedException, exception_handler)
 
 Instrumentator().instrument(app).expose(app)
