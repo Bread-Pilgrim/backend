@@ -83,12 +83,14 @@ class Review:
                     )
                     for r in review_infos
                 ],
-                paging=Paging(next_cursor=next_cursor, has_next=has_next),
+                paging=Paging(
+                    prev_cursor=cursor_value, next_cursor=next_cursor, has_next=has_next
+                ),
             )
 
         return BakeryReviewReponseDTO(
             items=[],
-            paging=Paging(next_cursor=None, has_next=False),
+            paging=Paging(prev_cursor=cursor_value, next_cursor=None, has_next=False),
         )
 
     async def get_my_reviews_by_bakery_id(
@@ -134,6 +136,7 @@ class Review:
                     for r in review_infos
                 ],
                 paging=Paging(
+                    prev_cursor=cursor_value,
                     next_cursor=to_cursor_str(review_infos[-1].review_id),
                     has_next=has_next,
                 ),
@@ -142,6 +145,7 @@ class Review:
         return BakeryMyReviewReponseDTO(
             items=[],
             paging=Paging(
+                prev_cursor=cursor_value,
                 next_cursor=None,
                 has_next=False,
             ),

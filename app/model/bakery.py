@@ -33,6 +33,7 @@ class Bakery(Base, DateTimeMixin):
     )
     avg_rating = Column(Float, default=0, comment="평균 별점")
     review_count = Column(Integer, default=0, comment="리뷰 개수")
+    thumbnail = Column(Text, default=None, comment="빵집 썸네일")
 
 
 class BakeryMenu(Base, DateTimeMixin):
