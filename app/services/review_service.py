@@ -167,12 +167,14 @@ class Review:
 
         # TODO redis
         # 1. 오늘 작성한 리뷰가 있는지 체크
-        reviewed_today = await review_repo.get_today_review(
-            user_id=user_id, bakery_id=bakery_id
-        )
+        # TODO 테스트 유저 조건 제거하기
+        if user_id != 2:
+            reviewed_today = await review_repo.get_today_review(
+                user_id=user_id, bakery_id=bakery_id
+            )
 
-        if reviewed_today:
-            raise DailyReviewLimitExceededExecption()
+            if reviewed_today:
+                raise DailyReviewLimitExceededExecption()
 
         # 2. consumed_menus 직렬화
         consumed_menus_json = json.loads(consumed_menus)
