@@ -116,6 +116,13 @@ class SimpleBakeryMenu(BaseModel):
 class VisitedBakery(CommonBakery):
     """방문한 빵집"""
 
+    gu: str = Field(..., description="베이커리 자치구")
+    dong: str = Field(..., description="베이커리 동")
     signature_menus: Optional[List[BakeryMenu]] = Field(
         default=[], description="시그니처 메뉴"
     )
+
+
+class VisitedBakeryResponseDTO(BaseModel):
+    items: List[VisitedBakery]
+    paging: Paging

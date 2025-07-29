@@ -30,6 +30,16 @@ class SearchService:
             page_size=page_size,
         )
 
+        if not bakeries:
+            return SearchBakeryResponseDTO(
+                items=[],
+                paging=Paging(
+                    prev_cursor=cursor_value,
+                    next_cursor=None,
+                    has_next=False,
+                ),
+            )
+
         # 2. 베이커리 메뉴 검색
         menus = await BakeryRepository(db=self.db).get_signature_menus(
             bakery_ids=[b.bakery_id for b in bakeries]

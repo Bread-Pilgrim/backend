@@ -1,4 +1,4 @@
-from sqlalchemy import and_, select
+from sqlalchemy import and_, desc, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
@@ -12,6 +12,7 @@ from app.model.bakery import (
     MenuPhoto,
     OperatingHour,
 )
+from app.model.review import Review
 from app.model.users import UserBakeryLikes, UserPreferences
 from app.schema.bakery import (
     BakeryDetail,
@@ -20,6 +21,7 @@ from app.schema.bakery import (
     LoadMoreBakery,
     RecommendBakery,
     SimpleBakeryMenu,
+    VisitedBakery,
 )
 from app.utils.converter import operating_hours_to_open_status
 
@@ -530,3 +532,80 @@ class BakeryRepository:
             return menus
         except Exception as e:
             raise UnknownException(detail=str(e))
+
+    async def get_visited_bakery(
+        self, user_id: int, target_day_of_week: int, cursor_value: str, page_size: int
+    ):
+        """방문한 빵집 (내가 리뷰 쓴 빵집 ) 조회하는 쿼리."""
+
+        try:
+            stmt = (
+                select(
+                    Bakery.id,
+                    Bakery.name,
+                    Bakery.gu,
+                    Bakery.dong,
+                    Bakery.avg_rating,
+                    Bakery.review_count,
+                    Bakery.thumbnail,
+                    OperatingHour.is_opened,
+                    OperatingHour.open_time,
+                    OperatingHour.close_time,
+                    UserBakeryLikes.user_id,
+                )
+                .join(BakeryMenu, BakeryMenu.bakery_id == Bakery.id)
+                .join(
+                    Review,
+                    and_(
+                        Review.bakery_id == Bakery.id,
+                        Review.user_id == user_id,
+                    ),
+                )
+                .join(
+                    OperatingHour,
+                    and_(
+                        OperatingHour.bakery_id == Bakery.id,
+                        OperatingHour.day_of_week == target_day_of_week,
+                    ),
+                    isouter=True,
+                )
+                .join(
+                    UserBakeryLikes,
+                    and_(
+                        UserBakeryLikes.bakery_id == Bakery.id,
+                        UserBakeryLikes.user_id == user_id,
+                    ),
+                    isouter=True,
+                )
+                .order_by(desc(Bakery.id))
+                .distinct(Bakery.id)
+                .limit(page_size + 1)
+            )
+
+            if cursor_value != "0":
+                stmt = stmt.where(Bakery.id > int(cursor_value))
+
+            res = self.db.execute(stmt).all()
+            has_next = len(res) > page_size
+
+            return [
+                VisitedBakery(
+                    bakery_id=r.id,
+                    bakery_name=r.name,
+                    avg_rating=r.avg_rating,
+                    review_count=r.review_count,
+                    gu=r.gu,
+                    dong=r.dong,
+                    img_url=r.thumbnail,
+                    is_like=True if r.user_id else False,
+                    open_status=operating_hours_to_open_status(
+                        is_opened=r.is_opened,
+                        close_time=r.close_time,
+                        open_time=r.open_time,
+                    ),
+                )
+                for r in res
+            ], has_next
+
+        except Exception as e:
+            raise UnknownException(str(e))
