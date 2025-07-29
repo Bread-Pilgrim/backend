@@ -43,6 +43,8 @@ class BakeryMenu(BaseModel):
 class LoadMoreBakery(CommonBakery):
     """더보기 빵집 모델."""
 
+    gu: str = Field(..., description="베이커리 자치구")
+    dong: str = Field(..., description="베이커리 동")
     commercial_area_id: int = Field(
         ...,
         description="베이커리 상권지역코드 - 상세보기 클릭시 근처 관광지 추천에 필요",

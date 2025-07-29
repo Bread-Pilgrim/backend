@@ -21,3 +21,5 @@ class ErrorCode:
     FAIL_UPLOAD_FILE = 1010
     # 리뷰 작성 개수 초과
     REVIEW_LIMIT_EXCEED = 1011
+    # 이미 좋아요 누름
+    ALREADY_LIKED = 1012

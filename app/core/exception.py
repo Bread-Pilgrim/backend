@@ -114,9 +114,19 @@ class UploadImageException(CustomException):
 
 
 class DailyReviewLimitExceededExecption(CustomException):
+    """오늘 작성한 리뷰가 있을 경우에 발생하는 Exception"""
+
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
     ERROR_CODE = ErrorCode.REVIEW_LIMIT_EXCEED
     DEFAULT_MESSAGE = "오늘은 이미 리뷰를 작성하셨어요."
+
+
+class AlreadyLikedException(CustomException):
+    """이미 좋아요를 눌렀는데, 또 좋아요하려고 할 때 발생하는 Exception"""
+
+    STATUS_CODE = status.HTTP_409_CONFLICT
+    ERROR_CODE = ErrorCode.ALREADY_LIKED
+    DEFAULT_MESSAGE = "이미 좋아요를 누르셨습니다."
 
 
 async def exception_handler(_, exc: Exception):
