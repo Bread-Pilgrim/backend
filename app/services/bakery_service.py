@@ -1,17 +1,14 @@
-from collections import defaultdict
-from datetime import datetime
-
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import NotFoundException
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
-    LoadMoreBakery,
     LoadMoreBakeryResponseDTO,
+    VisitedBakeryResponseDTO,
 )
 from app.schema.common import Paging
-from app.utils.converter import to_cursor_str
+from app.utils.converter import merge_menus_with_bakeries, to_cursor_str
 from app.utils.date import get_now_by_timezone
 from app.utils.parser import parse_comma_to_list
 from app.utils.validator import validate_area_code
@@ -20,19 +17,6 @@ from app.utils.validator import validate_area_code
 class BakeryService:
     def __init__(self, db: Session) -> None:
         self.db = db
-
-    @staticmethod
-    def __merge_menus_with_bakeries(bakeries: list[LoadMoreBakery], menus: list):
-        """베이커리 정보와 시그니처 메뉴 병합하는 메소드."""
-
-        menu_map = defaultdict(list)
-        for m in menus:
-            menu_map[m["bakery_id"]].append({"menu_name": m["menu_name"]})
-
-        return [
-            b.model_copy(update={"signature_menus": menu_map.get(b.bakery_id, [])})
-            for b in bakeries
-        ]
 
     async def get_recommend_bakeries_by_preference(self, area_code: str, user_id: int):
         """(홈) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
@@ -79,7 +63,9 @@ class BakeryService:
         if not bakeries:
             return LoadMoreBakeryResponseDTO(
                 items=[],
-                paging=Paging(next_cursor=None, has_next=False),
+                paging=Paging(
+                    prev_cursor=cursor_value, next_cursor=None, has_next=False
+                ),
             )
 
         # 베이커리 시그니처 메뉴 정보 조회
@@ -88,12 +74,14 @@ class BakeryService:
         )
 
         # 베이커리 정보 + 시그니처 메뉴 정보 병합
-        bakery_infos = self.__merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
         return LoadMoreBakeryResponseDTO(
             items=bakery_infos,
             paging=Paging(
-                next_cursor=to_cursor_str(bakeries[-1].bakery_id), has_next=has_next
+                prev_cursor=cursor_value,
+                next_cursor=to_cursor_str(bakeries[-1].bakery_id),
+                has_next=has_next,
             ),
         )
 
@@ -134,7 +122,9 @@ class BakeryService:
         if not bakeries:
             return LoadMoreBakeryResponseDTO(
                 items=[],
-                paging=Paging(next_cursor=None, has_next=False),
+                paging=Paging(
+                    prev_cursor=cursor_value, next_cursor=None, has_next=False
+                ),
             )
 
         # 빵 시그니처 메뉴 정보
@@ -142,12 +132,14 @@ class BakeryService:
             bakery_ids=[b.bakery_id for b in bakeries]
         )
 
-        bakery_infos = self.__merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
         return LoadMoreBakeryResponseDTO(
             items=bakery_infos,
             paging=Paging(
-                next_cursor=to_cursor_str(bakeries[-1].bakery_id), has_next=has_next
+                prev_cursor=cursor_value,
+                next_cursor=to_cursor_str(bakeries[-1].bakery_id),
+                has_next=has_next,
             ),
         )
 
@@ -187,3 +179,66 @@ class BakeryService:
 
     async def get_bakery_menus(self, bakery_id: int):
         return await BakeryRepository(db=self.db).get_bakery_menus(bakery_id=bakery_id)
+
+    async def get_visited_bakery(self, user_id: int, cursor_value: str, page_size: int):
+
+        bakery_repo = BakeryRepository(db=self.db)
+
+        # 1. 베이커리 검색
+        target_day_of_week = get_now_by_timezone().weekday()
+
+        bakeries, has_next = await bakery_repo.get_visited_bakery(
+            user_id=user_id,
+            target_day_of_week=target_day_of_week,
+            cursor_value=cursor_value,
+            page_size=page_size,
+        )
+
+        if not bakeries:
+            return VisitedBakeryResponseDTO(
+                items=[],
+                paging=Paging(
+                    prev_cursor=cursor_value,
+                    next_cursor=None,
+                    has_next=False,
+                ),
+            )
+
+        # 2. 시그니처 메뉴 검색
+        menus = await bakery_repo.get_signature_menus(
+            bakery_ids=[b.bakery_id for b in bakeries]
+        )
+
+        bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+
+        return VisitedBakeryResponseDTO(
+            items=bakery_info,
+            paging=Paging(
+                prev_cursor=cursor_value,
+                next_cursor=to_cursor_str(bakeries[-1].bakery_id),
+                has_next=has_next,
+            ),
+        )
+
+    async def like_bakery(self, user_id: int, bakery_id: int):
+        """베이커리 찜하는 비즈니스 로직."""
+        bakery_repo = BakeryRepository(db=self.db)
+
+        # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
+        await bakery_repo.check_already_liked_bakery(
+            user_id=user_id,
+            bakery_id=bakery_id,
+        )
+        # 2. 해당 베이커리 찜하기
+        await bakery_repo.like_bakery(user_id=user_id, bakery_id=bakery_id)
+
+    async def dislike_bakery(self, user_id: int, bakery_id: int):
+        """베이커리 찜하는 비즈니스 로직."""
+        bakery_repo = BakeryRepository(db=self.db)
+
+        # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
+        await bakery_repo.check_already_disliked_bakery(
+            user_id=user_id, bakery_id=bakery_id
+        )
+        # 2. 해당 베이커리 찜 삭제
+        await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)

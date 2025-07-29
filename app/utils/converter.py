@@ -1,4 +1,5 @@
 import uuid
+from collections import defaultdict
 from datetime import datetime, time
 from io import BytesIO
 from typing import List, Optional
@@ -143,3 +144,16 @@ async def convert_img_to_webp(img_list: List[UploadFile]):
     except Exception as e:
         print(str(e))
     return upload_files
+
+
+def merge_menus_with_bakeries(bakeries: list, menus: list):
+    """베이커리 정보와 시그니처 메뉴 병합하는 메소드."""
+
+    menu_map = defaultdict(list)
+    for m in menus:
+        menu_map[m["bakery_id"]].append({"menu_name": m["menu_name"]})
+
+    return [
+        b.model_copy(update={"signature_menus": menu_map.get(b.bakery_id, [])})
+        for b in bakeries
+    ]

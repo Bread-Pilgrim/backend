@@ -83,12 +83,14 @@ class Review:
                     )
                     for r in review_infos
                 ],
-                paging=Paging(next_cursor=next_cursor, has_next=has_next),
+                paging=Paging(
+                    prev_cursor=cursor_value, next_cursor=next_cursor, has_next=has_next
+                ),
             )
 
         return BakeryReviewReponseDTO(
             items=[],
-            paging=Paging(next_cursor=None, has_next=False),
+            paging=Paging(prev_cursor=cursor_value, next_cursor=None, has_next=False),
         )
 
     async def get_my_reviews_by_bakery_id(
@@ -134,6 +136,7 @@ class Review:
                     for r in review_infos
                 ],
                 paging=Paging(
+                    prev_cursor=cursor_value,
                     next_cursor=to_cursor_str(review_infos[-1].review_id),
                     has_next=has_next,
                 ),
@@ -142,6 +145,7 @@ class Review:
         return BakeryMyReviewReponseDTO(
             items=[],
             paging=Paging(
+                prev_cursor=cursor_value,
                 next_cursor=None,
                 has_next=False,
             ),
@@ -163,12 +167,14 @@ class Review:
 
         # TODO redis
         # 1. 오늘 작성한 리뷰가 있는지 체크
-        reviewed_today = await review_repo.get_today_review(
-            user_id=user_id, bakery_id=bakery_id
-        )
+        # TODO 테스트 유저 조건 제거하기
+        if user_id != 2:
+            reviewed_today = await review_repo.get_today_review(
+                user_id=user_id, bakery_id=bakery_id
+            )
 
-        if reviewed_today:
-            raise DailyReviewLimitExceededExecption()
+            if reviewed_today:
+                raise DailyReviewLimitExceededExecption()
 
         # 2. consumed_menus 직렬화
         consumed_menus_json = json.loads(consumed_menus)
@@ -210,3 +216,25 @@ class Review:
             await review_repo.bulk_insert_review_imgs(
                 review_id=review_id, filenames=filenames
             )
+
+    async def like_review(self, user_id: int, review_id: int):
+        """리뷰 좋아요를 하는 비즈니스 로직."""
+
+        review_repo = ReviewRepository(db=self.db)
+
+        # 1. 이미 리뷰에 대한 좋아요 여부 체크
+        await review_repo.check_like_review(user_id=user_id, review_id=review_id)
+        # 2. 리뷰 좋아여
+        await review_repo.like_review(user_id=user_id, review_id=review_id)
+        # 3. 베이커리의 리뷰 개수 update
+        await review_repo.update_like_review(review_id=review_id, count_value=1)
+
+    async def dislike_review(self, user_id: int, review_id: int):
+        review_repo = ReviewRepository(db=self.db)
+
+        # 1. 이미 리뷰에 대한 좋아요 해지여부 체크
+        await review_repo.check_dislike_review(user_id=user_id, review_id=review_id)
+        # 2. 리뷰 좋아요 해지
+        await review_repo.dislike_review(user_id=user_id, review_id=review_id)
+        # 3. 베이커리의 리뷰 개수 update
+        await review_repo.update_like_review(review_id=review_id, count_value=-1)

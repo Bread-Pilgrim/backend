@@ -6,6 +6,8 @@ from app.core.auth import get_user_id, verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import (
+    ERROR_ALREADY_DISLIKED,
+    ERROR_ALREADY_LIKED,
     ERROR_CONVERT_IMAGE,
     ERROR_INVALID_AREA_CODE,
     ERROR_INVALID_FILE_CONTENT_TYPE,
@@ -16,6 +18,7 @@ from app.core.exception import (
 )
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
+    BakeryLikeResponseDTO,
     LoadMoreBakeryResponseDTO,
     RecommendBakery,
     SimpleBakeryMenu,
@@ -128,6 +131,24 @@ async def get_hot_bakeries(
     return BaseResponse(
         data=await BakeryService(db=db).get_hot_bakeries(
             area_code=area_code, cursor_value=cursor_value, page_size=page_size
+        )
+    )
+
+
+@router.get("/visited")
+async def get_visited_bakery(
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
+    ),
+    page_size: int = Query(default=5),
+    user_id: int = Depends(get_user_id),
+    db=Depends(get_db),
+):
+
+    return BaseResponse(
+        data=await BakeryService(db=db).get_visited_bakery(
+            user_id=user_id, cursor_value=cursor_value, page_size=page_size
         )
     )
 
@@ -262,3 +283,36 @@ async def write_bakery_review(
     )
 
     return BaseResponse()
+
+
+@router.post(
+    "/{bakery_id}/like",
+    response_model=BaseResponse[BakeryLikeResponseDTO],
+    responses={**ERROR_UNKNOWN, **ERROR_ALREADY_LIKED},
+)
+async def like_bakery(
+    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """베이커리 찜하는 API"""
+
+    await BakeryService(db=db).like_bakery(
+        user_id=user_id,
+        bakery_id=bakery_id,
+    )
+
+    return BaseResponse(data=BakeryLikeResponseDTO(is_like=True, bakery_id=bakery_id))
+
+
+@router.delete(
+    "/{bakery_id}/like",
+    response_model=BaseResponse[BakeryLikeResponseDTO],
+    responses={**ERROR_UNKNOWN, **ERROR_ALREADY_DISLIKED},
+)
+async def dislike_bakery(
+    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """베이커리 찜취소 하는 API"""
+
+    await BakeryService(db=db).dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+
+    return BaseResponse(data=BakeryLikeResponseDTO(is_like=False, bakery_id=bakery_id))
