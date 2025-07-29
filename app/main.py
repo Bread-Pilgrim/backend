@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api import auth, bakery, common, preferences, review, test, tour, users
+from app.api import auth, bakery, common, preferences, review, search, test, tour, users
 from app.core.exception import (
     ConvertImageException,
     DailyReviewLimitExceededExecption,
@@ -45,6 +45,7 @@ app.include_router(bakery.router)
 app.include_router(tour.router)
 app.include_router(common.router)
 app.include_router(review.router)
+app.include_router(search.router)
 
 # Exception
 app.add_exception_handler(UnknownException, exception_handler)
