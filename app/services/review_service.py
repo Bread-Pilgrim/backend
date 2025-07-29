@@ -227,4 +227,14 @@ class Review:
         # 2. 리뷰 좋아여
         await review_repo.like_review(user_id=user_id, review_id=review_id)
         # 3. 베이커리의 리뷰 개수 update
-        await review_repo.update_like_review(review_id=review_id)
+        await review_repo.update_like_review(review_id=review_id, count_value=1)
+
+    async def dislike_review(self, user_id: int, review_id: int):
+        review_repo = ReviewRepository(db=self.db)
+
+        # 1. 이미 리뷰에 대한 좋아요 해지여부 체크
+        await review_repo.check_dislike_review(user_id=user_id, review_id=review_id)
+        # 2. 리뷰 좋아요 해지
+        await review_repo.dislike_review(user_id=user_id, review_id=review_id)
+        # 3. 베이커리의 리뷰 개수 update
+        await review_repo.update_like_review(review_id=review_id, count_value=-1)

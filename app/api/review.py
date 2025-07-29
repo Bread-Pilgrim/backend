@@ -24,6 +24,13 @@ async def like_bakery(
     return BaseResponse(data=ReviewLikeResponseDTO(is_like=True, review_id=review_id))
 
 
-@router.delete("/{review_id}/like")
-async def dislike_bakery():
-    pass
+@router.delete(
+    "/{review_id}/like",
+    response_model=BaseResponse[ReviewLikeResponseDTO],
+    responses=ERROR_UNKNOWN,
+)
+async def dislike_bakery(
+    review_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    await Review(db=db).dislike_review(user_id=user_id, review_id=review_id)
+    return BaseResponse(data=ReviewLikeResponseDTO(is_like=False, review_id=review_id))
