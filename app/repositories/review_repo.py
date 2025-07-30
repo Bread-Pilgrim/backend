@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.exception import (
@@ -115,7 +115,15 @@ class ReviewRepository:
         )
         order_by = build_order_by(sort_column, direction)
 
-        filters = [Review.bakery_id == bakery_id]
+        filters = [
+            and_(
+                Review.bakery_id == bakery_id,
+                or_(
+                    Review.is_private == False,
+                    and_(Review.is_private == True, Review.user_id == user_id),
+                ),
+            )
+        ]
         if cursor_filter is not None:
             filters.append(cursor_filter)
 

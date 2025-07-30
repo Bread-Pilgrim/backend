@@ -37,7 +37,7 @@ def build_cursor_filter(sort_column, sort_value, cursor_id, direction):
     if direction == "desc":
         return or_(
             sort_column < sort_value,
-            and_(sort_column == sort_value, Review.id > cursor_id),
+            and_(sort_column == sort_value, Review.id < cursor_id),
         )
     else:
         return or_(
@@ -52,7 +52,7 @@ def build_order_by(sort_column, direction):
     if direction == "desc":
         return [desc(sort_column), desc(Review.id)]
     else:
-        return [asc(sort_column), asc(Review.id)]
+        return [asc(sort_column), desc(Review.id)]
 
 
 def build_cursor(sort_value, review_id):
