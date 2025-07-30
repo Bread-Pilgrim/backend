@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import and_, desc, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
@@ -23,10 +25,10 @@ from app.schema.bakery import (
     BakeryDetail,
     BakeryDetailResponseDTO,
     BakeryOperatingHour,
+    GuDongMenuBakery,
     LoadMoreBakery,
     RecommendBakery,
     SimpleBakeryMenu,
-    VisitedBakery,
 )
 from app.utils.converter import operating_hours_to_open_status
 
@@ -594,7 +596,7 @@ class BakeryRepository:
             has_next = len(res) > page_size
 
             return [
-                VisitedBakery(
+                GuDongMenuBakery(
                     bakery_id=r.id,
                     bakery_name=r.name,
                     avg_rating=r.avg_rating,
@@ -614,6 +616,26 @@ class BakeryRepository:
 
         except Exception as e:
             raise UnknownException(str(e))
+
+    async def get_reviews_written_today(
+        self, user_id: int, bakery_id: int, start_time: datetime, end_time: datetime
+    ):
+        """해당 베이커리에 오늘 유저가 작성한 리뷰 조회하는 쿼리."""
+        try:
+            written_review = (
+                self.db.query(Review)
+                .filter(
+                    Review.user_id == user_id,
+                    Review.bakery_id == bakery_id,
+                    start_time <= Review.created_at,
+                    end_time >= Review.created_at,
+                )
+                .first()
+            )
+
+            return True if written_review else False
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def check_already_liked_bakery(self, user_id: int, bakery_id: int):
         try:
@@ -677,4 +699,72 @@ class BakeryRepository:
                 self.db.commit()
         except Exception as e:
             self.db.rollback()
+            raise UnknownException(detail=str(e))
+
+    async def get_like_bakeries(
+        self, user_id: int, target_day_of_week: int, cursor_value: str, page_size: int
+    ):
+        """찜한 베이커리 조회하는 쿼리."""
+
+        try:
+            stmt = (
+                select(
+                    Bakery.id,
+                    Bakery.name,
+                    Bakery.avg_rating,
+                    Bakery.review_count,
+                    Bakery.gu,
+                    Bakery.dong,
+                    Bakery.thumbnail,
+                    OperatingHour.close_time,
+                    OperatingHour.open_time,
+                    OperatingHour.is_opened,
+                )
+                .select_from(Bakery)
+                .join(
+                    UserBakeryLikes,
+                    and_(
+                        UserBakeryLikes.bakery_id == Bakery.id,
+                        UserBakeryLikes.user_id == user_id,
+                    ),
+                )
+                .join(
+                    OperatingHour,
+                    and_(
+                        OperatingHour.bakery_id == Bakery.id,
+                        OperatingHour.day_of_week == target_day_of_week,
+                    ),
+                    isouter=True,
+                )
+                .order_by(desc(Bakery.id))
+                .distinct(Bakery.id)
+                .limit(page_size + 1)
+            )
+
+            if cursor_value != "0":
+                stmt = stmt.where(Bakery.id > int(cursor_value))
+
+            res = self.db.execute(stmt).all()
+            has_next = len(res) > page_size
+
+            return [
+                GuDongMenuBakery(
+                    bakery_id=r.id,
+                    bakery_name=r.name,
+                    avg_rating=r.avg_rating,
+                    review_count=r.review_count,
+                    gu=r.gu,
+                    dong=r.dong,
+                    img_url=r.thumbnail,
+                    is_like=True,
+                    open_status=operating_hours_to_open_status(
+                        is_opened=r.is_opened,
+                        close_time=r.close_time,
+                        open_time=r.open_time,
+                    ),
+                )
+                for r in res
+            ], has_next
+
+        except Exception as e:
             raise UnknownException(detail=str(e))

@@ -21,6 +21,9 @@ class Review(Base, DateTimeMixin):
         comment="나만보기 여부 (True : 나만공개 / False : 전체공개)",
     )
     like_count = Column(Integer, nullable=False, default=0, comment="좋아요 개수")
+    day_of_week = Column(
+        Integer, nullable=False, default=0, comment="요일 : 월 0 ~ 일 6"
+    )
 
 
 class ReviewPhoto(Base):

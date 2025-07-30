@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.exception import (
@@ -115,7 +115,15 @@ class ReviewRepository:
         )
         order_by = build_order_by(sort_column, direction)
 
-        filters = [Review.bakery_id == bakery_id]
+        filters = [
+            and_(
+                Review.bakery_id == bakery_id,
+                or_(
+                    Review.is_private == False,
+                    and_(Review.is_private == True, Review.user_id == user_id),
+                ),
+            )
+        ]
         if cursor_filter is not None:
             filters.append(cursor_filter)
 
@@ -212,6 +220,7 @@ class ReviewRepository:
         content: str,
         is_private: bool,
         user_id: int,
+        target_day_of_week: int,
     ):
         """리뷰 정보 insert하는 쿼리"""
 
@@ -224,6 +233,7 @@ class ReviewRepository:
                 user_id=user_id,
                 like_count=0,
                 visit_date=get_now_by_timezone(tz="UTC"),
+                day_of_week=target_day_of_week,
             )
 
             self.db.add(review_info)

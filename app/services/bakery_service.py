@@ -4,12 +4,13 @@ from app.core.exception import NotFoundException
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
+    GuDongMenuBakeryResponseDTO,
     LoadMoreBakeryResponseDTO,
-    VisitedBakeryResponseDTO,
+    WrittenReview,
 )
 from app.schema.common import Paging
 from app.utils.converter import merge_menus_with_bakeries, to_cursor_str
-from app.utils.date import get_now_by_timezone
+from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
 from app.utils.parser import parse_comma_to_list
 from app.utils.validator import validate_area_code
 
@@ -195,7 +196,7 @@ class BakeryService:
         )
 
         if not bakeries:
-            return VisitedBakeryResponseDTO(
+            return GuDongMenuBakeryResponseDTO(
                 items=[],
                 paging=Paging(
                     prev_cursor=cursor_value,
@@ -211,7 +212,7 @@ class BakeryService:
 
         bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return VisitedBakeryResponseDTO(
+        return GuDongMenuBakeryResponseDTO(
             items=bakery_info,
             paging=Paging(
                 prev_cursor=cursor_value,
@@ -219,6 +220,21 @@ class BakeryService:
                 has_next=has_next,
             ),
         )
+
+    async def check_is_eligible_to_write_review(self, bakery_id: int, user_id: int):
+        """리뷰를 작성해도 되는지 체크하는 비즈니스 로직."""
+
+        start_time = get_today_start()
+        end_time = get_today_end()
+
+        written_review = await BakeryRepository(db=self.db).get_reviews_written_today(
+            user_id=user_id,
+            bakery_id=bakery_id,
+            start_time=start_time,
+            end_time=end_time,
+        )
+
+        return WrittenReview(is_eligible=False if written_review else True)
 
     async def like_bakery(self, user_id: int, bakery_id: int):
         """베이커리 찜하는 비즈니스 로직."""
@@ -242,3 +258,41 @@ class BakeryService:
         )
         # 2. 해당 베이커리 찜 삭제
         await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+
+    async def get_like_bakeries(self, user_id: int, cursor_value: str, page_size: int):
+        """내가 찜한 빵집 조회하는 비즈니스 로직."""
+
+        bakery_repo = BakeryRepository(db=self.db)
+
+        # 1. 베이커리 조회
+        target_day_of_week = get_now_by_timezone().weekday()
+        bakeries, has_next = await bakery_repo.get_like_bakeries(
+            user_id=user_id,
+            target_day_of_week=target_day_of_week,
+            cursor_value=cursor_value,
+            page_size=page_size,
+        )
+
+        if not bakeries:
+            return GuDongMenuBakeryResponseDTO(
+                items=[],
+                paging=Paging(
+                    prev_cursor=cursor_value, next_cursor=None, has_next=False
+                ),
+            )
+
+        # 2. 메뉴 조회
+        menus = await bakery_repo.get_signature_menus(
+            bakery_ids=[b.bakery_id for b in bakeries]
+        )
+
+        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+
+        return GuDongMenuBakeryResponseDTO(
+            items=bakery_infos,
+            paging=Paging(
+                prev_cursor=cursor_value,
+                next_cursor=to_cursor_str(bakeries[-1].bakery_id),
+                has_next=has_next,
+            ),
+        )

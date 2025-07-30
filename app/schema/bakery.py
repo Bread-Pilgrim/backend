@@ -115,7 +115,7 @@ class SimpleBakeryMenu(BaseModel):
     is_signature: bool = Field(..., description="대표메뉴 여부")
 
 
-class VisitedBakery(CommonBakery):
+class GuDongMenuBakery(CommonBakery):
     """방문한 빵집"""
 
     gu: str = Field(..., description="베이커리 자치구")
@@ -125,9 +125,13 @@ class VisitedBakery(CommonBakery):
     )
 
 
-class VisitedBakeryResponseDTO(BaseModel):
-    items: List[VisitedBakery]
+class GuDongMenuBakeryResponseDTO(BaseModel):
+    items: List[GuDongMenuBakery]
     paging: Paging
+
+
+class WrittenReview(BaseModel):
+    is_eligible: bool = Field(..., description="오늘 리뷰 작성가능 여부.")
 
 
 class BakeryLikeResponseDTO(BaseModel):
