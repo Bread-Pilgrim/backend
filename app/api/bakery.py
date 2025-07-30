@@ -208,9 +208,9 @@ async def get_bakery_menus(
 async def get_reviews_by_bakery_id(
     bakery_id: int,
     cursor_value: str = Query(
-        default="0:0",
+        default="0||0",
         description="""
-    처음엔 0:0으로 넘겨주고, 
+    처음엔 0||0으로 넘겨주고, 
     그 다음부턴 response 내 next_cursor값을 입력해주세요.
         """,
     ),

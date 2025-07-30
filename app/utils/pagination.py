@@ -20,10 +20,10 @@ def parse_value(value_str: str, sort_by: str):
 def parse_cursor_value(cursor_value: str, sort_by: str):
     """sort_value:review_id 형태의 커서를 파싱하여 비교 가능한 값으로 분리하는 메소드."""
 
-    if cursor_value == "0:0":
+    if cursor_value == "0||0":
         return None, None
     try:
-        sort_value_str, id_str = cursor_value.split(":")
+        sort_value_str, id_str = cursor_value.split("||")
         return parse_value(sort_value_str, sort_by), int(id_str)
     except Exception:
         raise InvalidSortParameterException()
@@ -58,4 +58,4 @@ def build_order_by(sort_column, direction):
 def build_cursor(sort_value, review_id):
     """다음 페이지 요청 시 넘겨줄 커서 문자열 생성하는 메소드."""
 
-    return f"{sort_value}:{review_id}"
+    return f"{sort_value}||{review_id}"
