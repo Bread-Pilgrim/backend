@@ -679,11 +679,12 @@ class BakeryRepository:
             self.db.rollback()
             raise UnknownException(detail=str(e))
 
-    async def get_like_bakery(
+    async def get_like_bakeries(
         self, user_id: int, target_day_of_week: int, cursor_value: str, page_size: int
     ):
-        try:
+        """찜한 베이커리 조회하는 쿼리."""
 
+        try:
             stmt = (
                 select(
                     Bakery.id,

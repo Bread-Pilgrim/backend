@@ -336,7 +336,7 @@ async def get_like_bakery(
     """내가 찜한 빵집 조회하는 API."""
 
     return BaseResponse(
-        data=await BakeryService(db=db).get_like_bakery(
+        data=await BakeryService(db=db).get_like_bakeries(
             user_id=user_id, cursor_value=cursor_value, page_size=page_size
         )
     )

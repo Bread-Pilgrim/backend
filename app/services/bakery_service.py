@@ -243,14 +243,14 @@ class BakeryService:
         # 2. 해당 베이커리 찜 삭제
         await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
 
-    async def get_like_bakery(self, user_id: int, cursor_value: str, page_size: int):
+    async def get_like_bakeries(self, user_id: int, cursor_value: str, page_size: int):
         """내가 찜한 빵집 조회하는 비즈니스 로직."""
 
         bakery_repo = BakeryRepository(db=self.db)
 
         # 1. 베이커리 조회
         target_day_of_week = get_now_by_timezone().weekday()
-        bakeries, has_next = await bakery_repo.get_like_bakery(
+        bakeries, has_next = await bakery_repo.get_like_bakeries(
             user_id=user_id,
             target_day_of_week=target_day_of_week,
             cursor_value=cursor_value,
