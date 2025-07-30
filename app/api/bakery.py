@@ -23,6 +23,7 @@ from app.schema.bakery import (
     LoadMoreBakeryResponseDTO,
     RecommendBakery,
     SimpleBakeryMenu,
+    WrittenReview,
 )
 from app.schema.review import BakeryMyReviewReponseDTO, BakeryReviewReponseDTO
 from app.services.bakery_service import BakeryService
@@ -150,6 +151,23 @@ async def get_visited_bakery(
     return BaseResponse(
         data=await BakeryService(db=db).get_visited_bakery(
             user_id=user_id, cursor_value=cursor_value, page_size=page_size
+        )
+    )
+
+
+@router.get(
+    "/{bakery_id}/review/eligibility",
+    response_model=BaseResponse[WrittenReview],
+    responses=ERROR_UNKNOWN,
+)
+async def check_is_eligible_to_write_review(
+    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """리뷰 작성 가능여부 체크하는 API."""
+
+    return BaseResponse(
+        data=await BakeryService(db=db).check_is_eligible_to_write_review(
+            bakery_id=bakery_id, user_id=user_id
         )
     )
 

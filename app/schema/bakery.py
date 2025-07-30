@@ -130,6 +130,10 @@ class GuDongMenuBakeryResponseDTO(BaseModel):
     paging: Paging
 
 
+class WrittenReview(BaseModel):
+    is_eligible: bool = Field(..., description="오늘 리뷰 작성가능 여부.")
+
+
 class BakeryLikeResponseDTO(BaseModel):
     is_like: bool = Field(..., description="찜여부")
     bakery_id: int = Field(..., description="빵집 id")

@@ -6,10 +6,11 @@ from app.schema.bakery import (
     BakeryDetailResponseDTO,
     GuDongMenuBakeryResponseDTO,
     LoadMoreBakeryResponseDTO,
+    WrittenReview,
 )
 from app.schema.common import Paging
 from app.utils.converter import merge_menus_with_bakeries, to_cursor_str
-from app.utils.date import get_now_by_timezone
+from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
 from app.utils.parser import parse_comma_to_list
 from app.utils.validator import validate_area_code
 
@@ -219,6 +220,21 @@ class BakeryService:
                 has_next=has_next,
             ),
         )
+
+    async def check_is_eligible_to_write_review(self, bakery_id: int, user_id: int):
+        """리뷰를 작성해도 되는지 체크하는 비즈니스 로직."""
+
+        start_time = get_today_start()
+        end_time = get_today_end()
+
+        written_review = await BakeryRepository(db=self.db).get_reviews_written_today(
+            user_id=user_id,
+            bakery_id=bakery_id,
+            start_time=start_time,
+            end_time=end_time,
+        )
+
+        return WrittenReview(is_eligible=False if written_review else True)
 
     async def like_bakery(self, user_id: int, bakery_id: int):
         """베이커리 찜하는 비즈니스 로직."""
