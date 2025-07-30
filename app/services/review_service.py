@@ -17,6 +17,7 @@ from app.schema.review import (
     ReviewPhoto,
 )
 from app.utils.converter import convert_img_to_webp, to_cursor_str
+from app.utils.date import get_now_by_timezone
 from app.utils.pagination import build_cursor
 from app.utils.parser import build_sort_clause
 from app.utils.upload import upload_multiple_to_supabase_storage
@@ -185,12 +186,14 @@ class Review:
             )
 
         # 4. 리뷰 데이터 insert
+        target_day_of_week = get_now_by_timezone().weekday()
         review_id = await review_repo.insert_review_infos(
             bakery_id=bakery_id,
             rating=rating,
             content=content,
             is_private=is_private,
             user_id=user_id,
+            target_day_of_week=target_day_of_week,
         )
         # 5. 리뷰 메뉴 insert
         await review_repo.bulk_insert_review_menus(

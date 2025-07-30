@@ -212,6 +212,7 @@ class ReviewRepository:
         content: str,
         is_private: bool,
         user_id: int,
+        target_day_of_week: int,
     ):
         """리뷰 정보 insert하는 쿼리"""
 
@@ -224,6 +225,7 @@ class ReviewRepository:
                 user_id=user_id,
                 like_count=0,
                 visit_date=get_now_by_timezone(tz="UTC"),
+                day_of_week=target_day_of_week,
             )
 
             self.db.add(review_info)
