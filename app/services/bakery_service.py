@@ -4,8 +4,8 @@ from app.core.exception import NotFoundException
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
+    GuDongMenuBakeryResponseDTO,
     LoadMoreBakeryResponseDTO,
-    VisitedBakeryResponseDTO,
 )
 from app.schema.common import Paging
 from app.utils.converter import merge_menus_with_bakeries, to_cursor_str
@@ -195,7 +195,7 @@ class BakeryService:
         )
 
         if not bakeries:
-            return VisitedBakeryResponseDTO(
+            return GuDongMenuBakeryResponseDTO(
                 items=[],
                 paging=Paging(
                     prev_cursor=cursor_value,
@@ -211,7 +211,7 @@ class BakeryService:
 
         bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return VisitedBakeryResponseDTO(
+        return GuDongMenuBakeryResponseDTO(
             items=bakery_info,
             paging=Paging(
                 prev_cursor=cursor_value,
@@ -242,3 +242,41 @@ class BakeryService:
         )
         # 2. 해당 베이커리 찜 삭제
         await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+
+    async def get_like_bakery(self, user_id: int, cursor_value: str, page_size: int):
+        """내가 찜한 빵집 조회하는 비즈니스 로직."""
+
+        bakery_repo = BakeryRepository(db=self.db)
+
+        # 1. 베이커리 조회
+        target_day_of_week = get_now_by_timezone().weekday()
+        bakeries, has_next = await bakery_repo.get_like_bakery(
+            user_id=user_id,
+            target_day_of_week=target_day_of_week,
+            cursor_value=cursor_value,
+            page_size=page_size,
+        )
+
+        if not bakeries:
+            return GuDongMenuBakeryResponseDTO(
+                items=[],
+                paging=Paging(
+                    prev_cursor=cursor_value, next_cursor=None, has_next=False
+                ),
+            )
+
+        # 2. 메뉴 조회
+        menus = await bakery_repo.get_signature_menus(
+            bakery_ids=[b.bakery_id for b in bakeries]
+        )
+
+        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+
+        return GuDongMenuBakeryResponseDTO(
+            items=bakery_infos,
+            paging=Paging(
+                prev_cursor=cursor_value,
+                next_cursor=to_cursor_str(bakeries[-1].bakery_id),
+                has_next=has_next,
+            ),
+        )
