@@ -100,12 +100,16 @@ async def get_recommend_bakery_by_area(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    _: None = Depends(verify_token),
+    user_id: int = Depends(get_user_id),
     db=Depends(get_db),
 ):
     """(홈) Hot한 빵집 조회 API."""
 
-    return BaseResponse(data=await BakeryService(db=db).get_bakery_by_area(area_code))
+    return BaseResponse(
+        data=await BakeryService(db=db).get_bakery_by_area(
+            area_code=area_code, user_id=user_id
+        )
+    )
 
 
 @router.get(
@@ -125,14 +129,17 @@ async def get_hot_bakeries(
         description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=15),
-    _: None = Depends(get_user_id),
+    user_id: int = Depends(get_user_id),
     db=Depends(get_db),
 ):
     """(더보기용) Hot한 빵집 조회하는 API."""
 
     return BaseResponse(
         data=await BakeryService(db=db).get_hot_bakeries(
-            area_code=area_code, cursor_value=cursor_value, page_size=page_size
+            area_code=area_code,
+            user_id=user_id,
+            cursor_value=cursor_value,
+            page_size=page_size,
         )
     )
 

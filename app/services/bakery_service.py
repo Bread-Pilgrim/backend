@@ -86,7 +86,7 @@ class BakeryService:
             ),
         )
 
-    async def get_bakery_by_area(self, area_code: str):
+    async def get_bakery_by_area(self, area_code: str, user_id: int):
         """(홈탭용)hot한 빵집 조회하는 비즈니스 로직."""
 
         area_codes = parse_comma_to_list(area_code)
@@ -96,11 +96,11 @@ class BakeryService:
         target_day_of_week = get_now_by_timezone().weekday()
 
         return await BakeryRepository(self.db).get_bakery_by_area(
-            area_codes, target_day_of_week
+            area_codes, target_day_of_week, user_id
         )
 
     async def get_hot_bakeries(
-        self, cursor_value: str, page_size: int, area_code: str
+        self, cursor_value: str, user_id: int, page_size: int, area_code: str
     ) -> LoadMoreBakeryResponseDTO:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
@@ -114,9 +114,10 @@ class BakeryService:
 
         # 빵집 정보
         bakeries, has_next = await bakery_repo.get_more_hot_bakeries(
-            cursor_value=cursor_value,
             area_codes=area_codes,
+            user_id=user_id,
             target_day_of_week=target_day_of_week,
+            cursor_value=cursor_value,
             page_size=page_size,
         )
 
