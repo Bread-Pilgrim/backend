@@ -29,6 +29,10 @@ class BreadReport(Base, DateTimeMixin):
     total_quantity = Column(Integer, nullable=True)
     total_price = Column(Integer, nullable=True)
     price_diff_from_last_month = Column(Integer, nullable=True)
+    price_summary = Column(
+        JSON,
+        comment='{"2025-05": 3000, "2025-06": 50000, "2025-07" : 20000} - 최근 세달치 총 소비금액',
+    )
     review_count = Column(Integer, nullable=True)
     liked_count = Column(Integer, nullable=True)
     received_likes_count = Column(Integer, nullable=True)
