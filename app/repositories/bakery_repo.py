@@ -650,9 +650,9 @@ class BakeryRepository:
 
             if is_liked:
                 raise AlreadyLikedException()
-        except AlreadyDislikedException:
-            raise
         except Exception as e:
+            if isinstance(e, AlreadyLikedException):
+                raise
             raise UnknownException(detail=str(e))
 
     async def like_bakery(self, user_id: int, bakery_id: int):
@@ -679,9 +679,9 @@ class BakeryRepository:
 
             if not is_liked:
                 raise AlreadyDislikedException()
-        except AlreadyDislikedException:
-            raise
         except Exception as e:
+            if isinstance(e, AlreadyDislikedException):
+                raise
             raise UnknownException(detail=str(e))
 
     async def dislike_bakery(self, user_id: int, bakery_id: int):
