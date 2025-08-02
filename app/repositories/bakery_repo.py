@@ -396,8 +396,6 @@ class BakeryRepository:
                     Bakery.id,
                     Bakery.name,
                     Bakery.address,
-                    Bakery.review_count,
-                    Bakery.avg_rating,
                     Bakery.phone,
                     OperatingHour.is_opened,
                     OperatingHour.close_time,
@@ -428,8 +426,6 @@ class BakeryRepository:
                     bakery_name=res.name,
                     address=res.address,
                     phone=res.phone,
-                    avg_rating=res.avg_rating,
-                    review_count=res.review_count,
                     open_status=operating_hours_to_open_status(
                         is_opened=res.is_opened,
                         close_time=res.close_time,
