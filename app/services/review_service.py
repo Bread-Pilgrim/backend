@@ -210,7 +210,7 @@ class Review:
         # 6. 리뷰 개수 및 평점 update
         # TODO Redis로 처리할 것
         await review_repo.update_avg_rating_and_review_count(
-            bakery_id=bakery_id, rating=rating
+            bakery_id=bakery_id, rating=rating, review_imgs=review_imgs
         )
 
         # 6. 리뷰 이미지 insert

@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Optional
 
+from fastapi import UploadFile
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
@@ -283,6 +284,7 @@ class ReviewRepository:
         self,
         bakery_id: int,
         rating: float,
+        review_imgs: Optional[List[UploadFile]] = None,
     ):
         """베이커리 평점 및 리뷰 개수 업데이트 하는 메소드."""
 
@@ -306,7 +308,10 @@ class ReviewRepository:
                 bakery_stat.review_count = new_count
                 bakery_stat.avg_rating = new_rating
 
-                self.db.flush()
+                if review_imgs:
+                    self.db.flush()
+                else:
+                    self.db.commit()
 
             else:
                 raise NotFoundException(
