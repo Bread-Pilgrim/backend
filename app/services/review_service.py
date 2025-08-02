@@ -41,8 +41,13 @@ class Review:
         review_repo = ReviewRepository(db=self.db)
         sort_by, direction = build_sort_clause(sort_clause=sort_clause)
 
+        # 0. 베이커리 리뷰 평균치
+        review_count, avg_rating = await review_repo.get_bakery_summary(
+            bakery_id=bakery_id
+        )
+
         # 1. 리뷰 주요 데이터 조회
-        review_infos, has_next = await review_repo.get_reviews_by_bakery_id(
+        review_infos, has_next = await review_repo.get_review_by_bakery_id(
             user_id=user_id,
             bakery_id=bakery_id,
             cursor_value=cursor_value,
@@ -76,6 +81,8 @@ class Review:
             next_cursor = build_cursor(sort_value, review_id)
 
             return BakeryReviewReponseDTO(
+                avg_rating=avg_rating,
+                review_count=review_count,
                 items=[
                     BakeryReview(
                         **r.model_dump(exclude={"review_photos", "review_menus"}),

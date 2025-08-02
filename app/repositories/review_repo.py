@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import List
 
 from sqlalchemy import and_, or_, select
@@ -7,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.exception import (
     AlreadyDislikedException,
     AlreadyLikedException,
+    NotFoundException,
     UnknownException,
 )
 from app.model.bakery import Bakery, BakeryMenu
@@ -95,7 +95,28 @@ class ReviewRepository:
 
         return self.db.execute(stmt).mappings().all()
 
-    async def get_reviews_by_bakery_id(
+    async def get_bakery_summary(self, bakery_id: int):
+        """ "베이커리 평점이랑 리뷰 개수 조회하는 쿼리."""
+
+        try:
+            res = (
+                self.db.query(Bakery.review_count, Bakery.avg_rating)
+                .filter(Bakery.id == bakery_id)
+                .first()
+            )
+
+            if res:
+                return res.review_count, res.avg_rating
+            else:
+                raise NotFoundException(
+                    detail=f"해당 빵집데이터를 찾을 수 없습니다. bakery_id : {bakery_id}"
+                )
+        except Exception as e:
+            if isinstance(e, NotFoundException):
+                raise
+            raise UnknownException(detail=str(e))
+
+    async def get_review_by_bakery_id(
         self,
         user_id: int,
         bakery_id: int,
@@ -158,7 +179,6 @@ class ReviewRepository:
         return (
             [
                 BakeryReview(
-                    avg_rating=r.avg_rating,
                     review_id=r.id,
                     user_name=r.name,
                     profile_img=r.profile_img,
@@ -264,24 +284,38 @@ class ReviewRepository:
         bakery_id: int,
         rating: float,
     ):
-        """베잌커리 평점 및 리뷰 개수 업데이트 하는 메소드."""
+        """베이커리 평점 및 리뷰 개수 업데이트 하는 메소드."""
 
         try:
             # 1. 베이커리 조회
             bakery_stat = self.db.query(Bakery).filter(Bakery.id == bakery_id).first()
 
-            # 2. 업데이트할 데이터 계산.
-            avg_rating, review_count = bakery_stat.avg_rating, bakery_stat.review_count
-            new_count = review_count + 1
-            new_rating = round(((avg_rating * review_count) + rating) / new_count, 1)
+            if bakery_stat:
 
-            # 3. 업데이트
-            bakery_stat.review_count = new_count
-            bakery_stat.avg_rating = new_rating
+                # 2. 업데이트할 데이터 계산.
+                avg_rating, review_count = (
+                    bakery_stat.avg_rating,
+                    bakery_stat.review_count,
+                )
+                new_count = review_count + 1
+                new_rating = round(
+                    ((avg_rating * review_count) + rating) / new_count, 1
+                )
 
-            self.db.flush()
+                # 3. 업데이트
+                bakery_stat.review_count = new_count
+                bakery_stat.avg_rating = new_rating
+
+                self.db.flush()
+
+            else:
+                raise NotFoundException(
+                    detail=f"해당 빵집데이터를 찾을 수 없습니다. bakery_id : {bakery_id}"
+                )
 
         except Exception as e:
+            if isinstance(e, NotFoundException):
+                raise
             self.db.rollback()
             raise UnknownException(detail=str(e))
 

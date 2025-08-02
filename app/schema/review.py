@@ -31,7 +31,6 @@ class MyBakeryReview(BaseModel):
 
 
 class BakeryReview(BaseModel):
-    avg_rating: float = Field(..., description="리뷰 평균 별점")
     user_name: str = Field(..., description="유저 이름")
     profile_img: Optional[str] = Field(default=None, description="유저 프로필 이미지")
     is_like: bool = Field(default=False, description="내가 리뷰 좋아요 눌렀는지 여부")
@@ -49,6 +48,8 @@ class BakeryReview(BaseModel):
 
 
 class BakeryReviewReponseDTO(BaseModel):
+    avg_rating: float = Field(default=0.0, description="리뷰 평균 별점")
+    review_count: int = Field(default=0, description="리뷰 개수")
     items: List[BakeryReview] = Field(default=[], description="조회된 리뷰 데이터.")
     paging: Paging = Field(..., description="페이징 정보")
 
