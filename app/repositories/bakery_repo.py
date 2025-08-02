@@ -236,7 +236,9 @@ class BakeryRepository:
         except Exception as e:
             raise UnknownException(detail=str(e))
 
-    async def get_bakery_by_area(self, area_codes: list[str], target_day_of_week: int):
+    async def get_bakery_by_area(
+        self, area_codes: list[str], target_day_of_week: int, user_id: int
+    ):
         """지역코드로 베이터리 조회하는 쿼리."""
 
         try:
@@ -272,6 +274,7 @@ class BakeryRepository:
                     UserBakeryLikes,
                     and_(
                         UserBakeryLikes.bakery_id == b.id,
+                        UserBakeryLikes.user_id == user_id,
                     ),
                     isouter=True,
                 )
@@ -304,10 +307,11 @@ class BakeryRepository:
 
     async def get_more_hot_bakeries(
         self,
+        area_codes: list[str],
+        user_id: int,
+        target_day_of_week: int,
         cursor_value: str,
         page_size: int,
-        area_codes: list[str],
-        target_day_of_week: int,
     ):
         """(더보기) hot한 빵집 조회하는 쿼리"""
 
@@ -349,7 +353,10 @@ class BakeryRepository:
             )
             .join(
                 UserBakeryLikes,
-                and_(UserBakeryLikes.bakery_id == Bakery.id),
+                and_(
+                    UserBakeryLikes.bakery_id == Bakery.id,
+                    UserBakeryLikes.user_id == user_id,
+                ),
                 isouter=True,
             )
             .where(and_(*filters))
@@ -389,8 +396,6 @@ class BakeryRepository:
                     Bakery.id,
                     Bakery.name,
                     Bakery.address,
-                    Bakery.review_count,
-                    Bakery.avg_rating,
                     Bakery.phone,
                     OperatingHour.is_opened,
                     OperatingHour.close_time,
@@ -421,8 +426,6 @@ class BakeryRepository:
                     bakery_name=res.name,
                     address=res.address,
                     phone=res.phone,
-                    avg_rating=res.avg_rating,
-                    review_count=res.review_count,
                     open_status=operating_hours_to_open_status(
                         is_opened=res.is_opened,
                         close_time=res.close_time,
@@ -650,9 +653,9 @@ class BakeryRepository:
 
             if is_liked:
                 raise AlreadyLikedException()
-        except AlreadyDislikedException:
-            raise
         except Exception as e:
+            if isinstance(e, AlreadyLikedException):
+                raise
             raise UnknownException(detail=str(e))
 
     async def like_bakery(self, user_id: int, bakery_id: int):
@@ -679,9 +682,9 @@ class BakeryRepository:
 
             if not is_liked:
                 raise AlreadyDislikedException()
-        except AlreadyDislikedException:
-            raise
         except Exception as e:
+            if isinstance(e, AlreadyDislikedException):
+                raise
             raise UnknownException(detail=str(e))
 
     async def dislike_bakery(self, user_id: int, bakery_id: int):

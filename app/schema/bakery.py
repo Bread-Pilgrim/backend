@@ -11,8 +11,6 @@ class CommonBakery(BaseModel):
 
     bakery_id: int = Field(..., description="베이커리 id")
     bakery_name: str = Field(..., description="베이커리 상호명")
-    avg_rating: float = Field(..., description="평균별점")
-    review_count: int = Field(..., description="리뷰 개수")
     open_status: str = Field(
         ...,
         description="""
@@ -30,6 +28,8 @@ class CommonBakery(BaseModel):
 class RecommendBakery(CommonBakery):
     """추천 빵집 모델"""
 
+    avg_rating: float = Field(..., description="평균별점")
+    review_count: int = Field(..., description="리뷰 개수")
     commercial_area_id: int = Field(
         ...,
         description="베이커리 상권지역코드 - 상세보기 클릭시 근처 관광지 추천에 필요",
@@ -43,6 +43,8 @@ class BakeryMenu(BaseModel):
 class LoadMoreBakery(CommonBakery):
     """더보기 빵집 모델."""
 
+    avg_rating: float = Field(..., description="평균별점")
+    review_count: int = Field(..., description="리뷰 개수")
     gu: str = Field(..., description="베이커리 자치구")
     dong: str = Field(..., description="베이커리 동")
     commercial_area_id: int = Field(
@@ -85,8 +87,6 @@ class BakeryDetailResponseDTO(BaseModel):
     bakery_name: str = Field(..., description="베이커리 상호명")
     address: str = Field(..., description="빵집 주소")
     phone: Optional[str] = Field(default=None, description="빵집 전화번호")
-    avg_rating: float = Field(..., description="평균별점")
-    review_count: int = Field(..., description="리뷰 개수")
     open_status: str = Field(
         ...,
         description="""
@@ -118,6 +118,8 @@ class SimpleBakeryMenu(BaseModel):
 class GuDongMenuBakery(CommonBakery):
     """방문한 빵집"""
 
+    avg_rating: float = Field(..., description="평균별점")
+    review_count: int = Field(..., description="리뷰 개수")
     gu: str = Field(..., description="베이커리 자치구")
     dong: str = Field(..., description="베이커리 동")
     signature_menus: Optional[List[BakeryMenu]] = Field(
