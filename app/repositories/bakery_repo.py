@@ -717,9 +717,11 @@ class BakeryRepository:
             raise UnknownException(detail=str(e))
 
     async def get_like_bakeries(
-        self, user_id: int, target_day_of_week: int, cursor_value: str, page_size: int
+        self, user_id: int, target_day_of_week: int, page_no: int, page_size: int
     ):
         """찜한 베이커리 조회하는 쿼리."""
+
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
         try:
             stmt = (
@@ -753,11 +755,9 @@ class BakeryRepository:
                 )
                 .order_by(desc(Bakery.id))
                 .distinct(Bakery.id)
-                .limit(page_size + 1)
+                .limit(limit)
+                .offset(offset)
             )
-
-            if cursor_value != "0":
-                stmt = stmt.where(Bakery.id > int(cursor_value))
 
             res = self.db.execute(stmt).all()
             has_next = len(res) > page_size

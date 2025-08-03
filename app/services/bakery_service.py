@@ -222,7 +222,7 @@ class BakeryService:
         # 2. 해당 베이커리 찜 삭제
         await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
 
-    async def get_like_bakeries(self, user_id: int, cursor_value: str, page_size: int):
+    async def get_like_bakeries(self, user_id: int, page_no: int, page_size: int):
         """내가 찜한 빵집 조회하는 비즈니스 로직."""
 
         bakery_repo = BakeryRepository(db=self.db)
@@ -232,17 +232,12 @@ class BakeryService:
         bakeries, has_next = await bakery_repo.get_like_bakeries(
             user_id=user_id,
             target_day_of_week=target_day_of_week,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
         )
 
         if not bakeries:
-            return GuDongMenuBakeryResponseDTO(
-                items=[],
-                paging=Paging(
-                    prev_cursor=cursor_value, next_cursor=None, has_next=False
-                ),
-            )
+            return GuDongMenuBakeryResponseDTO()
 
         # 2. 메뉴 조회
         menus = await bakery_repo.get_signature_menus(
@@ -251,11 +246,4 @@ class BakeryService:
 
         bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return GuDongMenuBakeryResponseDTO(
-            items=bakery_infos,
-            paging=Paging(
-                prev_cursor=cursor_value,
-                next_cursor=to_cursor_str(bakeries[-1].bakery_id),
-                has_next=has_next,
-            ),
-        )
+        return GuDongMenuBakeryResponseDTO(items=bakery_infos, has_next=has_next)
