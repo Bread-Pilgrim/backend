@@ -1,4 +1,5 @@
-## 🛠️ 기술 스택
+# Server Environment
+## 기술 스택
 
 | 항목         | 내용                                                         |
 |--------------|--------------------------------------------------------------|
@@ -20,3 +21,6 @@
   <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
   <img src="https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white" />
 </p>
+
+## 아키텍처
+<img width="2523" height="2130" alt="스크린샷 2025-08-01 오후 5 56 42" src="https://github.com/user-attachments/assets/e64f122a-a337-4892-8318-413c0965f67d" />
