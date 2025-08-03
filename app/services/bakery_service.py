@@ -62,7 +62,7 @@ class BakeryService:
 
         # 베이커리 조회결과 없을 때, 반환값
         if not bakeries:
-            return LoadMoreBakeryResponseDTO(items=[], has_next=False)
+            return LoadMoreBakeryResponseDTO(items=[])
 
         # 베이커리 시그니처 메뉴 정보 조회
         menus = await bakery_repo.get_signature_menus(
@@ -110,7 +110,7 @@ class BakeryService:
         )
 
         if not bakeries:
-            return LoadMoreBakeryResponseDTO(items=[], has_next=False)
+            return LoadMoreBakeryResponseDTO(items=[])
 
         # 빵 시그니처 메뉴 정보
         menus = await bakery_repo.get_signature_menus(
@@ -173,7 +173,7 @@ class BakeryService:
         )
 
         if not bakeries:
-            return GuDongMenuBakeryResponseDTO(items=[], has_next=False)
+            return GuDongMenuBakeryResponseDTO(items=[])
 
         # 2. 시그니처 메뉴 검색
         menus = await bakery_repo.get_signature_menus(

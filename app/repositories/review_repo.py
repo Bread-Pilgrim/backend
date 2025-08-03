@@ -15,7 +15,7 @@ from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
 from app.schema.review import BakeryReview, MyBakeryReview
 from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
-from app.utils.pagination import build_cursor_filter, build_order_by, parse_cursor_value
+from app.utils.pagination import build_order_by, convert_limit_and_offset
 
 
 class ReviewRepository:
@@ -121,33 +121,19 @@ class ReviewRepository:
         self,
         user_id: int,
         bakery_id: int,
-        cursor_value: str,
+        page_no: int,
         sort_by: str,
         direction: str,
         page_size: int,
     ):
         """리뷰 주요데이터 조회하는 쿼리."""
 
+        # limit offset
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+
         # 정렬할 필드 추출 (Review.like_count 이런식)
         sort_column = getattr(Review, sort_by)
-        # sort_value:review_id 형태의 요청 파라미터를 조건절에 들어갈 수 있는 형태로 파싱
-        sort_value, cursor_id = parse_cursor_value(cursor_value, sort_by)
-        cursor_filter = build_cursor_filter(
-            sort_column, sort_value, cursor_id, direction
-        )
         order_by = build_order_by(sort_column, direction)
-
-        filters = [
-            and_(
-                Review.bakery_id == bakery_id,
-                or_(
-                    Review.is_private == False,
-                    and_(Review.is_private == True, Review.user_id == user_id),
-                ),
-            )
-        ]
-        if cursor_filter is not None:
-            filters.append(cursor_filter)
 
         stmt = (
             select(
@@ -169,9 +155,18 @@ class ReviewRepository:
                 and_(ReviewLike.review_id == Review.id, ReviewLike.user_id == user_id),
                 isouter=True,
             )
-            .filter(*filters)
+            .filter(
+                and_(
+                    Review.bakery_id == bakery_id,
+                    or_(
+                        Review.is_private == False,
+                        and_(Review.is_private == True, Review.user_id == user_id),
+                    ),
+                )
+            )
             .order_by(*order_by)
-            .limit(page_size + 1)
+            .limit(limit)
+            .offset(offset)
         )
 
         res = self.db.execute(stmt).mappings().all()

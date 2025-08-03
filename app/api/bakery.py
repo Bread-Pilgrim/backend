@@ -206,13 +206,7 @@ async def get_bakery_menus(
 )
 async def get_reviews_by_bakery_id(
     bakery_id: int,
-    cursor_value: str = Query(
-        default="0||0",
-        description="""
-    처음엔 0||0으로 넘겨주고, 
-    그 다음부턴 response 내 next_cursor값을 입력해주세요.
-        """,
-    ),
+    page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=5),
     sort_clause: str = Query(
         default="LIKE_COUNT.DESC",
@@ -233,7 +227,7 @@ async def get_reviews_by_bakery_id(
         data=await Review(db=db).get_reviews_by_bakery_id(
             user_id=user_id,
             bakery_id=bakery_id,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
             sort_clause=sort_clause,
         )
