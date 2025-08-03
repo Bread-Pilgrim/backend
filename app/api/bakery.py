@@ -140,18 +140,16 @@ async def get_hot_bakeries(
 
 @router.get("/visited")
 async def get_visited_bakery(
-    cursor_value: str = Query(
-        default="0",
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
-    ),
+    page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=5),
     user_id: int = Depends(get_user_id),
     db=Depends(get_db),
 ):
+    """내가 방문한 빵집 조회하는 API."""
 
     return BaseResponse(
         data=await BakeryService(db=db).get_visited_bakery(
-            user_id=user_id, cursor_value=cursor_value, page_size=page_size
+            user_id=user_id, page_no=page_no, page_size=page_size
         )
     )
 
