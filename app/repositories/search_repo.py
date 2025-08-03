@@ -64,6 +64,7 @@ class SearchRepository:
                         BakeryMenu.name.ilike(f"{keyword}%"),
                     )
                 )
+                .distinct(Bakery.id)
                 .order_by(desc(Bakery.id))
                 .limit(limit)
                 .offset(offset)
