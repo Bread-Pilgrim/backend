@@ -88,7 +88,7 @@ class BakeryService:
         )
 
     async def get_hot_bakeries(
-        self, cursor_value: str, user_id: int, page_size: int, area_code: str
+        self, page_no: int, user_id: int, page_size: int, area_code: str
     ) -> LoadMoreBakeryResponseDTO:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
@@ -105,17 +105,12 @@ class BakeryService:
             area_codes=area_codes,
             user_id=user_id,
             target_day_of_week=target_day_of_week,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
         )
 
         if not bakeries:
-            return LoadMoreBakeryResponseDTO(
-                items=[],
-                paging=Paging(
-                    prev_cursor=cursor_value, next_cursor=None, has_next=False
-                ),
-            )
+            return LoadMoreBakeryResponseDTO(items=[], has_next=False)
 
         # 빵 시그니처 메뉴 정보
         menus = await bakery_repo.get_signature_menus(
@@ -124,14 +119,7 @@ class BakeryService:
 
         bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return LoadMoreBakeryResponseDTO(
-            items=bakery_infos,
-            paging=Paging(
-                prev_cursor=cursor_value,
-                next_cursor=to_cursor_str(bakeries[-1].bakery_id),
-                has_next=has_next,
-            ),
-        )
+        return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
 
     async def get_bakery_detail(self, bakery_id: int):
         """베이커리 상세 조회하는 비즈니스 로직."""

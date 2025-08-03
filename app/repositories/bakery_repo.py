@@ -315,13 +315,16 @@ class BakeryRepository:
         area_codes: list[str],
         user_id: int,
         target_day_of_week: int,
-        cursor_value: str,
+        page_no: int,
         page_size: int,
     ):
         """(더보기) hot한 빵집 조회하는 쿼리"""
 
-        filters = [Bakery.id > cursor_value, BakeryPhoto.is_signature == True]
+        # limit offset
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
+        # where clause
+        filters = [BakeryPhoto.is_signature == True]
         if area_codes != ["14"]:
             filters.append(Bakery.commercial_area_id.in_(area_codes))
 
@@ -365,8 +368,12 @@ class BakeryRepository:
                 isouter=True,
             )
             .where(and_(*filters))
-            .order_by(Bakery.id, Bakery.avg_rating.desc())
-            .limit(page_size + 1)
+            .order_by(
+                Bakery.id.desc(),
+                Bakery.avg_rating.desc(),
+            )
+            .limit(limit=limit)
+            .offset(offset=offset)
         )
 
         res = self.db.execute(stmt).mappings().all()
