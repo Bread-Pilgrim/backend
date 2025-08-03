@@ -35,6 +35,7 @@ class SearchRepository:
                     Bakery.avg_rating,
                     Bakery.review_count,
                     Bakery.thumbnail,
+                    Bakery.commercial_area_id,
                     OperatingHour.is_opened,
                     OperatingHour.open_time,
                     OperatingHour.close_time,
@@ -80,6 +81,7 @@ class SearchRepository:
                     gu=r.gu,
                     dong=r.dong,
                     img_url=r.thumbnail,
+                    commercial_area_id=r.commercial_area_id,
                     is_like=True if r.user_id else False,
                     open_status=operating_hours_to_open_status(
                         is_opened=r.is_opened,
