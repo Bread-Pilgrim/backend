@@ -39,7 +39,7 @@ class BakeryService:
         )
 
     async def get_more_bakeries_by_preference(
-        self, cursor_value: str, page_size: int, area_code: str, user_id: int
+        self, page_no: int, page_size: int, area_code: str, user_id: int
     ):
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
 
@@ -53,7 +53,7 @@ class BakeryService:
         # 베이커리 정보 조회
         bakery_repo = BakeryRepository(db=self.db)
         bakeries, has_next = await bakery_repo.get_more_bakeries_by_preference(
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
             area_codes=area_codes,
             user_id=user_id,
@@ -62,12 +62,7 @@ class BakeryService:
 
         # 베이커리 조회결과 없을 때, 반환값
         if not bakeries:
-            return LoadMoreBakeryResponseDTO(
-                items=[],
-                paging=Paging(
-                    prev_cursor=cursor_value, next_cursor=None, has_next=False
-                ),
-            )
+            return LoadMoreBakeryResponseDTO(items=[], has_next=False)
 
         # 베이커리 시그니처 메뉴 정보 조회
         menus = await bakery_repo.get_signature_menus(
@@ -77,14 +72,7 @@ class BakeryService:
         # 베이커리 정보 + 시그니처 메뉴 정보 병합
         bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return LoadMoreBakeryResponseDTO(
-            items=bakery_infos,
-            paging=Paging(
-                prev_cursor=cursor_value,
-                next_cursor=to_cursor_str(bakeries[-1].bakery_id),
-                has_next=has_next,
-            ),
-        )
+        return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
 
     async def get_bakery_by_area(self, area_code: str, user_id: int):
         """(홈탭용)hot한 빵집 조회하는 비즈니스 로직."""

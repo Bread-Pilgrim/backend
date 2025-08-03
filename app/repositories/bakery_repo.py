@@ -31,6 +31,7 @@ from app.schema.bakery import (
     SimpleBakeryMenu,
 )
 from app.utils.converter import operating_hours_to_open_status
+from app.utils.pagination import convert_limit_and_offset
 
 
 class BakeryRepository:
@@ -125,7 +126,7 @@ class BakeryRepository:
 
     async def get_more_bakeries_by_preference(
         self,
-        cursor_value: str,
+        page_no: int,
         page_size: int,
         area_codes: list[str],
         user_id: int,
@@ -133,9 +134,12 @@ class BakeryRepository:
     ):
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 쿼리"""
 
+        # limit offset
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+
+        # where clause
         conditions = [
             UserPreferences.user_id == user_id,
-            Bakery.id > cursor_value,
             BakeryPhoto.is_signature == True,
         ]
 
@@ -190,7 +194,8 @@ class BakeryRepository:
                 )
                 .where(and_(*conditions))
                 .order_by(Bakery.id.asc())
-                .limit(page_size + 1)
+                .limit(limit=limit)
+                .offset(offset=offset)
             )
 
             res = self.db.execute(stmt).mappings().all()
