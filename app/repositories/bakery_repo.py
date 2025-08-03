@@ -31,6 +31,7 @@ from app.schema.bakery import (
     SimpleBakeryMenu,
 )
 from app.utils.converter import operating_hours_to_open_status
+from app.utils.pagination import convert_limit_and_offset
 
 
 class BakeryRepository:
@@ -125,7 +126,7 @@ class BakeryRepository:
 
     async def get_more_bakeries_by_preference(
         self,
-        cursor_value: str,
+        page_no: int,
         page_size: int,
         area_codes: list[str],
         user_id: int,
@@ -133,9 +134,12 @@ class BakeryRepository:
     ):
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 쿼리"""
 
+        # limit offset
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+
+        # where clause
         conditions = [
             UserPreferences.user_id == user_id,
-            Bakery.id > cursor_value,
             BakeryPhoto.is_signature == True,
         ]
 
@@ -190,7 +194,8 @@ class BakeryRepository:
                 )
                 .where(and_(*conditions))
                 .order_by(Bakery.id.asc())
-                .limit(page_size + 1)
+                .limit(limit=limit)
+                .offset(offset=offset)
             )
 
             res = self.db.execute(stmt).mappings().all()
@@ -310,13 +315,16 @@ class BakeryRepository:
         area_codes: list[str],
         user_id: int,
         target_day_of_week: int,
-        cursor_value: str,
+        page_no: int,
         page_size: int,
     ):
         """(더보기) hot한 빵집 조회하는 쿼리"""
 
-        filters = [Bakery.id > cursor_value, BakeryPhoto.is_signature == True]
+        # limit offset
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
+        # where clause
+        filters = [BakeryPhoto.is_signature == True]
         if area_codes != ["14"]:
             filters.append(Bakery.commercial_area_id.in_(area_codes))
 
@@ -360,8 +368,12 @@ class BakeryRepository:
                 isouter=True,
             )
             .where(and_(*filters))
-            .order_by(Bakery.id, Bakery.avg_rating.desc())
-            .limit(page_size + 1)
+            .order_by(
+                Bakery.id.desc(),
+                Bakery.avg_rating.desc(),
+            )
+            .limit(limit=limit)
+            .offset(offset=offset)
         )
 
         res = self.db.execute(stmt).mappings().all()
@@ -544,9 +556,11 @@ class BakeryRepository:
             raise UnknownException(detail=str(e))
 
     async def get_visited_bakery(
-        self, user_id: int, target_day_of_week: int, cursor_value: str, page_size: int
+        self, user_id: int, target_day_of_week: int, page_no: int, page_size: int
     ):
         """방문한 빵집 (내가 리뷰 쓴 빵집 ) 조회하는 쿼리."""
+
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
         try:
             stmt = (
@@ -589,11 +603,9 @@ class BakeryRepository:
                 )
                 .order_by(desc(Bakery.id))
                 .distinct(Bakery.id)
-                .limit(page_size + 1)
+                .limit(limit)
+                .offset(offset)
             )
-
-            if cursor_value != "0":
-                stmt = stmt.where(Bakery.id > int(cursor_value))
 
             res = self.db.execute(stmt).all()
             has_next = len(res) > page_size
@@ -705,9 +717,11 @@ class BakeryRepository:
             raise UnknownException(detail=str(e))
 
     async def get_like_bakeries(
-        self, user_id: int, target_day_of_week: int, cursor_value: str, page_size: int
+        self, user_id: int, target_day_of_week: int, page_no: int, page_size: int
     ):
         """찜한 베이커리 조회하는 쿼리."""
+
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
         try:
             stmt = (
@@ -741,11 +755,9 @@ class BakeryRepository:
                 )
                 .order_by(desc(Bakery.id))
                 .distinct(Bakery.id)
-                .limit(page_size + 1)
+                .limit(limit)
+                .offset(offset)
             )
-
-            if cursor_value != "0":
-                stmt = stmt.where(Bakery.id > int(cursor_value))
 
             res = self.db.execute(stmt).all()
             has_next = len(res) > page_size

@@ -60,7 +60,7 @@ class LoadMoreBakeryResponseDTO(BaseModel):
     """더보기 빵집 응답모델."""
 
     items: List[LoadMoreBakery] = Field(default=[], description="조회된 빵집 데이터.")
-    paging: Paging = Field(..., description="페이징 정보")
+    has_next: bool = Field(default=False, description="다음 페이지 유무")
 
 
 class BakeryDetail(BakeryMenu):
@@ -128,8 +128,8 @@ class GuDongMenuBakery(CommonBakery):
 
 
 class GuDongMenuBakeryResponseDTO(BaseModel):
-    items: List[GuDongMenuBakery]
-    paging: Paging
+    items: List[GuDongMenuBakery] = Field(default=[])
+    has_next: bool = Field(default=False, description="다음 페이지 유무")
 
 
 class WrittenReview(BaseModel):

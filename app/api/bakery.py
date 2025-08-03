@@ -68,10 +68,7 @@ async def get_preference_bakery(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    cursor_value: str = Query(
-        default="0",
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
-    ),
+    page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=15),
     user_id=Depends(get_user_id),
     db=Depends(get_db),
@@ -80,7 +77,7 @@ async def get_preference_bakery(
 
     return BaseResponse(
         data=await BakeryService(db=db).get_more_bakeries_by_preference(
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
             area_code=area_code,
             user_id=user_id,
@@ -124,10 +121,7 @@ async def get_hot_bakeries(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    cursor_value: str = Query(
-        default="0",
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
-    ),
+    page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=15),
     user_id: int = Depends(get_user_id),
     db=Depends(get_db),
@@ -138,7 +132,7 @@ async def get_hot_bakeries(
         data=await BakeryService(db=db).get_hot_bakeries(
             area_code=area_code,
             user_id=user_id,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
         )
     )
@@ -146,18 +140,16 @@ async def get_hot_bakeries(
 
 @router.get("/visited")
 async def get_visited_bakery(
-    cursor_value: str = Query(
-        default="0",
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
-    ),
+    page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=5),
     user_id: int = Depends(get_user_id),
     db=Depends(get_db),
 ):
+    """내가 방문한 빵집 조회하는 API."""
 
     return BaseResponse(
         data=await BakeryService(db=db).get_visited_bakery(
-            user_id=user_id, cursor_value=cursor_value, page_size=page_size
+            user_id=user_id, page_no=page_no, page_size=page_size
         )
     )
 
@@ -214,13 +206,7 @@ async def get_bakery_menus(
 )
 async def get_reviews_by_bakery_id(
     bakery_id: int,
-    cursor_value: str = Query(
-        default="0||0",
-        description="""
-    처음엔 0||0으로 넘겨주고, 
-    그 다음부턴 response 내 next_cursor값을 입력해주세요.
-        """,
-    ),
+    page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=5),
     sort_clause: str = Query(
         default="LIKE_COUNT.DESC",
@@ -241,7 +227,7 @@ async def get_reviews_by_bakery_id(
         data=await Review(db=db).get_reviews_by_bakery_id(
             user_id=user_id,
             bakery_id=bakery_id,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
             sort_clause=sort_clause,
         )
@@ -253,10 +239,7 @@ async def get_reviews_by_bakery_id(
 )
 async def get_my_bakery_review(
     bakery_id: int,
-    cursor_value: str = Query(
-        default=0,
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
-    ),
+    page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=5),
     user_id=Depends(get_user_id),
     db=Depends(get_db),
@@ -267,7 +250,7 @@ async def get_my_bakery_review(
         data=await Review(db=db).get_my_reviews_by_bakery_id(
             bakery_id=bakery_id,
             user_id=user_id,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
         )
     )
@@ -350,10 +333,7 @@ async def dislike_bakery(
     responses=ERROR_UNKNOWN,
 )
 async def get_like_bakery(
-    cursor_value: str = Query(
-        default="0",
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
-    ),
+    page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=5),
     user_id: int = Depends(get_user_id),
     db=Depends(get_db),
@@ -362,6 +342,6 @@ async def get_like_bakery(
 
     return BaseResponse(
         data=await BakeryService(db=db).get_like_bakeries(
-            user_id=user_id, cursor_value=cursor_value, page_size=page_size
+            user_id=user_id, page_no=page_no, page_size=page_size
         )
     )

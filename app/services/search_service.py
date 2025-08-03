@@ -13,7 +13,7 @@ class SearchService:
         self.db = db
 
     async def search_bakeries_by_keyword(
-        self, keyword: str, user_id: int, cursor_value: str, page_size: int
+        self, keyword: str, user_id: int, page_no: int, page_size: int
     ):
         """키워드 검색 비즈니스 로직."""
 
@@ -26,19 +26,12 @@ class SearchService:
             keyword=keyword,
             user_id=user_id,
             target_day_of_week=target_day_of_week,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
         )
 
         if not bakeries:
-            return SearchBakeryResponseDTO(
-                items=[],
-                paging=Paging(
-                    prev_cursor=cursor_value,
-                    next_cursor=None,
-                    has_next=False,
-                ),
-            )
+            return SearchBakeryResponseDTO()
 
         # 2. 베이커리 메뉴 검색
         menus = await BakeryRepository(db=self.db).get_signature_menus(
@@ -47,11 +40,4 @@ class SearchService:
 
         bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return SearchBakeryResponseDTO(
-            items=bakery_info,
-            paging=Paging(
-                prev_cursor=cursor_value,
-                next_cursor=to_cursor_str(bakery_info[-1].bakery_id),
-                has_next=has_next,
-            ),
-        )
+        return SearchBakeryResponseDTO(items=bakery_info, has_next=has_next)

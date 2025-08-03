@@ -51,12 +51,12 @@ class BakeryReviewReponseDTO(BaseModel):
     avg_rating: float = Field(default=0.0, description="리뷰 평균 별점")
     review_count: int = Field(default=0, description="리뷰 개수")
     items: List[BakeryReview] = Field(default=[], description="조회된 리뷰 데이터.")
-    paging: Paging = Field(..., description="페이징 정보")
+    has_next: bool = Field(default=False, description="다음 페이지 유무")
 
 
 class BakeryMyReviewReponseDTO(BaseModel):
     items: List[MyBakeryReview] = Field(default=[], description="조회된 리뷰 데이터.")
-    paging: Paging = Field(..., description="페이징 정보")
+    has_next: bool = Field(default=False, description="다음 페이지 유무")
 
 
 class ReviewLikeResponseDTO(BaseModel):

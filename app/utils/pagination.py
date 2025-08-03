@@ -59,3 +59,12 @@ def build_cursor(sort_value, review_id):
     """다음 페이지 요청 시 넘겨줄 커서 문자열 생성하는 메소드."""
 
     return f"{sort_value}||{review_id}"
+
+
+def convert_limit_and_offset(page_no: int, page_size: int):
+    """LIMIT OFFSET 반환하는 메소드."""
+
+    limit = page_size + 1
+    offset = (page_no - 1) * page_size
+
+    return limit, offset
