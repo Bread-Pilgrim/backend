@@ -128,7 +128,7 @@ class GuDongMenuBakery(CommonBakery):
 
 
 class GuDongMenuBakeryResponseDTO(BaseModel):
-    items: List[GuDongMenuBakery]
+    items: List[GuDongMenuBakery] = Field(default=[])
     has_next: bool = Field(default=False, description="다음 페이지 유무")
 
 

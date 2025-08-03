@@ -56,7 +56,7 @@ class BakeryReviewReponseDTO(BaseModel):
 
 class BakeryMyReviewReponseDTO(BaseModel):
     items: List[MyBakeryReview] = Field(default=[], description="조회된 리뷰 데이터.")
-    paging: Paging = Field(..., description="페이징 정보")
+    has_next: bool = Field(default=False, description="다음 페이지 유무")
 
 
 class ReviewLikeResponseDTO(BaseModel):

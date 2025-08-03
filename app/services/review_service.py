@@ -89,10 +89,10 @@ class Review:
                 ],
             )
 
-        return BakeryReviewReponseDTO(items=[])
+        return BakeryReviewReponseDTO()
 
     async def get_my_reviews_by_bakery_id(
-        self, bakery_id: int, user_id: int, cursor_value: str, page_size: int
+        self, bakery_id: int, user_id: int, page_no: int, page_size: int
     ):
         """특정 베이커리에 내 리뷰 조회하는 비즈니스 로직."""
         review_repo = ReviewRepository(db=self.db)
@@ -101,7 +101,7 @@ class Review:
         review_infos, has_next = await review_repo.get_my_reviews_by_bakery_id(
             bakery_id=bakery_id,
             user_id=user_id,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
         )
 
@@ -133,21 +133,10 @@ class Review:
                     )
                     for r in review_infos
                 ],
-                paging=Paging(
-                    prev_cursor=cursor_value,
-                    next_cursor=to_cursor_str(review_infos[-1].review_id),
-                    has_next=has_next,
-                ),
+                has_next=has_next,
             )
 
-        return BakeryMyReviewReponseDTO(
-            items=[],
-            paging=Paging(
-                prev_cursor=cursor_value,
-                next_cursor=None,
-                has_next=False,
-            ),
-        )
+        return BakeryMyReviewReponseDTO()
 
     async def write_bakery_review(
         self,

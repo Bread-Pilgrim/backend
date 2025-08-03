@@ -23,19 +23,11 @@ class ReviewRepository:
         self.db = db
 
     async def get_my_reviews_by_bakery_id(
-        self, bakery_id: int, user_id: int, cursor_value: str, page_size: int
+        self, bakery_id: int, user_id: int, page_no: int, page_size: int
     ):
         """리뷰 주요데이터 조회하는 쿼리."""
 
-        filters = [
-            Users.id == user_id,
-            Review.bakery_id == bakery_id,
-        ]
-
-        if cursor_value != "0":
-            filters.append(
-                Review.id < cursor_value,
-            )
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
         stmt = (
             select(
@@ -54,9 +46,13 @@ class ReviewRepository:
                 and_(ReviewLike.review_id == Review.id, ReviewLike.user_id == user_id),
                 isouter=True,
             )
-            .filter(*filters)
+            .filter(
+                Users.id == user_id,
+                Review.bakery_id == bakery_id,
+            )
             .order_by(Review.id.desc())
-            .limit(page_size + 1)
+            .limit(limit)
+            .offset(offset)
         )
 
         res = self.db.execute(stmt).mappings().all()
