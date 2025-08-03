@@ -13,19 +13,18 @@ router = APIRouter(prefix="/search", tags=["search"])
 @router.get("/bakeries", response_model=BaseResponse[SearchBakeryResponseDTO])
 async def search_bakeries_by_keyword(
     keyword: str,
-    cursor_value: str = Query(
-        default="0",
-        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 paging.next_cursor 값을 사용해서 조회.",
-    ),
-    page_size: int = Query(default=5),
+    page_no: int = Query(default=1, description="페이지 번호"),
+    page_size: int = Query(default=20),
     user_id: int = Depends(get_user_id),
     db=Depends(get_db),
 ):
+    """검색어로 빵집 조회하는 API."""
+
     return BaseResponse(
         data=await SearchService(db=db).search_bakeries_by_keyword(
             keyword=keyword,
             user_id=user_id,
-            cursor_value=cursor_value,
+            page_no=page_no,
             page_size=page_size,
         )
     )

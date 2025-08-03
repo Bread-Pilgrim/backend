@@ -6,6 +6,7 @@ from app.model.bakery import Bakery, BakeryMenu, BakeryPhoto, OperatingHour
 from app.model.users import UserBakeryLikes
 from app.schema.search import SearchBakery
 from app.utils.converter import operating_hours_to_open_status
+from app.utils.pagination import convert_limit_and_offset
 
 
 class SearchRepository:
@@ -17,21 +18,14 @@ class SearchRepository:
         keyword: str,
         user_id: int,
         target_day_of_week: int,
-        cursor_value: str,
+        page_no: int,
         page_size: int,
     ):
         """키워드로 베이커리 조회하는 쿼리."""
+
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+
         try:
-            where_conditions = [
-                or_(
-                    Bakery.name.ilike(f"{keyword}%"),
-                    BakeryMenu.name.ilike(f"{keyword}%"),
-                )
-            ]
-
-            if cursor_value != "0":
-                where_conditions.append(Bakery.id < cursor_value)
-
             stmt = (
                 select(
                     Bakery.id,
@@ -63,9 +57,15 @@ class SearchRepository:
                     ),
                     isouter=True,
                 )
-                .where(and_(*where_conditions))
+                .where(
+                    or_(
+                        Bakery.name.ilike(f"{keyword}%"),
+                        BakeryMenu.name.ilike(f"{keyword}%"),
+                    )
+                )
                 .order_by(desc(Bakery.id))
-                .limit(page_size + 1)
+                .limit(limit)
+                .offset(offset)
             )
 
             res = self.db.execute(stmt).all()
