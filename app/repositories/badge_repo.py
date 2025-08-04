@@ -15,7 +15,13 @@ class BadgeRepository:
 
         try:
             res = (
-                self.db.query(Badge.id, Badge.name, Badge.img_url, UserBadge.user_id)
+                self.db.query(
+                    Badge.id,
+                    Badge.name,
+                    Badge.img_url,
+                    Badge.description,
+                    UserBadge.user_id,
+                )
                 .outerjoin(
                     UserBadge,
                     and_(UserBadge.badge_id == Badge.id, UserBadge.user_id == user_id),
@@ -28,6 +34,7 @@ class BadgeRepository:
                 BadgeItem(
                     badge_id=r.id,
                     badge_name=r.name,
+                    description=r.description,
                     img_url=r.img_url,
                     is_earned=True if r.user_id else False,
                 )
