@@ -141,4 +141,4 @@ dmypy.json
 .vscode/*
 *.json
 .env.test
-.csv
+*.csv
