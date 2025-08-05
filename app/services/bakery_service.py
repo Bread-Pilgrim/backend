@@ -11,7 +11,7 @@ from app.schema.bakery import (
 from app.schema.common import Paging
 from app.utils.converter import merge_menus_with_bakeries, to_cursor_str
 from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
-from app.utils.parser import parse_comma_to_list
+from app.utils.parser import build_sort_clause, parse_comma_to_list
 from app.utils.validator import validate_area_code
 
 
@@ -222,16 +222,21 @@ class BakeryService:
         # 2. 해당 베이커리 찜 삭제
         await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
 
-    async def get_like_bakeries(self, user_id: int, page_no: int, page_size: int):
+    async def get_like_bakeries(
+        self, user_id: int, sort_clause: str, page_no: int, page_size: int
+    ):
         """내가 찜한 빵집 조회하는 비즈니스 로직."""
-
         bakery_repo = BakeryRepository(db=self.db)
 
         # 1. 베이커리 조회
+        sort_by, direction = build_sort_clause(sort_clause=sort_clause)
+
         target_day_of_week = get_now_by_timezone().weekday()
         bakeries, has_next = await bakery_repo.get_like_bakeries(
             user_id=user_id,
             target_day_of_week=target_day_of_week,
+            sort_by=sort_by,
+            direction=direction,
             page_no=page_no,
             page_size=page_size,
         )

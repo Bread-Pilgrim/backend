@@ -31,7 +31,7 @@ from app.schema.bakery import (
     SimpleBakeryMenu,
 )
 from app.utils.converter import operating_hours_to_open_status
-from app.utils.pagination import convert_limit_and_offset
+from app.utils.pagination import build_order_by, convert_limit_and_offset
 
 
 class BakeryRepository:
@@ -717,9 +717,21 @@ class BakeryRepository:
             raise UnknownException(detail=str(e))
 
     async def get_like_bakeries(
-        self, user_id: int, target_day_of_week: int, page_no: int, page_size: int
+        self,
+        user_id: int,
+        target_day_of_week: int,
+        sort_by: str,
+        direction: str,
+        page_no: int,
+        page_size: int,
     ):
         """찜한 베이커리 조회하는 쿼리."""
+
+        if sort_by == "created_at":
+            sort_column = getattr(UserBakeryLikes, sort_by)
+        else:
+            sort_column = getattr(Bakery, sort_by)
+        order_by = build_order_by(sort_column, direction)
 
         limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
@@ -753,8 +765,7 @@ class BakeryRepository:
                     ),
                     isouter=True,
                 )
-                .order_by(desc(Bakery.id))
-                .distinct(Bakery.id)
+                .order_by(*order_by)
                 .limit(limit)
                 .offset(offset)
             )

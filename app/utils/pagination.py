@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import and_, asc, desc, or_
 
 from app.core.exception import InvalidSortParameterException
+from app.model.bakery import Bakery
 from app.model.review import Review
 
 
@@ -46,13 +47,22 @@ def build_cursor_filter(sort_column, sort_value, cursor_id, direction):
         )
 
 
-def build_order_by(sort_column, direction):
+def build_order_by_with_reviews(sort_column, direction):
     """정렬 컬럼과 id를 기준으로 안정적인 ORDER BY 리스트 생성하는 메소드."""
 
     if direction == "desc":
         return [desc(sort_column), desc(Review.id)]
     else:
         return [asc(sort_column), desc(Review.id)]
+
+
+def build_order_by(sort_column, direction):
+    """정렬 컬럼과 id를 기준으로 안정적인 ORDER BY 리스트 생성하는 메소드."""
+
+    if direction == "desc":
+        return [desc(sort_column)]
+    else:
+        return [asc(sort_column)]
 
 
 def build_cursor(sort_value, review_id):

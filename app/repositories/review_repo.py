@@ -15,7 +15,7 @@ from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
 from app.schema.review import BakeryReview, MyBakeryReview
 from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
-from app.utils.pagination import build_order_by, convert_limit_and_offset
+from app.utils.pagination import build_order_by_with_reviews, convert_limit_and_offset
 
 
 class ReviewRepository:
@@ -129,7 +129,7 @@ class ReviewRepository:
 
         # 정렬할 필드 추출 (Review.like_count 이런식)
         sort_column = getattr(Review, sort_by)
-        order_by = build_order_by(sort_column, direction)
+        order_by = build_order_by_with_reviews(sort_column, direction)
 
         stmt = (
             select(

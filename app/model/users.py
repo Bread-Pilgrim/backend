@@ -53,7 +53,7 @@ class Preferences(Base, DateTimeMixin):
         from_attributes = True
 
 
-class UserBakeryLikes(Base):
+class UserBakeryLikes(Base, DateTimeMixin):
     """베이커리 찜 테이블."""
 
     __tablename__ = "user_bakery_likes"
