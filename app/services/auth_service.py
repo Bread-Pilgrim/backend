@@ -58,6 +58,7 @@ class AuthService:
         """로그인/회원가입 비즈니스 로직."""
 
         login_type = req.login_type
+        login_type = login_type.upper()
 
         # 1. login_type 기준으로 소셜 유저 정보 조회
         if login_type == "KAKAO" and social_access_token and self.db:
