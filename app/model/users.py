@@ -21,7 +21,7 @@ class Users(Base, DateTimeMixin):
     age_range = Column(SmallInteger, nullable=True, comment="연령대")
     profile_img = Column(String(128), nullable=True, comment="프로필 썸네일")
     gender = Column(String(4), nullable=True)
-    is_preferences_set = Column(Boolean, nullable=True)
+    is_preferences_set = Column(Boolean, default=False, nullable=True)
 
 
 class UserPreferences(Base):
