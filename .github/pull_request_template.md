@@ -1,5 +1,3 @@
 ## 🚀 Description
 
-## 📸 Screenshot
-
 ## 📢 Notes
