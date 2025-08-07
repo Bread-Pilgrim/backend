@@ -12,11 +12,32 @@ class UserRepository:
     async def find_user_by_nickname(self, nickname: str, user_id: int):
         """nickname 조회하는 쿼리.."""
 
-        return (
-            self.db.query(Users)
+        is_exist = (
+            self.db.query(Users.id)
             .filter(Users.nickname == nickname, Users.id != user_id)
             .first()
         )
+
+        if is_exist:
+            raise DuplicateException(
+                detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
+                error_code="DUPLICATE_NICKNAME",
+            )
+
+    async def has_set_preferences(self, user_id: int):
+        """이미 취향설정 했는지에 대한 여부 조회하는 쿼리."""
+
+        has_set = (
+            self.db.query(Users.is_preferences_set)
+            .filter(Users.id == user_id, Users.is_preferences_set == True)
+            .first()
+        )
+
+        if has_set:
+            raise DuplicateException(
+                detail="이미 취향설정을 완료한 유저입니다.",
+                error_code="DUPLICATE_NICKNAME",
+            )
 
     async def bulk_insert_user_perferences(
         self,
