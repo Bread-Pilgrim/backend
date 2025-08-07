@@ -265,7 +265,6 @@ class BakeryRepository:
                     OperatingHour.close_time,
                     OperatingHour.open_time,
                     BakeryPhoto.img_url,
-                    UserBakeryLikes.bakery_id.label("is_like"),
                 )
                 .distinct(b.id)
                 .select_from(b)
@@ -290,7 +289,6 @@ class BakeryRepository:
                 RecommendBakery(
                     bakery_id=r.id,
                     bakery_name=r.name,
-                    is_like=True if r.is_like else False,
                     commercial_area_id=r.commercial_area_id,
                     avg_rating=r.avg_rating,
                     review_count=r.review_count,
@@ -337,7 +335,6 @@ class BakeryRepository:
                 OperatingHour.close_time,
                 OperatingHour.open_time,
                 BakeryPhoto.img_url,
-                UserBakeryLikes.bakery_id.label("is_like"),
             )
             .distinct(Bakery.id)
             .select_from(Bakery)
@@ -388,7 +385,6 @@ class BakeryRepository:
                     open_time=r.open_time,
                 ),
                 img_url=r.img_url,
-                is_like=True if r.is_like else False,
                 gu=r.gu,
                 dong=r.dong,
             )
