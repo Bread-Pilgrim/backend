@@ -1,6 +1,10 @@
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import RequestDataMissingException
+from app.core.exception import (
+    DuplicateException,
+    RequestDataMissingException,
+    UnknownException,
+)
 from app.repositories.user_repo import UserRepository
 from app.schema.users import (
     UpdateUserInfoRequestDTO,
@@ -27,25 +31,43 @@ class UserService:
 
         user_repo = UserRepository(db=self.db)
 
-        # 1. 닉네임 중복체크
-        await user_repo.find_user_by_nickname(nickname=nickname, user_id=user_id)
+        try:
+            # 1. 닉네임 중복체크
+            is_exist = await user_repo.find_user_by_nickname(
+                nickname=nickname, user_id=user_id
+            )
 
-        # 2. 취향설정 여부 체크
-        await user_repo.has_set_preferences(user_id=user_id)
+            if is_exist:
+                raise DuplicateException(
+                    detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
+                    error_code="DUPLICATE_NICKNAME",
+                )
 
-        # 3. 유저-취향 N:M 테이블 데이터 적재
-        preference_ids = a + b + f
-        preference_ids = list(set(preference_ids))  # 중복제거
+            # 2. 취향설정 여부 체크
+            has_set = await user_repo.has_set_preferences(user_id=user_id)
 
-        maps = [{"user_id": user_id, "preference_id": pid} for pid in preference_ids]
-        await user_repo.bulk_insert_user_perferences(maps=maps)
+            if has_set:
+                raise DuplicateException(
+                    detail="이미 취향설정을 완료한 유저입니다.",
+                    error_code="DUPLICATE_NICKNAME",
+                )
 
-        # 4. 유저 정보 수정 - 닉네임
-        target_field = req.model_dump(exclude_unset=True, exclude_none=True)
-        await user_repo.update_user_info(user_id=user_id, target_field=target_field)
+            # 3. 유저-취향 N:M 테이블 데이터 적재
+            await user_repo.bulk_insert_user_perferences(
+                user_id=user_id, atmospheres=a, bread_types=b, flavors=f
+            )
 
-        # 5. 취향설정 완료여부 변경
-        await user_repo.modify_preference_state(user_id=user_id)
+            # 4. 유저 정보 수정 - 닉네임
+            target_field = req.model_dump(exclude_unset=True, exclude_none=True)
+            await user_repo.update_user_info(user_id=user_id, target_field=target_field)
+
+            # 5. 취향설정 완료여부 변경
+            await user_repo.update_preference_state(user_id=user_id)
+        except Exception as e:
+            if isinstance(e, DuplicateException):
+                raise
+            else:
+                raise UnknownException(str(e))
 
     async def update_user_info(self, user_id: int, req: UpdateUserInfoRequestDTO):
         """유저 정보 수정하는 비즈니스 로직."""

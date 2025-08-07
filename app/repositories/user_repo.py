@@ -11,7 +11,7 @@ class UserRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    async def find_user_by_nickname(self, nickname: str, user_id: int):
+    async def find_user_by_nickname(self, nickname: str, user_id: int) -> bool:
         """nickname 조회하는 쿼리.."""
 
         is_exist = (
@@ -20,13 +20,9 @@ class UserRepository:
             .first()
         )
 
-        if is_exist:
-            raise DuplicateException(
-                detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
-                error_code="DUPLICATE_NICKNAME",
-            )
+        return True if is_exist else False
 
-    async def has_set_preferences(self, user_id: int):
+    async def has_set_preferences(self, user_id: int) -> bool:
         """이미 취향설정 했는지에 대한 여부 조회하는 쿼리."""
 
         has_set = (
@@ -35,54 +31,38 @@ class UserRepository:
             .first()
         )
 
-        if has_set:
-            raise DuplicateException(
-                detail="이미 취향설정을 완료한 유저입니다.",
-                error_code="DUPLICATE_NICKNAME",
-            )
+        return True if has_set else False
 
     async def bulk_insert_user_perferences(
         self,
-        maps,
-    ):
+        user_id: int,
+        atmospheres: List[int],
+        bread_types: List[int],
+        flavors: List[int],
+    ) -> None:
         """유저의 취향 insert 하는 쿼리.."""
 
-        try:
-            user_preferences = inspect(UserPreferences)
-            self.db.bulk_insert_mappings(user_preferences, maps)
-            self.db.commit()
+        # bulk insert할 데이터 가공
+        preference_ids = atmospheres + bread_types + flavors
+        preference_ids = list(set(preference_ids))  # 중복제거
+        maps = [{"user_id": user_id, "preference_id": pid} for pid in preference_ids]
 
-        except Exception as e:
-            self.db.rollback()
-            raise DuplicateException(
-                detail="이미 취향이 설정되어 있습니다. 취향을 수정하시려면 변경 요청을 해주세요.",
-                error_code="ALREADY_ONBOARDED",
-            )
+        user_preferences = inspect(UserPreferences)
+        self.db.bulk_insert_mappings(user_preferences, maps)
 
     async def update_user_info(self, user_id: int, target_field):
         """유저 정보 수정하는 쿼리."""
 
-        try:
-            user = self.db.query(Users).filter(Users.id == user_id).first()
+        user = self.db.query(Users).filter(Users.id == user_id).first()
+        for key, value in target_field.items():
+            setattr(user, key, value)
 
-            for key, value in target_field.items():
-                setattr(user, key, value)
-            self.db.commit()
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
-
-    async def modify_preference_state(self, user_id: int):
+    async def update_preference_state(self, user_id: int):
         """취향설정 완료 상태 변경하는 쿼리."""
-        try:
-            user = self.db.query(Users).filter(Users.id == user_id).first()
 
-            if user:
-                user.is_preferences_set = True
-                self.db.commit()
-
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        user = self.db.query(Users).filter(Users.id == user_id).first()
+        if user:
+            user.is_preferences_set = True
 
     async def bulk_delete_user_preferences(
         self, user_id: int, delete_preferences: List[int]
@@ -94,7 +74,6 @@ class UserRepository:
                 UserPreferences.user_id == user_id,
                 UserPreferences.preference_id.in_(delete_preferences),
             ).delete()
-            self.db.commit()
         except Exception as e:
             self.db.rollback()
             raise UnknownException(detail=str(e))
