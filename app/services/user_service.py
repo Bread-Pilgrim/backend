@@ -14,10 +14,9 @@ class UserService:
     ):
         """온보딩에서 유저의 취향설정을 완료처리하는 비즈니스 로직"""
 
-        a, b, c, f, nickname = (
+        a, b, f, nickname = (
             req.atmospheres,
             req.bread_types,
-            req.commercial_areas,
             req.flavors,
             req.nickname,
         )
@@ -35,7 +34,7 @@ class UserService:
             )
 
         # 2. 유저-취향 N:M 테이블 데이터 적재
-        preference_ids = a + b + c + f
+        preference_ids = a + b + f
         preference_ids = list(set(preference_ids))  # 중복제거
 
         maps = [{"user_id": user_id, "preference_id": pid} for pid in preference_ids]
