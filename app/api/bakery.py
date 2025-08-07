@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 
-from app.core.auth import get_user_id, verify_token
+from app.core.auth import get_user_id
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import (

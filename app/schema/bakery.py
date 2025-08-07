@@ -22,7 +22,6 @@ class CommonBakery(BaseModel):
     """,
     )
     img_url: str = Field(..., description="베이커리 썸네일")
-    is_like: bool = Field(default=False, description="찜여부")
 
 
 class RecommendBakery(CommonBakery):
