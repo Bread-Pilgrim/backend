@@ -4,7 +4,11 @@ from app.core.auth import get_user_id
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
-from app.schema.users import ModifyUserInfoRequestDTO, UserOnboardRequestDTO
+from app.schema.users import (
+    UpdateUserInfoRequestDTO,
+    UpdateUserPreferenceRequestDTO,
+    UserOnboardRequestDTO,
+)
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["user"])
@@ -41,17 +45,21 @@ async def complete_onboarding(
     1. 500 에러 예시 : DB 이슈
     """,
 )
-async def modify_user_info(
-    req: ModifyUserInfoRequestDTO, user_id=Depends(get_user_id), db=Depends(get_db)
+async def update_user_info(
+    req: UpdateUserInfoRequestDTO, user_id=Depends(get_user_id), db=Depends(get_db)
 ):
     """유저 정보 수정하는 API"""
 
-    await UserService(db=db).modify_user_info(user_id=user_id, req=req)
+    await UserService(db=db).update_user_info(user_id=user_id, req=req)
     return BaseResponse(message="유저정보 수정 성공")
 
 
-@router.get("/me/reviews")
-async def get_my_reviews():
-    """내가 작성한 리뷰 조회하는 API."""
-
-    pass
+@router.patch("/preferences")
+async def update_user_bakery_preferences(
+    req: UpdateUserPreferenceRequestDTO,
+    user_id: int = Depends(get_user_id),
+    db=Depends(get_db),
+):
+    """유저 취향정보 변경하는 API"""
+    await UserService(db=db).modify_user_preference(user_id=user_id, req=req)
+    return BaseResponse(message="유저 취향 수정 성공")

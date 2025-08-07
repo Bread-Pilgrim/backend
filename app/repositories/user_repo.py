@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 
@@ -51,12 +53,13 @@ class UserRepository:
             self.db.commit()
 
         except Exception as e:
+            self.db.rollback()
             raise DuplicateException(
                 detail="이미 취향이 설정되어 있습니다. 취향을 수정하시려면 변경 요청을 해주세요.",
                 error_code="ALREADY_ONBOARDED",
             )
 
-    async def modify_user_info(self, user_id: int, target_field):
+    async def update_user_info(self, user_id: int, target_field):
         """유저 정보 수정하는 쿼리."""
 
         try:
@@ -66,6 +69,7 @@ class UserRepository:
                 setattr(user, key, value)
             self.db.commit()
         except Exception as e:
+            self.db.rollback()
             raise UnknownException(detail=str(e))
 
     async def modify_preference_state(self, user_id: int):
@@ -78,4 +82,19 @@ class UserRepository:
                 self.db.commit()
 
         except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def bulk_delete_user_preferences(
+        self, user_id: int, delete_preferences: List[int]
+    ):
+        """유저 취향 제거하는 쿼리."""
+
+        try:
+            self.db.query(UserPreferences).filter(
+                UserPreferences.user_id == user_id,
+                UserPreferences.preference_id.in_(delete_preferences),
+            ).delete()
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
             raise UnknownException(detail=str(e))

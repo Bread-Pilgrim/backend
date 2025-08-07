@@ -56,7 +56,7 @@ class InvalidTokenException(CustomException):
 class RequestDataMissingException(CustomException):
     """요청데이터 누락 Exception"""
 
-    STATUS_CODE = status.HTTP_400_BAD_REQUEST
+    STATUS_CODE = status.HTTP_422_UNPROCESSABLE_ENTITY
     ERROR_CODE = ErrorCode.REQUEST_MISSING
     DEFAULT_MESSAGE = "요청데이터가 누락되었습니다."
 

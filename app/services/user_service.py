@@ -1,8 +1,12 @@
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import DuplicateException
+from app.core.exception import RequestDataMissingException
 from app.repositories.user_repo import UserRepository
-from app.schema.users import ModifyUserInfoRequestDTO, UserOnboardRequestDTO
+from app.schema.users import (
+    UpdateUserInfoRequestDTO,
+    UpdateUserPreferenceRequestDTO,
+    UserOnboardRequestDTO,
+)
 
 
 class UserService:
@@ -38,15 +42,46 @@ class UserService:
 
         # 4. 유저 정보 수정 - 닉네임
         target_field = req.model_dump(exclude_unset=True, exclude_none=True)
-        await user_repo.modify_user_info(user_id=user_id, target_field=target_field)
+        await user_repo.update_user_info(user_id=user_id, target_field=target_field)
 
         # 5. 취향설정 완료여부 변경
         await user_repo.modify_preference_state(user_id=user_id)
 
-    async def modify_user_info(self, user_id: int, req: ModifyUserInfoRequestDTO):
+    async def update_user_info(self, user_id: int, req: UpdateUserInfoRequestDTO):
         """유저 정보 수정하는 비즈니스 로직."""
 
         target_field = req.model_dump(exclude_unset=True, exclude_none=True)
-        await UserRepository(db=self.db).modify_user_info(
+        await UserRepository(db=self.db).update_user_info(
             user_id=user_id, target_field=target_field
         )
+
+    async def modify_user_preference(
+        self, user_id: int, req: UpdateUserPreferenceRequestDTO
+    ):
+        """유저 취향 정보 변경하는 비즈니스 로직"""
+
+        # 아무런 데이터도 보내지 않았으면, 변경된 사항 없다고 전달.
+        if all(not r for r in req.model_dump().values()):
+            raise RequestDataMissingException(
+                detail="변경할 취향 정보가 입력되지 않았습니다."
+            )
+
+        add_preferences, delete_preferences = (
+            req.add_preferences,
+            req.delete_preferences,
+        )
+
+        user_repo = UserRepository(db=self.db)
+
+        # 1. 제거되는 데이터
+        if delete_preferences:
+            await user_repo.bulk_delete_user_preferences(
+                user_id=user_id, delete_preferences=delete_preferences
+            )
+
+        # 2. 새로 추가되는 데이터
+        if add_preferences:
+            maps = [
+                {"user_id": user_id, "preference_id": pid} for pid in add_preferences
+            ]
+            await user_repo.bulk_insert_user_perferences(maps=maps)
