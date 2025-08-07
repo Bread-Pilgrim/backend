@@ -567,7 +567,6 @@ class BakeryRepository:
                     OperatingHour.is_opened,
                     OperatingHour.open_time,
                     OperatingHour.close_time,
-                    UserBakeryLikes.user_id,
                 )
                 .join(BakeryMenu, BakeryMenu.bakery_id == Bakery.id)
                 .join(
@@ -611,7 +610,6 @@ class BakeryRepository:
                     gu=r.gu,
                     dong=r.dong,
                     img_url=r.thumbnail,
-                    is_like=True if r.user_id else False,
                     open_status=operating_hours_to_open_status(
                         is_opened=r.is_opened,
                         close_time=r.close_time,
