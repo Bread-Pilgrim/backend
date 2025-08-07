@@ -772,7 +772,6 @@ class BakeryRepository:
                     gu=r.gu,
                     dong=r.dong,
                     img_url=r.thumbnail,
-                    is_like=True,
                     open_status=operating_hours_to_open_status(
                         is_opened=r.is_opened,
                         close_time=r.close_time,
