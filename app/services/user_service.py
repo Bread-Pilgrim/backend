@@ -54,7 +54,7 @@ class UserService:
 
             # 3. 유저-취향 N:M 테이블 데이터 적재
             await user_repo.bulk_insert_user_perferences(
-                user_id=user_id, atmospheres=a, bread_types=b, flavors=f
+                user_id=user_id, preference_ids=list(set(a + b + f))
             )
 
             # 4. 유저 정보 수정 - 닉네임
@@ -82,28 +82,32 @@ class UserService:
     ):
         """유저 취향 정보 변경하는 비즈니스 로직"""
 
-        # 아무런 데이터도 보내지 않았으면, 변경된 사항 없다고 전달.
-        if all(not r for r in req.model_dump().values()):
-            raise RequestDataMissingException(
-                detail="변경할 취향 정보가 입력되지 않았습니다."
+        try:
+            # 아무런 데이터도 보내지 않았으면, 변경된 사항 없다고 전달.
+            if all(not r for r in req.model_dump().values()):
+                raise RequestDataMissingException(
+                    detail="변경할 취향 정보가 입력되지 않았습니다."
+                )
+
+            add_preferences, delete_preferences = (
+                req.add_preferences,
+                req.delete_preferences,
             )
 
-        add_preferences, delete_preferences = (
-            req.add_preferences,
-            req.delete_preferences,
-        )
+            user_repo = UserRepository(db=self.db)
 
-        user_repo = UserRepository(db=self.db)
+            # 1. 제거되는 데이터
+            if delete_preferences:
+                await user_repo.bulk_delete_user_preferences(
+                    user_id=user_id, delete_preferences=delete_preferences
+                )
 
-        # 1. 제거되는 데이터
-        if delete_preferences:
-            await user_repo.bulk_delete_user_preferences(
-                user_id=user_id, delete_preferences=delete_preferences
-            )
-
-        # 2. 새로 추가되는 데이터
-        if add_preferences:
-            maps = [
-                {"user_id": user_id, "preference_id": pid} for pid in add_preferences
-            ]
-            await user_repo.bulk_insert_user_perferences(maps=maps)
+            # 2. 새로 추가되는 데이터
+            if add_preferences:
+                await user_repo.bulk_insert_user_perferences(
+                    user_id=user_id, preference_ids=add_preferences
+                )
+        except Exception as e:
+            if isinstance(e, RequestDataMissingException):
+                raise e
+            raise UnknownException(str(e))

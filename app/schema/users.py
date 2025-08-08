@@ -15,7 +15,6 @@ class UserOnboardRequestDTO(BaseModel):
 class UpdateUserInfoRequestDTO(BaseModel):
     """유저 정보 수정 요청모델."""
 
-    is_preferences_set: Optional[bool] = Field(None, description="취향설정 완료 여부")
     age_range: Optional[int] = Field(None, description="연령대")
     nickname: Optional[str] = Field(None, description="닉네임")
     profile_img: Optional[str] = Field(None, description="프로필 이미지")

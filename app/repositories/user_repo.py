@@ -34,17 +34,11 @@ class UserRepository:
         return True if has_set else False
 
     async def bulk_insert_user_perferences(
-        self,
-        user_id: int,
-        atmospheres: List[int],
-        bread_types: List[int],
-        flavors: List[int],
+        self, user_id: int, preference_ids: List[int]
     ) -> None:
         """유저의 취향 insert 하는 쿼리.."""
 
         # bulk insert할 데이터 가공
-        preference_ids = atmospheres + bread_types + flavors
-        preference_ids = list(set(preference_ids))  # 중복제거
         maps = [{"user_id": user_id, "preference_id": pid} for pid in preference_ids]
 
         user_preferences = inspect(UserPreferences)
