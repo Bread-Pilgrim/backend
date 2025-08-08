@@ -142,6 +142,17 @@ async def get_hot_bakeries(
 async def get_visited_bakery(
     page_no: int = Query(default=1, description="페이지 번호"),
     page_size: int = Query(default=5),
+    sort_clause: str = Query(
+        default="CREATED_AT.DESC",
+        description="""
+     \n
+    최신 작성순 : CREATED_AT.DESC 
+    리뷰 많은 순 : REVIEW_COUNT.DESC 
+    별점 높은순 : AVG_RATING.DESC 
+    별점 낮은순 : AVG_RATING.ASC 
+    가나다 순: NAME.ASC
+    """,
+    ),
     user_id: int = Depends(get_user_id),
     db=Depends(get_db),
 ):
@@ -149,7 +160,10 @@ async def get_visited_bakery(
 
     return BaseResponse(
         data=await BakeryService(db=db).get_visited_bakery(
-            user_id=user_id, page_no=page_no, page_size=page_size
+            user_id=user_id,
+            page_no=page_no,
+            sort_clause=sort_clause,
+            page_size=page_size,
         )
     )
 
