@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import and_, desc, select
 from sqlalchemy.orm import aliased
@@ -28,10 +29,9 @@ from app.schema.bakery import (
     GuDongMenuBakery,
     LoadMoreBakery,
     RecommendBakery,
-    SimpleBakeryMenu,
 )
 from app.utils.converter import operating_hours_to_open_status
-from app.utils.pagination import build_order_by, convert_limit_and_offset
+from app.utils.pagination import convert_limit_and_offset
 
 
 class BakeryRepository:
@@ -44,83 +44,79 @@ class BakeryRepository:
         user_id: int,
         target_day_of_week: int,
         page_size: int = 20,
-    ):
+    ) -> List[RecommendBakery]:
         """(홈) 유저의 취향이 반영된 빵집 조회하는 쿼리."""
 
-        try:
-            conditions = [
-                UserPreferences.user_id == user_id,
-                BakeryPhoto.is_signature == True,
-            ]
+        conditions = [
+            UserPreferences.user_id == user_id,
+            BakeryPhoto.is_signature == True,
+        ]
 
-            if area_codes != ["14"]:
-                conditions.append(Bakery.commercial_area_id.in_(area_codes))
+        if area_codes != ["14"]:
+            conditions.append(Bakery.commercial_area_id.in_(area_codes))
 
-            stmt = (
-                select(
-                    Bakery.id,
-                    Bakery.name,
-                    Bakery.avg_rating,
-                    Bakery.commercial_area_id,
-                    Bakery.review_count,
-                    OperatingHour.is_opened,
-                    OperatingHour.close_time,
-                    OperatingHour.open_time,
-                    BakeryPhoto.img_url,
-                )
-                .distinct(Bakery.id)
-                .select_from(UserPreferences)
-                .join(
-                    BakeryPreference,
-                    BakeryPreference.preference_id == UserPreferences.preference_id,
-                )
-                .join(Bakery, Bakery.id == BakeryPreference.bakery_id)
-                .join(
-                    OperatingHour,
-                    and_(
-                        OperatingHour.bakery_id == Bakery.id,
-                        OperatingHour.day_of_week == target_day_of_week,
-                    ),
-                )
-                .join(
-                    BakeryPhoto,
-                    and_(
-                        BakeryPhoto.bakery_id == Bakery.id,
-                        BakeryPhoto.is_signature.is_(True),
-                    ),
-                )
-                .join(
-                    UserBakeryLikes,
-                    and_(
-                        UserBakeryLikes.bakery_id == Bakery.id,
-                        UserBakeryLikes.user_id == user_id,
-                    ),
-                    isouter=True,
-                )
-                .where(and_(*conditions))
-                .limit(page_size)
+        stmt = (
+            select(
+                Bakery.id,
+                Bakery.name,
+                Bakery.avg_rating,
+                Bakery.commercial_area_id,
+                Bakery.review_count,
+                OperatingHour.is_opened,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
+                BakeryPhoto.img_url,
             )
+            .distinct(Bakery.id)
+            .select_from(UserPreferences)
+            .join(
+                BakeryPreference,
+                BakeryPreference.preference_id == UserPreferences.preference_id,
+            )
+            .join(Bakery, Bakery.id == BakeryPreference.bakery_id)
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+            )
+            .join(
+                BakeryPhoto,
+                and_(
+                    BakeryPhoto.bakery_id == Bakery.id,
+                    BakeryPhoto.is_signature.is_(True),
+                ),
+            )
+            .join(
+                UserBakeryLikes,
+                and_(
+                    UserBakeryLikes.bakery_id == Bakery.id,
+                    UserBakeryLikes.user_id == user_id,
+                ),
+                isouter=True,
+            )
+            .where(and_(*conditions))
+            .limit(page_size)
+        )
 
-            res = self.db.execute(stmt).mappings().all()
-            return [
-                RecommendBakery(
-                    bakery_id=r.id,
-                    commercial_area_id=r.commercial_area_id,
-                    bakery_name=r.name,
-                    avg_rating=r.avg_rating,
-                    review_count=r.review_count,
-                    open_status=operating_hours_to_open_status(
-                        is_opened=r.is_opened,
-                        close_time=r.close_time,
-                        open_time=r.open_time,
-                    ),
-                    img_url=r.img_url,
-                )
-                for r in res
-            ]
-
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        res = self.db.execute(stmt).mappings().all()
+        return [
+            RecommendBakery(
+                bakery_id=r.id,
+                commercial_area_id=r.commercial_area_id,
+                bakery_name=r.name,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
+                img_url=r.img_url,
+            )
+            for r in res
+        ]
 
     async def get_more_bakeries_by_preference(
         self,

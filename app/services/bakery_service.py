@@ -1,6 +1,6 @@
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import NotFoundException
+from app.core.exception import NotFoundException, UnknownException
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
@@ -22,21 +22,22 @@ class BakeryService:
     async def get_recommend_bakeries_by_preference(self, area_code: str, user_id: int):
         """(홈) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
 
-        # 구분자로 받은 지역코드 list로 반환
-        area_codes = parse_comma_to_list(area_code)
+        try:
+            # 구분자로 받은 지역코드 list로 반환
+            area_codes = parse_comma_to_list(area_code)
+            # 지역코드 유효성 체크
+            validate_area_code(area_codes=area_codes)
+            # 오늘 요일
+            target_day_of_week = get_now_by_timezone().weekday()
 
-        # 지역코드 유효성 체크
-        validate_area_code(area_codes=area_codes)
-
-        # 오늘 요일
-        target_day_of_week = get_now_by_timezone().weekday()
-
-        # 유저 취향 + 지역 기반으로 빵집 조회
-        return await BakeryRepository(self.db).get_bakeries_by_preference(
-            area_codes=area_codes,
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-        )
+            # 유저 취향 + 지역 기반으로 빵집 조회
+            return await BakeryRepository(self.db).get_bakeries_by_preference(
+                area_codes=area_codes,
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def get_more_bakeries_by_preference(
         self, page_no: int, page_size: int, area_code: str, user_id: int
