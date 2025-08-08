@@ -164,31 +164,36 @@ class BakeryService:
     async def get_bakery_menus(self, bakery_id: int):
         return await BakeryRepository(db=self.db).get_bakery_menus(bakery_id=bakery_id)
 
-    async def get_visited_bakery(self, user_id: int, page_no: int, page_size: int):
+    async def get_visited_bakery(
+        self, user_id: int, sort_clause: str, page_no: int, page_size: int
+    ):
+        try:
+            bakery_repo = BakeryRepository(db=self.db)
 
-        bakery_repo = BakeryRepository(db=self.db)
+            # 1. 베이커리 검색
+            sort_by, direction = build_sort_clause(sort_clause=sort_clause)
+            target_day_of_week = get_now_by_timezone().weekday()
+            bakeries, has_next = await bakery_repo.get_visited_bakery(
+                user_id=user_id,
+                sort_by=sort_by,
+                direction=direction,
+                target_day_of_week=target_day_of_week,
+                page_no=page_no,
+                page_size=page_size,
+            )
 
-        # 1. 베이커리 검색
-        target_day_of_week = get_now_by_timezone().weekday()
+            if not bakeries:
+                return GuDongMenuBakeryResponseDTO()
 
-        bakeries, has_next = await bakery_repo.get_visited_bakery(
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-            page_no=page_no,
-            page_size=page_size,
-        )
+            # 2. 시그니처 메뉴 검색
+            menus = await bakery_repo.get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
+            bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        if not bakeries:
-            return GuDongMenuBakeryResponseDTO()
-
-        # 2. 시그니처 메뉴 검색
-        menus = await bakery_repo.get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
-
-        bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
-
-        return GuDongMenuBakeryResponseDTO(items=bakery_info, has_next=has_next)
+            return GuDongMenuBakeryResponseDTO(items=bakery_info, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def check_is_eligible_to_write_review(self, bakery_id: int, user_id: int):
         """리뷰를 작성해도 되는지 체크하는 비즈니스 로직."""
@@ -233,28 +238,29 @@ class BakeryService:
     ):
         """내가 찜한 빵집 조회하는 비즈니스 로직."""
         bakery_repo = BakeryRepository(db=self.db)
-
-        # 1. 베이커리 조회
         sort_by, direction = build_sort_clause(sort_clause=sort_clause)
-
         target_day_of_week = get_now_by_timezone().weekday()
-        bakeries, has_next = await bakery_repo.get_like_bakeries(
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-            sort_by=sort_by,
-            direction=direction,
-            page_no=page_no,
-            page_size=page_size,
-        )
+        try:
+            # 1. 베이커리 조회
+            bakeries, has_next = await bakery_repo.get_like_bakeries(
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+                sort_by=sort_by,
+                direction=direction,
+                page_no=page_no,
+                page_size=page_size,
+            )
 
-        if not bakeries:
-            return GuDongMenuBakeryResponseDTO()
+            if not bakeries:
+                return GuDongMenuBakeryResponseDTO()
 
-        # 2. 메뉴 조회
-        menus = await bakery_repo.get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
+            # 2. 메뉴 조회
+            menus = await bakery_repo.get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
 
-        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+            bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return GuDongMenuBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+            return GuDongMenuBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))

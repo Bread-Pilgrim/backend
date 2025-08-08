@@ -31,7 +31,7 @@ from app.schema.bakery import (
     RecommendBakery,
 )
 from app.utils.converter import operating_hours_to_open_status
-from app.utils.pagination import convert_limit_and_offset
+from app.utils.pagination import build_order_by, convert_limit_and_offset
 
 
 class BakeryRepository:
@@ -534,79 +534,87 @@ class BakeryRepository:
             raise UnknownException(detail=str(e))
 
     async def get_visited_bakery(
-        self, user_id: int, target_day_of_week: int, page_no: int, page_size: int
+        self,
+        user_id: int,
+        sort_by: str,
+        direction: str,
+        target_day_of_week: int,
+        page_no: int,
+        page_size: int,
     ):
         """방문한 빵집 (내가 리뷰 쓴 빵집 ) 조회하는 쿼리."""
 
+        if sort_by == "created_at":
+            sort_column = getattr(UserBakeryLikes, sort_by)
+        else:
+            sort_column = getattr(Bakery, sort_by)
+        order_by = build_order_by(sort_column, direction)
+
         limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
-        try:
-            stmt = (
-                select(
-                    Bakery.id,
-                    Bakery.name,
-                    Bakery.gu,
-                    Bakery.dong,
-                    Bakery.avg_rating,
-                    Bakery.review_count,
-                    Bakery.thumbnail,
-                    OperatingHour.is_opened,
-                    OperatingHour.open_time,
-                    OperatingHour.close_time,
-                )
-                .join(BakeryMenu, BakeryMenu.bakery_id == Bakery.id)
-                .join(
-                    Review,
-                    and_(
-                        Review.bakery_id == Bakery.id,
-                        Review.user_id == user_id,
-                    ),
-                )
-                .join(
-                    OperatingHour,
-                    and_(
-                        OperatingHour.bakery_id == Bakery.id,
-                        OperatingHour.day_of_week == target_day_of_week,
-                    ),
-                    isouter=True,
-                )
-                .join(
-                    UserBakeryLikes,
-                    and_(
-                        UserBakeryLikes.bakery_id == Bakery.id,
-                        UserBakeryLikes.user_id == user_id,
-                    ),
-                    isouter=True,
-                )
-                .order_by(desc(Bakery.id))
-                .distinct(Bakery.id)
-                .limit(limit)
-                .offset(offset)
+        stmt = (
+            select(
+                Bakery.id,
+                Bakery.name,
+                Bakery.gu,
+                Bakery.dong,
+                Bakery.avg_rating,
+                Bakery.review_count,
+                Bakery.thumbnail,
+                OperatingHour.is_opened,
+                OperatingHour.open_time,
+                OperatingHour.close_time,
             )
+            .distinct(Bakery.id)
+            .join(BakeryMenu, BakeryMenu.bakery_id == Bakery.id)
+            .join(
+                Review,
+                and_(
+                    Review.bakery_id == Bakery.id,
+                    Review.user_id == user_id,
+                ),
+            )
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+                isouter=True,
+            )
+            .join(
+                UserBakeryLikes,
+                and_(
+                    UserBakeryLikes.bakery_id == Bakery.id,
+                    UserBakeryLikes.user_id == user_id,
+                ),
+                isouter=True,
+            )
+            .order_by(*order_by)
+            .limit(limit)
+            .offset(offset)
+        )
 
-            res = self.db.execute(stmt).all()
-            has_next = len(res) > page_size
+        res = self.db.execute(stmt).all()
+        has_next = len(res) > page_size
 
-            return [
-                GuDongMenuBakery(
-                    bakery_id=r.id,
-                    bakery_name=r.name,
-                    avg_rating=r.avg_rating,
-                    review_count=r.review_count,
-                    gu=r.gu,
-                    dong=r.dong,
-                    img_url=r.thumbnail,
-                    open_status=operating_hours_to_open_status(
-                        is_opened=r.is_opened,
-                        close_time=r.close_time,
-                        open_time=r.open_time,
-                    ),
-                )
-                for r in res
-            ], has_next
-
-        except Exception as e:
-            raise UnknownException(str(e))
+        return [
+            GuDongMenuBakery(
+                bakery_id=r.id,
+                bakery_name=r.name,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                gu=r.gu,
+                dong=r.dong,
+                img_url=r.thumbnail,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
+            )
+            for r in res
+        ], has_next
 
     async def get_reviews_written_today(
         self, user_id: int, bakery_id: int, start_time: datetime, end_time: datetime
