@@ -216,19 +216,16 @@ class BakeryRepository:
     async def get_signature_menus(self, bakery_ids: list[int]):
         """베이커리 내 대표메뉴 조회하는 쿼리."""
 
-        try:
-            menus = (
-                self.db.query(BakeryMenu.bakery_id, BakeryMenu.name)
-                .filter(
-                    BakeryMenu.is_signature == True,
-                    BakeryMenu.bakery_id.in_(bakery_ids),
-                )
-                .all()
+        menus = (
+            self.db.query(BakeryMenu.bakery_id, BakeryMenu.name)
+            .filter(
+                BakeryMenu.is_signature == True,
+                BakeryMenu.bakery_id.in_(bakery_ids),
             )
+            .all()
+        )
 
-            return [{"bakery_id": m.bakery_id, "menu_name": m.name} for m in menus]
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return [{"bakery_id": m.bakery_id, "menu_name": m.name} for m in menus]
 
     async def get_bakery_by_area(
         self, area_codes: list[str], target_day_of_week: int, user_id: int

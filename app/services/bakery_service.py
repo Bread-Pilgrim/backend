@@ -97,34 +97,35 @@ class BakeryService:
     ) -> LoadMoreBakeryResponseDTO:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
-        area_codes = parse_comma_to_list(area_code)
-        # 지역코드 유효성 체크
-        validate_area_code(area_codes=area_codes)
+        try:
+            area_codes = parse_comma_to_list(area_code)
+            # 지역코드 유효성 체크
+            validate_area_code(area_codes=area_codes)
+            target_day_of_week = get_now_by_timezone().weekday()
+            bakery_repo = BakeryRepository(self.db)
 
-        target_day_of_week = get_now_by_timezone().weekday()
+            # 빵집 정보
+            bakeries, has_next = await bakery_repo.get_more_hot_bakeries(
+                area_codes=area_codes,
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+                page_no=page_no,
+                page_size=page_size,
+            )
 
-        bakery_repo = BakeryRepository(self.db)
+            if not bakeries:
+                return LoadMoreBakeryResponseDTO()
 
-        # 빵집 정보
-        bakeries, has_next = await bakery_repo.get_more_hot_bakeries(
-            area_codes=area_codes,
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-            page_no=page_no,
-            page_size=page_size,
-        )
+            # 빵 시그니처 메뉴 정보
+            menus = await bakery_repo.get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
 
-        if not bakeries:
-            return LoadMoreBakeryResponseDTO()
+            bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        # 빵 시그니처 메뉴 정보
-        menus = await bakery_repo.get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
-
-        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
-
-        return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+            return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_detail(self, bakery_id: int):
         """베이커리 상세 조회하는 비즈니스 로직."""
