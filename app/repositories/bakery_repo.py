@@ -235,67 +235,63 @@ class BakeryRepository:
     ):
         """지역코드로 베이터리 조회하는 쿼리."""
 
-        try:
+        b = aliased(Bakery)
 
-            b = aliased(Bakery)
+        conditions = [
+            OperatingHour.day_of_week == target_day_of_week,
+            BakeryPhoto.is_signature == True,
+        ]
+        if area_codes != ["14"]:
+            conditions.append(b.commercial_area_id.in_(area_codes))
 
-            conditions = [
-                OperatingHour.day_of_week == target_day_of_week,
-                BakeryPhoto.is_signature == True,
-            ]
-            if area_codes != ["14"]:
-                conditions.append(b.commercial_area_id.in_(area_codes))
-
-            stmt = (
-                select(
-                    b.id.label("bakery_id"),
-                    b.id,
-                    b.name,
-                    b.avg_rating,
-                    b.commercial_area_id,
-                    b.review_count,
-                    OperatingHour.is_opened,
-                    OperatingHour.close_time,
-                    OperatingHour.open_time,
-                    BakeryPhoto.img_url,
-                )
-                .distinct(b.id)
-                .select_from(b)
-                .join(OperatingHour, OperatingHour.bakery_id == b.id)
-                .join(BakeryPhoto, BakeryPhoto.bakery_id == b.id)
-                .join(
-                    UserBakeryLikes,
-                    and_(
-                        UserBakeryLikes.bakery_id == b.id,
-                        UserBakeryLikes.user_id == user_id,
-                    ),
-                    isouter=True,
-                )
-                .where(and_(*conditions))
-                .order_by(b.id, b.avg_rating.desc())
-                .limit(20)
+        stmt = (
+            select(
+                b.id.label("bakery_id"),
+                b.id,
+                b.name,
+                b.avg_rating,
+                b.commercial_area_id,
+                b.review_count,
+                OperatingHour.is_opened,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
+                BakeryPhoto.img_url,
             )
+            .distinct(b.id)
+            .select_from(b)
+            .join(OperatingHour, OperatingHour.bakery_id == b.id)
+            .join(BakeryPhoto, BakeryPhoto.bakery_id == b.id)
+            .join(
+                UserBakeryLikes,
+                and_(
+                    UserBakeryLikes.bakery_id == b.id,
+                    UserBakeryLikes.user_id == user_id,
+                ),
+                isouter=True,
+            )
+            .where(and_(*conditions))
+            .order_by(b.id, b.avg_rating.desc())
+            .limit(20)
+        )
 
-            res = self.db.execute(stmt).mappings().all()
+        res = self.db.execute(stmt).mappings().all()
 
-            return [
-                RecommendBakery(
-                    bakery_id=r.id,
-                    bakery_name=r.name,
-                    commercial_area_id=r.commercial_area_id,
-                    avg_rating=r.avg_rating,
-                    review_count=r.review_count,
-                    open_status=operating_hours_to_open_status(
-                        is_opened=r.is_opened,
-                        close_time=r.close_time,
-                        open_time=r.open_time,
-                    ),
-                    img_url=r.img_url,
-                )
-                for r in res
-            ]
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return [
+            RecommendBakery(
+                bakery_id=r.id,
+                bakery_name=r.name,
+                commercial_area_id=r.commercial_area_id,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
+                img_url=r.img_url,
+            )
+            for r in res
+        ]
 
     async def get_more_hot_bakeries(
         self,
