@@ -41,39 +41,41 @@ class BakeryService:
 
     async def get_more_bakeries_by_preference(
         self, page_no: int, page_size: int, area_code: str, user_id: int
-    ):
+    ) -> LoadMoreBakeryResponseDTO:
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
 
-        # 구분자로 받은 지역코드 list로 반환
-        area_codes = parse_comma_to_list(area_code)
-        # 지역코드 유효성 체크
-        validate_area_code(area_codes=area_codes)
-        # 오늘 요일
-        target_day_of_week = get_now_by_timezone().weekday()
+        try:
+            # 구분자로 받은 지역코드 list로 반환
+            area_codes = parse_comma_to_list(area_code)
+            # 지역코드 유효성 체크
+            validate_area_code(area_codes=area_codes)
+            # 오늘 요일
+            target_day_of_week = get_now_by_timezone().weekday()
 
-        # 베이커리 정보 조회
-        bakery_repo = BakeryRepository(db=self.db)
-        bakeries, has_next = await bakery_repo.get_more_bakeries_by_preference(
-            page_no=page_no,
-            page_size=page_size,
-            area_codes=area_codes,
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-        )
+            # 베이커리 정보 조회
+            bakery_repo = BakeryRepository(db=self.db)
+            bakeries, has_next = await bakery_repo.get_more_bakeries_by_preference(
+                page_no=page_no,
+                page_size=page_size,
+                area_codes=area_codes,
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+            )
 
-        # 베이커리 조회결과 없을 때, 반환값
-        if not bakeries:
-            return LoadMoreBakeryResponseDTO()
+            # 베이커리 조회결과 없을 때, 반환값
+            if not bakeries:
+                return LoadMoreBakeryResponseDTO()
 
-        # 베이커리 시그니처 메뉴 정보 조회
-        menus = await bakery_repo.get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
+            # 베이커리 시그니처 메뉴 정보 조회
+            menus = await bakery_repo.get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
+            # 베이커리 정보 + 시그니처 메뉴 정보 병합
+            bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+            return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
 
-        # 베이커리 정보 + 시그니처 메뉴 정보 병합
-        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
-
-        return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_by_area(self, area_code: str, user_id: int):
         """(홈탭용)hot한 빵집 조회하는 비즈니스 로직."""

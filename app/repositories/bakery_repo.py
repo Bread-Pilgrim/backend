@@ -140,81 +140,78 @@ class BakeryRepository:
         if area_codes != ["14"]:
             conditions.append(Bakery.commercial_area_id.in_(area_codes))
 
-        try:
-            stmt = (
-                select(
-                    Bakery.id,
-                    Bakery.name,
-                    Bakery.gu,
-                    Bakery.dong,
-                    Bakery.avg_rating,
-                    Bakery.review_count,
-                    Bakery.commercial_area_id,
-                    OperatingHour.is_opened,
-                    OperatingHour.close_time,
-                    OperatingHour.open_time,
-                    BakeryPhoto.img_url,
-                )
-                .distinct(Bakery.id)
-                .select_from(UserPreferences)
-                .join(
-                    BakeryPreference,
-                    BakeryPreference.preference_id == UserPreferences.preference_id,
-                )
-                .join(Bakery, Bakery.id == BakeryPreference.bakery_id)
-                .join(
-                    OperatingHour,
-                    and_(
-                        OperatingHour.bakery_id == Bakery.id,
-                        OperatingHour.day_of_week == target_day_of_week,
-                    ),
-                )
-                .join(
-                    BakeryPhoto,
-                    and_(
-                        BakeryPhoto.bakery_id == Bakery.id,
-                        BakeryPhoto.is_signature.is_(True),
-                    ),
-                    isouter=True,
-                )
-                .join(
-                    UserBakeryLikes,
-                    and_(
-                        UserBakeryLikes.bakery_id == Bakery.id,
-                        UserBakeryLikes.user_id == user_id,
-                    ),
-                    isouter=True,
-                )
-                .where(and_(*conditions))
-                .order_by(Bakery.id.asc())
-                .limit(limit=limit)
-                .offset(offset=offset)
+        stmt = (
+            select(
+                Bakery.id,
+                Bakery.name,
+                Bakery.gu,
+                Bakery.dong,
+                Bakery.avg_rating,
+                Bakery.review_count,
+                Bakery.commercial_area_id,
+                OperatingHour.is_opened,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
+                BakeryPhoto.img_url,
             )
+            .distinct(Bakery.id)
+            .select_from(UserPreferences)
+            .join(
+                BakeryPreference,
+                BakeryPreference.preference_id == UserPreferences.preference_id,
+            )
+            .join(Bakery, Bakery.id == BakeryPreference.bakery_id)
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+            )
+            .join(
+                BakeryPhoto,
+                and_(
+                    BakeryPhoto.bakery_id == Bakery.id,
+                    BakeryPhoto.is_signature.is_(True),
+                ),
+                isouter=True,
+            )
+            .join(
+                UserBakeryLikes,
+                and_(
+                    UserBakeryLikes.bakery_id == Bakery.id,
+                    UserBakeryLikes.user_id == user_id,
+                ),
+                isouter=True,
+            )
+            .where(and_(*conditions))
+            .order_by(Bakery.id.asc())
+            .limit(limit=limit)
+            .offset(offset=offset)
+        )
 
-            res = self.db.execute(stmt).mappings().all()
+        res = self.db.execute(stmt).mappings().all()
 
-            has_next = len(res) > page_size
+        has_next = len(res) > page_size
 
-            return [
-                LoadMoreBakery(
-                    bakery_id=r.id,
-                    bakery_name=r.name,
-                    commercial_area_id=r.commercial_area_id,
-                    avg_rating=r.avg_rating,
-                    review_count=r.review_count,
-                    open_status=operating_hours_to_open_status(
-                        is_opened=r.is_opened,
-                        close_time=r.close_time,
-                        open_time=r.open_time,
-                    ),
-                    img_url=r.img_url,
-                    gu=r.gu,
-                    dong=r.dong,
-                )
-                for r in res[:page_size]
-            ], has_next
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return [
+            LoadMoreBakery(
+                bakery_id=r.id,
+                bakery_name=r.name,
+                commercial_area_id=r.commercial_area_id,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
+                img_url=r.img_url,
+                gu=r.gu,
+                dong=r.dong,
+            )
+            for r in res[:page_size]
+        ], has_next
 
     async def get_signature_menus(self, bakery_ids: list[int]):
         """베이커리 내 대표메뉴 조회하는 쿼리."""
