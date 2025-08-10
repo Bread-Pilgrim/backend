@@ -620,21 +620,19 @@ class BakeryRepository:
         self, user_id: int, bakery_id: int, start_time: datetime, end_time: datetime
     ):
         """해당 베이커리에 오늘 유저가 작성한 리뷰 조회하는 쿼리."""
-        try:
-            written_review = (
-                self.db.query(Review)
-                .filter(
-                    Review.user_id == user_id,
-                    Review.bakery_id == bakery_id,
-                    start_time <= Review.created_at,
-                    end_time >= Review.created_at,
-                )
-                .first()
-            )
 
-            return True if written_review else False
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        written_review = (
+            self.db.query(Review)
+            .filter(
+                Review.user_id == user_id,
+                Review.bakery_id == bakery_id,
+                start_time <= Review.created_at,
+                end_time >= Review.created_at,
+            )
+            .first()
+        )
+
+        return True if written_review else False
 
     async def check_already_liked_bakery(self, user_id: int, bakery_id: int):
         try:
