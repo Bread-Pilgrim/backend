@@ -380,130 +380,114 @@ class BakeryRepository:
     async def get_bakery_detail(self, bakery_id: int, target_day_of_week: int):
         """베이커리 상세정보 조회하는 쿼리."""
 
-        try:
-            res = (
-                self.db.query(
-                    Bakery.id,
-                    Bakery.name,
-                    Bakery.address,
-                    Bakery.phone,
-                    OperatingHour.is_opened,
-                    OperatingHour.close_time,
-                    OperatingHour.open_time,
-                    UserBakeryLikes.bakery_id.label("is_like"),
-                )
-                .select_from(Bakery)
-                .join(
-                    OperatingHour,
-                    and_(
-                        OperatingHour.bakery_id == Bakery.id,
-                        OperatingHour.day_of_week == target_day_of_week,
-                    ),
-                    isouter=True,
-                )
-                .join(
-                    UserBakeryLikes,
-                    and_(UserBakeryLikes.bakery_id == Bakery.id),
-                    isouter=True,
-                )
-                .filter(Bakery.id == bakery_id)
-                .first()
+        res = (
+            self.db.query(
+                Bakery.id,
+                Bakery.name,
+                Bakery.address,
+                Bakery.phone,
+                OperatingHour.is_opened,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
+                UserBakeryLikes.bakery_id.label("is_like"),
+            )
+            .select_from(Bakery)
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+                isouter=True,
+            )
+            .join(
+                UserBakeryLikes,
+                and_(UserBakeryLikes.bakery_id == Bakery.id),
+                isouter=True,
+            )
+            .filter(Bakery.id == bakery_id)
+            .first()
+        )
+
+        if res:
+            return BakeryDetailResponseDTO(
+                bakery_id=res.id,
+                bakery_name=res.name,
+                address=res.address,
+                phone=res.phone,
+                open_status=operating_hours_to_open_status(
+                    is_opened=res.is_opened,
+                    close_time=res.close_time,
+                    open_time=res.open_time,
+                ),
+                is_like=True if res.is_like else False,
             )
 
-            if res:
-                return BakeryDetailResponseDTO(
-                    bakery_id=res.id,
-                    bakery_name=res.name,
-                    address=res.address,
-                    phone=res.phone,
-                    open_status=operating_hours_to_open_status(
-                        is_opened=res.is_opened,
-                        close_time=res.close_time,
-                        open_time=res.open_time,
-                    ),
-                    is_like=True if res.is_like else False,
-                )
-            else:
-                raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
-        except NotFoundException as e:
-            raise e
-        except Exception as e:
-            raise UnknownException(detail=str(e))
-
-    async def get_bakery_menu_detail(self, bakery_id: int):
+    async def get_bakery_menu_detail(self, bakery_id: int) -> List[BakeryDetail]:
         """베이커리 메뉴 정보 조회하는 쿼리"""
 
-        try:
-            stmt = (
-                self.db.query(
-                    BakeryMenu.name,
-                    BakeryMenu.price,
-                    BakeryMenu.is_signature,
-                    MenuPhoto.img_url,
-                )
-                .select_from(BakeryMenu)
-                .outerjoin(MenuPhoto, MenuPhoto.menu_id == BakeryMenu.id)
-                .filter(BakeryMenu.bakery_id == bakery_id)
+        stmt = (
+            self.db.query(
+                BakeryMenu.name,
+                BakeryMenu.price,
+                BakeryMenu.is_signature,
+                MenuPhoto.img_url,
             )
+            .select_from(BakeryMenu)
+            .outerjoin(MenuPhoto, MenuPhoto.menu_id == BakeryMenu.id)
+            .filter(BakeryMenu.bakery_id == bakery_id)
+        )
 
-            res = self.db.execute(stmt).mappings().all()
+        res = self.db.execute(stmt).mappings().all()
 
-            return [
-                BakeryDetail(
-                    menu_name=r.name,
-                    price=r.price,
-                    is_signature=r.is_signature,
-                    img_url=r.img_url,
-                )
-                for r in res
-            ]
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return [
+            BakeryDetail(
+                menu_name=r.name,
+                price=r.price,
+                is_signature=r.is_signature,
+                img_url=r.img_url,
+            )
+            for r in res
+        ]
 
-    async def get_bakery_photos(self, bakery_id: int):
+    async def get_bakery_photos(self, bakery_id: int) -> List[str]:
         """베이커리 썸네일 조회하는 메소드."""
 
-        try:
-            res = (
-                self.db.query(BakeryPhoto.img_url)
-                .filter(BakeryPhoto.bakery_id == bakery_id)
-                .all()
-            )
+        res = (
+            self.db.query(BakeryPhoto.img_url)
+            .filter(BakeryPhoto.bakery_id == bakery_id)
+            .all()
+        )
 
-            return [r.img_url for r in res if r.img_url] if res else []
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return [r.img_url for r in res if r.img_url] if res else []
 
     async def get_bakery_operating_hours(self, bakery_id: int):
         """베이커리 전체 영업시간 가져오는 쿼리."""
 
-        try:
-            res = (
-                self.db.query(
-                    OperatingHour.day_of_week,
-                    OperatingHour.open_time,
-                    OperatingHour.close_time,
-                    OperatingHour.is_opened,
-                )
-                .filter(OperatingHour.bakery_id == bakery_id)
-                .all()
+        res = (
+            self.db.query(
+                OperatingHour.day_of_week,
+                OperatingHour.open_time,
+                OperatingHour.close_time,
+                OperatingHour.is_opened,
             )
+            .filter(OperatingHour.bakery_id == bakery_id)
+            .all()
+        )
 
-            return (
-                [
-                    BakeryOperatingHour(
-                        day_of_week=r.day_of_week,
-                        open_time=(r.open_time).strftime("%H:%M"),
-                        close_time=(r.close_time).strftime("%H:%M"),
-                        is_opened=r.is_opened,
-                    )
-                    for r in res
-                ]
-                if res
-                else []
-            )
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return (
+            [
+                BakeryOperatingHour(
+                    day_of_week=r.day_of_week,
+                    open_time=(r.open_time).strftime("%H:%M"),
+                    close_time=(r.close_time).strftime("%H:%M"),
+                    is_opened=r.is_opened,
+                )
+                for r in res
+            ]
+            if res
+            else []
+        )
 
     async def get_bakery_menus(self, bakery_id):
         """베이커리 메뉴 조회하는 쿼리."""

@@ -133,33 +133,38 @@ class BakeryService:
         bakery_repo = BakeryRepository(db=self.db)
         target_day_of_week = get_now_by_timezone().weekday()
 
-        # 1. 베이커리 정보 가져오기
-        bakery = await bakery_repo.get_bakery_detail(
-            bakery_id=bakery_id, target_day_of_week=target_day_of_week
-        )
+        try:
+            # 1. 베이커리 정보 가져오기
+            bakery = await bakery_repo.get_bakery_detail(
+                bakery_id=bakery_id, target_day_of_week=target_day_of_week
+            )
 
-        if not bakery:
-            raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
+            if not bakery:
+                raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
 
-        # 2. 베이커리 메뉴 가져오기
-        menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)
+            # 2. 베이커리 메뉴 가져오기
+            menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)
 
-        # 3. 베이커리 썸네일 가져오기
-        photos = await bakery_repo.get_bakery_photos(bakery_id=bakery_id)
+            # 3. 베이커리 썸네일 가져오기
+            photos = await bakery_repo.get_bakery_photos(bakery_id=bakery_id)
 
-        # 4. 베이커리 영업시간 가져오기
-        operating_hours = await bakery_repo.get_bakery_operating_hours(
-            bakery_id=bakery_id
-        )
+            # 4. 베이커리 영업시간 가져오기
+            operating_hours = await bakery_repo.get_bakery_operating_hours(
+                bakery_id=bakery_id
+            )
 
-        return BakeryDetailResponseDTO(
-            **bakery.model_dump(
-                exclude={"menus", "bakery_img_urls", "operating_hours"}
-            ),
-            menus=menus,
-            bakery_img_urls=photos,
-            operating_hours=operating_hours,
-        )
+            return BakeryDetailResponseDTO(
+                **bakery.model_dump(
+                    exclude={"menus", "bakery_img_urls", "operating_hours"}
+                ),
+                menus=menus,
+                bakery_img_urls=photos,
+                operating_hours=operating_hours,
+            )
+        except Exception as e:
+            if isinstance(e, NotFoundException):
+                raise e
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_menus(self, bakery_id: int):
         return await BakeryRepository(db=self.db).get_bakery_menus(bakery_id=bakery_id)
