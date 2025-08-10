@@ -167,7 +167,12 @@ class BakeryService:
             raise UnknownException(detail=str(e))
 
     async def get_bakery_menus(self, bakery_id: int):
-        return await BakeryRepository(db=self.db).get_bakery_menus(bakery_id=bakery_id)
+        try:
+            return await BakeryRepository(db=self.db).get_bakery_menus(
+                bakery_id=bakery_id
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def get_visited_bakery(
         self, user_id: int, sort_clause: str, page_no: int, page_size: int

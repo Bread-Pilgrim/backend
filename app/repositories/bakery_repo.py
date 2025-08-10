@@ -29,6 +29,7 @@ from app.schema.bakery import (
     GuDongMenuBakery,
     LoadMoreBakery,
     RecommendBakery,
+    SimpleBakeryMenu,
 )
 from app.utils.converter import operating_hours_to_open_status
 from app.utils.pagination import build_order_by, convert_limit_and_offset
@@ -492,30 +493,27 @@ class BakeryRepository:
     async def get_bakery_menus(self, bakery_id):
         """베이커리 메뉴 조회하는 쿼리."""
 
-        try:
-            res = (
-                self.db.query(BakeryMenu.id, BakeryMenu.name, BakeryMenu.is_signature)
-                .filter(BakeryMenu.bakery_id == bakery_id)
-                .all()
+        res = (
+            self.db.query(BakeryMenu.id, BakeryMenu.name, BakeryMenu.is_signature)
+            .filter(BakeryMenu.bakery_id == bakery_id)
+            .all()
+        )
+
+        menus = [
+            SimpleBakeryMenu(
+                menu_id=r.id, menu_name=r.name, is_signature=r.is_signature
             )
+            for r in res
+        ]
 
-            menus = [
+        if all(menu.menu_name != ETC_MENU_NAME for menu in menus):
+
+            menus.append(
                 SimpleBakeryMenu(
-                    menu_id=r.id, menu_name=r.name, is_signature=r.is_signature
+                    menu_id=-1, menu_name=ETC_MENU_NAME, is_signature=False
                 )
-                for r in res
-            ]
-
-            if all(menu.menu_name != ETC_MENU_NAME for menu in menus):
-
-                menus.append(
-                    SimpleBakeryMenu(
-                        menu_id=-1, menu_name=ETC_MENU_NAME, is_signature=False
-                    )
-                )
-            return menus
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+            )
+        return menus
 
     async def get_visited_bakery(
         self,
