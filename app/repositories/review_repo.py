@@ -93,25 +93,13 @@ class ReviewRepository:
         return self.db.execute(stmt).mappings().all()
 
     async def get_bakery_summary(self, bakery_id: int):
-        """ "베이커리 평점이랑 리뷰 개수 조회하는 쿼리."""
+        """베이커리 평점이랑 리뷰 개수 조회하는 쿼리."""
 
-        try:
-            res = (
-                self.db.query(Bakery.review_count, Bakery.avg_rating)
-                .filter(Bakery.id == bakery_id)
-                .first()
-            )
-
-            if res:
-                return res.review_count, res.avg_rating
-            else:
-                raise NotFoundException(
-                    detail=f"해당 빵집데이터를 찾을 수 없습니다. bakery_id : {bakery_id}"
-                )
-        except Exception as e:
-            if isinstance(e, NotFoundException):
-                raise
-            raise UnknownException(detail=str(e))
+        return (
+            self.db.query(Bakery.review_count, Bakery.avg_rating)
+            .filter(Bakery.id == bakery_id)
+            .first()
+        )
 
     async def get_review_by_bakery_id(
         self,

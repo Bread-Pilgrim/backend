@@ -5,7 +5,11 @@ from typing import List, Optional
 from fastapi import File, UploadFile
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import DailyReviewLimitExceededExecption
+from app.core.exception import (
+    DailyReviewLimitExceededExecption,
+    NotFoundException,
+    UnknownException,
+)
 from app.repositories.review_repo import ReviewRepository
 from app.schema.common import Paging
 from app.schema.review import (
@@ -41,55 +45,68 @@ class Review:
         review_repo = ReviewRepository(db=self.db)
         sort_by, direction = build_sort_clause(sort_clause=sort_clause)
 
-        # 0. 베이커리 리뷰 평균치
-        review_count, avg_rating = await review_repo.get_bakery_summary(
-            bakery_id=bakery_id
-        )
+        try:
+            # 0. 베이커리 리뷰 평균치
+            bakery_summary = await review_repo.get_bakery_summary(bakery_id=bakery_id)
 
-        # 1. 리뷰 주요 데이터 조회
-        review_infos, has_next = await review_repo.get_review_by_bakery_id(
-            user_id=user_id,
-            bakery_id=bakery_id,
-            page_no=page_no,
-            sort_by=sort_by,
-            direction=direction,
-            page_size=page_size,
-        )
+            if not bakery_summary:
+                raise NotFoundException(
+                    detail=f"해당 빵집데이터를 찾을 수 없습니다. bakery_id : {bakery_id}"
+                )
 
-        if review_infos:
-            revies_ids = [r.review_id for r in review_infos]
-
-            # 2. 리뷰에 첨부된 사진 조회
-            photos = await review_repo.get_my_review_photos_by_bakery_id(
-                review_ids=revies_ids
-            )
-            photo_maps = defaultdict(list)
-            for p in photos:
-                photo_maps[p.review_id].append(ReviewPhoto(img_url=p.img_url))
-
-            # 3. 리뷰한 베이커리 메뉴 조회
-            review_menus = await review_repo.get_my_review_menus_by_bakery_id(
-                review_ids=revies_ids
-            )
-            review_menu_maps = defaultdict(list)
-            for r in review_menus:
-                review_menu_maps[r.review_id].append(ReviewMenu(menu_name=r.name))
-
-            return BakeryReviewReponseDTO(
-                avg_rating=avg_rating,
-                review_count=review_count,
-                has_next=has_next,
-                items=[
-                    BakeryReview(
-                        **r.model_dump(exclude={"review_photos", "review_menus"}),
-                        review_photos=photo_maps.get(r.review_id, []),
-                        review_menus=review_menu_maps.get(r.review_id, []),
-                    )
-                    for r in review_infos
-                ],
+            review_count, avg_rating = (
+                bakery_summary.review_count,
+                bakery_summary.avg_rating,
             )
 
-        return BakeryReviewReponseDTO()
+            # 1. 리뷰 주요 데이터 조회
+            review_infos, has_next = await review_repo.get_review_by_bakery_id(
+                user_id=user_id,
+                bakery_id=bakery_id,
+                page_no=page_no,
+                sort_by=sort_by,
+                direction=direction,
+                page_size=page_size,
+            )
+
+            if review_infos:
+                revies_ids = [r.review_id for r in review_infos]
+
+                # 2. 리뷰에 첨부된 사진 조회
+                photos = await review_repo.get_my_review_photos_by_bakery_id(
+                    review_ids=revies_ids
+                )
+                photo_maps = defaultdict(list)
+                for p in photos:
+                    photo_maps[p.review_id].append(ReviewPhoto(img_url=p.img_url))
+
+                # 3. 리뷰한 베이커리 메뉴 조회
+                review_menus = await review_repo.get_my_review_menus_by_bakery_id(
+                    review_ids=revies_ids
+                )
+                review_menu_maps = defaultdict(list)
+                for r in review_menus:
+                    review_menu_maps[r.review_id].append(ReviewMenu(menu_name=r.name))
+
+                return BakeryReviewReponseDTO(
+                    avg_rating=avg_rating,
+                    review_count=review_count,
+                    has_next=has_next,
+                    items=[
+                        BakeryReview(
+                            **r.model_dump(exclude={"review_photos", "review_menus"}),
+                            review_photos=photo_maps.get(r.review_id, []),
+                            review_menus=review_menu_maps.get(r.review_id, []),
+                        )
+                        for r in review_infos
+                    ],
+                )
+
+            return BakeryReviewReponseDTO()
+        except Exception as e:
+            if isinstance(e, NotFoundException):
+                raise e
+            raise UnknownException(detail=str(e))
 
     async def get_my_reviews_by_bakery_id(
         self, bakery_id: int, user_id: int, page_no: int, page_size: int
