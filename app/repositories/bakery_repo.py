@@ -474,8 +474,10 @@ class BakeryRepository:
             [
                 BakeryOperatingHour(
                     day_of_week=r.day_of_week,
-                    open_time=(r.open_time).strftime("%H:%M"),
-                    close_time=(r.close_time).strftime("%H:%M"),
+                    open_time=(r.open_time).strftime("%H:%M") if r.open_time else None,
+                    close_time=(
+                        (r.close_time).strftime("%H:%M") if r.close_time else None
+                    ),
                     is_opened=r.is_opened,
                 )
                 for r in res
