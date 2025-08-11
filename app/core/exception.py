@@ -56,7 +56,7 @@ class InvalidTokenException(CustomException):
 class RequestDataMissingException(CustomException):
     """요청데이터 누락 Exception"""
 
-    STATUS_CODE = status.HTTP_400_BAD_REQUEST
+    STATUS_CODE = status.HTTP_422_UNPROCESSABLE_ENTITY
     ERROR_CODE = ErrorCode.REQUEST_MISSING
     DEFAULT_MESSAGE = "요청데이터가 누락되었습니다."
 
@@ -78,12 +78,16 @@ class NotFoundException(CustomException):
 
 
 class InvalidAreaCodeException(CustomException):
+    """지원하지 않는 지역코드 Exception."""
+
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
     ERROR_CODE = ErrorCode.INVALID_AREA_CODE
     DEFAULT_MESSAGE = "잘못된 지역코드를 입력했습니다."
 
 
 class InvalidSortParameterException(CustomException):
+    """지원하지 않는 정렬기준이나 방향 Exception"""
+
     STATUS_CODE = status.HTTP_400_BAD_REQUEST
     ERROR_CODE = ErrorCode.INVALID_SORT_PARAM
     DEFAULT_MESSAGE = "정렬 기준이나 방향이 누락되거나 잘못되었습니다."

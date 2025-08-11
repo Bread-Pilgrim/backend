@@ -1,6 +1,11 @@
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import NotFoundException
+from app.core.exception import (
+    AlreadyDislikedException,
+    AlreadyLikedException,
+    NotFoundException,
+    UnknownException,
+)
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
@@ -22,104 +27,110 @@ class BakeryService:
     async def get_recommend_bakeries_by_preference(self, area_code: str, user_id: int):
         """(홈) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
 
-        # 구분자로 받은 지역코드 list로 반환
-        area_codes = parse_comma_to_list(area_code)
+        try:
+            # 구분자로 받은 지역코드 list로 반환
+            area_codes = parse_comma_to_list(area_code)
+            # 지역코드 유효성 체크
+            validate_area_code(area_codes=area_codes)
+            # 오늘 요일
+            target_day_of_week = get_now_by_timezone().weekday()
 
-        # 지역코드 유효성 체크
-        validate_area_code(area_codes=area_codes)
-
-        # 오늘 요일
-        target_day_of_week = get_now_by_timezone().weekday()
-
-        # 유저 취향 + 지역 기반으로 빵집 조회
-        return await BakeryRepository(self.db).get_bakeries_by_preference(
-            area_codes=area_codes,
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-        )
+            # 유저 취향 + 지역 기반으로 빵집 조회
+            return await BakeryRepository(self.db).get_bakeries_by_preference(
+                area_codes=area_codes,
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def get_more_bakeries_by_preference(
         self, page_no: int, page_size: int, area_code: str, user_id: int
-    ):
+    ) -> LoadMoreBakeryResponseDTO:
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 비즈니스 로직."""
 
-        # 구분자로 받은 지역코드 list로 반환
-        area_codes = parse_comma_to_list(area_code)
-        # 지역코드 유효성 체크
-        validate_area_code(area_codes=area_codes)
-        # 오늘 요일
-        target_day_of_week = get_now_by_timezone().weekday()
+        try:
+            # 구분자로 받은 지역코드 list로 반환
+            area_codes = parse_comma_to_list(area_code)
+            # 지역코드 유효성 체크
+            validate_area_code(area_codes=area_codes)
+            # 오늘 요일
+            target_day_of_week = get_now_by_timezone().weekday()
 
-        # 베이커리 정보 조회
-        bakery_repo = BakeryRepository(db=self.db)
-        bakeries, has_next = await bakery_repo.get_more_bakeries_by_preference(
-            page_no=page_no,
-            page_size=page_size,
-            area_codes=area_codes,
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-        )
+            # 베이커리 정보 조회
+            bakery_repo = BakeryRepository(db=self.db)
+            bakeries, has_next = await bakery_repo.get_more_bakeries_by_preference(
+                page_no=page_no,
+                page_size=page_size,
+                area_codes=area_codes,
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+            )
 
-        # 베이커리 조회결과 없을 때, 반환값
-        if not bakeries:
-            return LoadMoreBakeryResponseDTO()
+            # 베이커리 조회결과 없을 때, 반환값
+            if not bakeries:
+                return LoadMoreBakeryResponseDTO()
 
-        # 베이커리 시그니처 메뉴 정보 조회
-        menus = await bakery_repo.get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
+            # 베이커리 시그니처 메뉴 정보 조회
+            menus = await bakery_repo.get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
+            # 베이커리 정보 + 시그니처 메뉴 정보 병합
+            bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+            return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
 
-        # 베이커리 정보 + 시그니처 메뉴 정보 병합
-        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
-
-        return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_by_area(self, area_code: str, user_id: int):
         """(홈탭용)hot한 빵집 조회하는 비즈니스 로직."""
 
-        area_codes = parse_comma_to_list(area_code)
-        # 지역코드 유효성 체크
-        validate_area_code(area_codes=area_codes)
+        try:
+            area_codes = parse_comma_to_list(area_code)
+            # 지역코드 유효성 체크
+            validate_area_code(area_codes=area_codes)
+            target_day_of_week = get_now_by_timezone().weekday()
 
-        target_day_of_week = get_now_by_timezone().weekday()
-
-        return await BakeryRepository(self.db).get_bakery_by_area(
-            area_codes, target_day_of_week, user_id
-        )
+            return await BakeryRepository(self.db).get_bakery_by_area(
+                area_codes, target_day_of_week, user_id
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def get_hot_bakeries(
         self, page_no: int, user_id: int, page_size: int, area_code: str
     ) -> LoadMoreBakeryResponseDTO:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
-        area_codes = parse_comma_to_list(area_code)
-        # 지역코드 유효성 체크
-        validate_area_code(area_codes=area_codes)
+        try:
+            area_codes = parse_comma_to_list(area_code)
+            # 지역코드 유효성 체크
+            validate_area_code(area_codes=area_codes)
+            target_day_of_week = get_now_by_timezone().weekday()
+            bakery_repo = BakeryRepository(self.db)
 
-        target_day_of_week = get_now_by_timezone().weekday()
+            # 빵집 정보
+            bakeries, has_next = await bakery_repo.get_more_hot_bakeries(
+                area_codes=area_codes,
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+                page_no=page_no,
+                page_size=page_size,
+            )
 
-        bakery_repo = BakeryRepository(self.db)
+            if not bakeries:
+                return LoadMoreBakeryResponseDTO()
 
-        # 빵집 정보
-        bakeries, has_next = await bakery_repo.get_more_hot_bakeries(
-            area_codes=area_codes,
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-            page_no=page_no,
-            page_size=page_size,
-        )
+            # 빵 시그니처 메뉴 정보
+            menus = await bakery_repo.get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
 
-        if not bakeries:
-            return LoadMoreBakeryResponseDTO()
+            bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        # 빵 시그니처 메뉴 정보
-        menus = await bakery_repo.get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
-
-        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
-
-        return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+            return LoadMoreBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_detail(self, bakery_id: int):
         """베이커리 상세 조회하는 비즈니스 로직."""
@@ -127,62 +138,77 @@ class BakeryService:
         bakery_repo = BakeryRepository(db=self.db)
         target_day_of_week = get_now_by_timezone().weekday()
 
-        # 1. 베이커리 정보 가져오기
-        bakery = await bakery_repo.get_bakery_detail(
-            bakery_id=bakery_id, target_day_of_week=target_day_of_week
-        )
+        try:
+            # 1. 베이커리 정보 가져오기
+            bakery = await bakery_repo.get_bakery_detail(
+                bakery_id=bakery_id, target_day_of_week=target_day_of_week
+            )
 
-        if not bakery:
-            raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
+            if not bakery:
+                raise NotFoundException(detail="해당 베이커리를 찾을 수 없습니다.")
 
-        # 2. 베이커리 메뉴 가져오기
-        menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)
+            # 2. 베이커리 메뉴 가져오기
+            menus = await bakery_repo.get_bakery_menu_detail(bakery_id=bakery_id)
 
-        # 3. 베이커리 썸네일 가져오기
-        photos = await bakery_repo.get_bakery_photos(bakery_id=bakery_id)
+            # 3. 베이커리 썸네일 가져오기
+            photos = await bakery_repo.get_bakery_photos(bakery_id=bakery_id)
 
-        # 4. 베이커리 영업시간 가져오기
-        operating_hours = await bakery_repo.get_bakery_operating_hours(
-            bakery_id=bakery_id
-        )
+            # 4. 베이커리 영업시간 가져오기
+            operating_hours = await bakery_repo.get_bakery_operating_hours(
+                bakery_id=bakery_id
+            )
 
-        return BakeryDetailResponseDTO(
-            **bakery.model_dump(
-                exclude={"menus", "bakery_img_urls", "operating_hours"}
-            ),
-            menus=menus,
-            bakery_img_urls=photos,
-            operating_hours=operating_hours,
-        )
+            return BakeryDetailResponseDTO(
+                **bakery.model_dump(
+                    exclude={"menus", "bakery_img_urls", "operating_hours"}
+                ),
+                menus=menus,
+                bakery_img_urls=photos,
+                operating_hours=operating_hours,
+            )
+        except Exception as e:
+            if isinstance(e, NotFoundException):
+                raise e
+            raise UnknownException(detail=str(e))
 
     async def get_bakery_menus(self, bakery_id: int):
-        return await BakeryRepository(db=self.db).get_bakery_menus(bakery_id=bakery_id)
+        try:
+            return await BakeryRepository(db=self.db).get_bakery_menus(
+                bakery_id=bakery_id
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
-    async def get_visited_bakery(self, user_id: int, page_no: int, page_size: int):
+    async def get_visited_bakery(
+        self, user_id: int, sort_clause: str, page_no: int, page_size: int
+    ):
+        try:
+            bakery_repo = BakeryRepository(db=self.db)
 
-        bakery_repo = BakeryRepository(db=self.db)
+            # 1. 베이커리 검색
+            sort_by, direction = build_sort_clause(sort_clause=sort_clause)
+            target_day_of_week = get_now_by_timezone().weekday()
+            bakeries, has_next = await bakery_repo.get_visited_bakery(
+                user_id=user_id,
+                sort_by=sort_by,
+                direction=direction,
+                target_day_of_week=target_day_of_week,
+                page_no=page_no,
+                page_size=page_size,
+            )
 
-        # 1. 베이커리 검색
-        target_day_of_week = get_now_by_timezone().weekday()
+            if not bakeries:
+                return GuDongMenuBakeryResponseDTO()
 
-        bakeries, has_next = await bakery_repo.get_visited_bakery(
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-            page_no=page_no,
-            page_size=page_size,
-        )
+            # 2. 시그니처 메뉴 검색
+            menus = await bakery_repo.get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
+            bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        if not bakeries:
-            return GuDongMenuBakeryResponseDTO()
-
-        # 2. 시그니처 메뉴 검색
-        menus = await bakery_repo.get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
-
-        bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
-
-        return GuDongMenuBakeryResponseDTO(items=bakery_info, has_next=has_next)
+            return GuDongMenuBakeryResponseDTO(items=bakery_info, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def check_is_eligible_to_write_review(self, bakery_id: int, user_id: int):
         """리뷰를 작성해도 되는지 체크하는 비즈니스 로직."""
@@ -190,65 +216,86 @@ class BakeryService:
         start_time = get_today_start()
         end_time = get_today_end()
 
-        written_review = await BakeryRepository(db=self.db).get_reviews_written_today(
-            user_id=user_id,
-            bakery_id=bakery_id,
-            start_time=start_time,
-            end_time=end_time,
-        )
+        try:
+            written_review = await BakeryRepository(
+                db=self.db
+            ).get_reviews_written_today(
+                user_id=user_id,
+                bakery_id=bakery_id,
+                start_time=start_time,
+                end_time=end_time,
+            )
 
-        return WrittenReview(is_eligible=False if written_review else True)
+            return WrittenReview(is_eligible=False if written_review else True)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def like_bakery(self, user_id: int, bakery_id: int):
         """베이커리 찜하는 비즈니스 로직."""
         bakery_repo = BakeryRepository(db=self.db)
 
-        # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
-        await bakery_repo.check_already_liked_bakery(
-            user_id=user_id,
-            bakery_id=bakery_id,
-        )
-        # 2. 해당 베이커리 찜하기
-        await bakery_repo.like_bakery(user_id=user_id, bakery_id=bakery_id)
+        try:
+            # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
+            is_liked = await bakery_repo.check_already_liked_bakery(
+                user_id=user_id,
+                bakery_id=bakery_id,
+            )
+            if is_liked:
+                raise AlreadyLikedException()
+            # 2. 해당 베이커리 찜하기
+            await bakery_repo.like_bakery(user_id=user_id, bakery_id=bakery_id)
+        except Exception as e:
+            if isinstance(e, AlreadyLikedException):
+                raise e
+            raise UnknownException(detail=str(e))
 
     async def dislike_bakery(self, user_id: int, bakery_id: int):
         """베이커리 찜하는 비즈니스 로직."""
         bakery_repo = BakeryRepository(db=self.db)
 
-        # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
-        await bakery_repo.check_already_disliked_bakery(
-            user_id=user_id, bakery_id=bakery_id
-        )
-        # 2. 해당 베이커리 찜 삭제
-        await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+        try:
+            # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
+            is_disliked = await bakery_repo.check_already_disliked_bakery(
+                user_id=user_id, bakery_id=bakery_id
+            )
+            if not is_disliked:
+                raise AlreadyDislikedException()
+
+            # 2. 해당 베이커리 찜 삭제
+            await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+        except Exception as e:
+            if isinstance(e, AlreadyDislikedException):
+                raise e
+            raise UnknownException(detail=str(e))
 
     async def get_like_bakeries(
         self, user_id: int, sort_clause: str, page_no: int, page_size: int
     ):
         """내가 찜한 빵집 조회하는 비즈니스 로직."""
         bakery_repo = BakeryRepository(db=self.db)
-
-        # 1. 베이커리 조회
         sort_by, direction = build_sort_clause(sort_clause=sort_clause)
-
         target_day_of_week = get_now_by_timezone().weekday()
-        bakeries, has_next = await bakery_repo.get_like_bakeries(
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-            sort_by=sort_by,
-            direction=direction,
-            page_no=page_no,
-            page_size=page_size,
-        )
+        try:
+            # 1. 베이커리 조회
+            bakeries, has_next = await bakery_repo.get_like_bakeries(
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+                sort_by=sort_by,
+                direction=direction,
+                page_no=page_no,
+                page_size=page_size,
+            )
 
-        if not bakeries:
-            return GuDongMenuBakeryResponseDTO()
+            if not bakeries:
+                return GuDongMenuBakeryResponseDTO()
 
-        # 2. 메뉴 조회
-        menus = await bakery_repo.get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
+            # 2. 메뉴 조회
+            menus = await bakery_repo.get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
 
-        bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+            bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-        return GuDongMenuBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+            return GuDongMenuBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))

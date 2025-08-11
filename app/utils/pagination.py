@@ -60,9 +60,9 @@ def build_order_by(sort_column, direction):
     """정렬 컬럼과 id를 기준으로 안정적인 ORDER BY 리스트 생성하는 메소드."""
 
     if direction == "desc":
-        return [desc(sort_column)]
+        return [desc(Bakery.id), desc(sort_column)]
     else:
-        return [asc(sort_column)]
+        return [desc(Bakery.id), asc(sort_column)]
 
 
 def build_cursor(sort_value, review_id):

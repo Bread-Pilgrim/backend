@@ -4,12 +4,6 @@ from fastapi import UploadFile
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
-from app.core.exception import (
-    AlreadyDislikedException,
-    AlreadyLikedException,
-    NotFoundException,
-    UnknownException,
-)
 from app.model.bakery import Bakery, BakeryMenu
 from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
@@ -93,25 +87,13 @@ class ReviewRepository:
         return self.db.execute(stmt).mappings().all()
 
     async def get_bakery_summary(self, bakery_id: int):
-        """ "베이커리 평점이랑 리뷰 개수 조회하는 쿼리."""
+        """베이커리 평점이랑 리뷰 개수 조회하는 쿼리."""
 
-        try:
-            res = (
-                self.db.query(Bakery.review_count, Bakery.avg_rating)
-                .filter(Bakery.id == bakery_id)
-                .first()
-            )
-
-            if res:
-                return res.review_count, res.avg_rating
-            else:
-                raise NotFoundException(
-                    detail=f"해당 빵집데이터를 찾을 수 없습니다. bakery_id : {bakery_id}"
-                )
-        except Exception as e:
-            if isinstance(e, NotFoundException):
-                raise
-            raise UnknownException(detail=str(e))
+        return (
+            self.db.query(Bakery.review_count, Bakery.avg_rating)
+            .filter(Bakery.id == bakery_id)
+            .first()
+        )
 
     async def get_review_by_bakery_id(
         self,
@@ -204,26 +186,21 @@ class ReviewRepository:
     async def insert_extra_menu(self, bakery_id: int, consumed_menus: dict):
         """기타 메뉴 추가하는 쿼리."""
 
-        try:
-            bakery_menu = BakeryMenu(
-                name="기타메뉴",
-                is_signature=False,
-                price=0,
-                bakery_id=bakery_id,
-            )
+        bakery_menu = BakeryMenu(
+            name="기타메뉴",
+            is_signature=False,
+            price=0,
+            bakery_id=bakery_id,
+        )
 
-            self.db.add(bakery_menu)
-            self.db.flush()
+        self.db.add(bakery_menu)
+        self.db.flush()
 
-            for c in consumed_menus:
-                if c["menu_id"] == -1:
-                    c["menu_id"] = bakery_menu.id
+        for c in consumed_menus:
+            if c["menu_id"] == -1:
+                c["menu_id"] = bakery_menu.id
 
-            return consumed_menus
-
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        return consumed_menus
 
     async def insert_review_infos(
         self,
@@ -236,40 +213,32 @@ class ReviewRepository:
     ):
         """리뷰 정보 insert하는 쿼리"""
 
-        try:
-            review_info = Review(
-                bakery_id=bakery_id,
-                rating=rating,
-                content=content,
-                is_private=is_private,
-                user_id=user_id,
-                like_count=0,
-                visit_date=get_now_by_timezone(tz="UTC"),
-                day_of_week=target_day_of_week,
-            )
+        review_info = Review(
+            bakery_id=bakery_id,
+            rating=rating,
+            content=content,
+            is_private=is_private,
+            user_id=user_id,
+            like_count=0,
+            visit_date=get_now_by_timezone(tz="UTC"),
+            day_of_week=target_day_of_week,
+        )
 
-            self.db.add(review_info)
-            self.db.flush()
-            return review_info.id
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        self.db.add(review_info)
+        self.db.flush()
+        return review_info.id
 
     async def bulk_insert_review_menus(self, review_id: int, consumed_menus: dict):
-        try:
-            add_data = [
-                ReviewBakeryMenu(
-                    review_id=review_id,
-                    menu_id=c.get("menu_id"),
-                    quantity=c.get("quantity"),
-                )
-                for c in consumed_menus
-            ]
-            self.db.add_all(add_data)
-            self.db.flush()
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        add_data = [
+            ReviewBakeryMenu(
+                review_id=review_id,
+                menu_id=c.get("menu_id"),
+                quantity=c.get("quantity"),
+            )
+            for c in consumed_menus
+        ]
+        self.db.add_all(add_data)
+        self.db.flush()
 
     async def update_avg_rating_and_review_count(
         self,
@@ -279,127 +248,71 @@ class ReviewRepository:
     ):
         """베이커리 평점 및 리뷰 개수 업데이트 하는 메소드."""
 
-        try:
-            # 1. 베이커리 조회
-            bakery_stat = self.db.query(Bakery).filter(Bakery.id == bakery_id).first()
+        # 1. 베이커리 조회
+        bakery_stat = self.db.query(Bakery).filter(Bakery.id == bakery_id).first()
 
-            if bakery_stat:
+        if bakery_stat:
 
-                # 2. 업데이트할 데이터 계산.
-                avg_rating, review_count = (
-                    bakery_stat.avg_rating,
-                    bakery_stat.review_count,
-                )
-                new_count = review_count + 1
-                new_rating = round(
-                    ((avg_rating * review_count) + rating) / new_count, 1
-                )
+            # 2. 업데이트할 데이터 계산.
+            avg_rating, review_count = (
+                bakery_stat.avg_rating,
+                bakery_stat.review_count,
+            )
+            new_count = review_count + 1
+            new_rating = round(((avg_rating * review_count) + rating) / new_count, 1)
 
-                # 3. 업데이트
-                bakery_stat.review_count = new_count
-                bakery_stat.avg_rating = new_rating
+            # 3. 업데이트
+            bakery_stat.review_count = new_count
+            bakery_stat.avg_rating = new_rating
 
-                if review_imgs:
-                    self.db.flush()
-                else:
-                    self.db.commit()
-
-            else:
-                raise NotFoundException(
-                    detail=f"해당 빵집데이터를 찾을 수 없습니다. bakery_id : {bakery_id}"
-                )
-
-        except Exception as e:
-            if isinstance(e, NotFoundException):
-                raise
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+            if review_imgs:
+                self.db.flush()
 
     async def bulk_insert_review_imgs(self, review_id: int, filenames: List[str]):
         """리뷰 이미지 한 번에 저장하는 쿼리."""
-        try:
-            add_data = [ReviewPhoto(review_id=review_id, img_url=f) for f in filenames]
-            self.db.add_all(add_data)
-            self.db.commit()
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        add_data = [ReviewPhoto(review_id=review_id, img_url=f) for f in filenames]
+        self.db.add_all(add_data)
 
     async def check_like_review(self, user_id: int, review_id: int):
         """리뷰에 대한 좋아요여부 체크하는 쿼리."""
 
-        try:
-            review = (
-                self.db.query(ReviewLike)
-                .filter(
-                    ReviewLike.review_id == review_id, ReviewLike.user_id == user_id
-                )
-                .first()
-            )
-
-            if review:
-                raise AlreadyLikedException()
-        except AlreadyLikedException:
-            raise
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return (
+            self.db.query(ReviewLike)
+            .filter(ReviewLike.review_id == review_id, ReviewLike.user_id == user_id)
+            .first()
+        )
 
     async def like_review(self, user_id: int, review_id: int):
         """리뷰 좋아요 쿼리."""
 
-        try:
-            review = ReviewLike(user_id=user_id, review_id=review_id)
-            self.db.add(review)
-            self.db.flush()
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        review = ReviewLike(user_id=user_id, review_id=review_id)
+        self.db.add(review)
+        self.db.flush()
 
     async def update_like_review(self, review_id: int, count_value: int):
         """리뷰 count 업데이트 하는 쿼리."""
-        try:
-            review = self.db.query(Review).filter(Review.id == review_id).first()
-            review.like_count += count_value
-            self.db.commit()
 
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        review = self.db.query(Review).filter(Review.id == review_id).first()
+        review.like_count += count_value
 
     async def check_dislike_review(self, user_id: int, review_id: int):
         """리뷰에 대한 좋아요 해지여부 체크하는 쿼리."""
 
-        try:
-            review = (
-                self.db.query(ReviewLike)
-                .filter(
-                    ReviewLike.review_id == review_id, ReviewLike.user_id == user_id
-                )
-                .first()
-            )
-
-            if not review:
-                raise AlreadyDislikedException()
-        except AlreadyDislikedException:
-            raise
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return (
+            self.db.query(ReviewLike)
+            .filter(ReviewLike.review_id == review_id, ReviewLike.user_id == user_id)
+            .first()
+        )
 
     async def dislike_review(self, user_id: int, review_id: int):
         """리뷰 좋아요 해지 쿼리."""
 
-        try:
-            like_review = (
-                self.db.query(ReviewLike)
-                .filter(
-                    ReviewLike.user_id == user_id, ReviewLike.review_id == review_id
-                )
-                .first()
-            )
+        like_review = (
+            self.db.query(ReviewLike)
+            .filter(ReviewLike.user_id == user_id, ReviewLike.review_id == review_id)
+            .first()
+        )
 
-            if like_review:
-                self.db.delete(like_review)
-                self.db.flush()
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        if like_review:
+            self.db.delete(like_review)
+            self.db.flush()

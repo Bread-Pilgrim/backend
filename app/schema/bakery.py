@@ -17,12 +17,11 @@ class CommonBakery(BaseModel):
     영업상태\n
     O : 영업중
     C : 영업종료
-    D : 휴무일 
-    B : 영업전                      
+    D : 휴무일
+    B : 영업전
     """,
     )
-    img_url: str = Field(..., description="베이커리 썸네일")
-    is_like: bool = Field(default=False, description="찜여부")
+    img_url: Optional[str] = Field(default=None, description="베이커리 썸네일")
 
 
 class RecommendBakery(CommonBakery):
@@ -93,8 +92,8 @@ class BakeryDetailResponseDTO(BaseModel):
     영업상태\n
     O : 영업중
     C : 영업종료
-    D : 휴무일 
-    B : 영업전                      
+    D : 휴무일
+    B : 영업전
     """,
     )
     operating_hours: Optional[List[BakeryOperatingHour]] = Field(

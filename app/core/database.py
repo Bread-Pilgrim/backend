@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Configs
+from app.core.exception import DuplicateException, UnknownException
 
 config = Configs()
 
@@ -21,16 +22,15 @@ T = TypeVar("T", bound=BaseModel)
 @contextmanager
 def start_session():
     """PostgreSQL 연결 및 session 관리"""
-    session = None
+    session = SessionLocal()
     try:
-        session = SessionLocal()
         yield session
+        session.commit()
     except Exception as e:
-        print(f"에러 : {str(e)}")
-        raise e
+        session.rollback()
+        raise
     finally:
-        if session:
-            session.close()
+        session.close()
 
 
 def get_db() -> Generator:

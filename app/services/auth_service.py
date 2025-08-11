@@ -1,7 +1,6 @@
 from typing import Optional
 
 import httpx
-from fastapi import logger
 from sqlalchemy.orm.session import Session
 
 from app.core.auth import create_jwt_token
@@ -57,29 +56,35 @@ class AuthService:
     async def login_and_signup(self, req: LoginRequestDTO, social_access_token: str):
         """로그인/회원가입 비즈니스 로직."""
 
-        login_type = req.login_type
-        login_type = login_type.upper()
+        login_type = req.login_type.upper()
 
-        # 1. login_type 기준으로 소셜 유저 정보 조회
-        if login_type == "KAKAO" and social_access_token and self.db:
-            data = await self.__get_kakao_user_info(social_access_token)
-            kakao_data = parse_kakao_user_info(data)
-            social_id, email = kakao_data.social_id, kakao_data.email
+        try:
+            if login_type == "KAKAO" and social_access_token and self.db:
+                data = await self.__get_kakao_user_info(social_access_token)
+                kakao_data = parse_kakao_user_info(data)
+                social_id, email = kakao_data.social_id, kakao_data.email
 
-        # 2. 소셜 유저 정보 기반으로 기저회원 여부 체크
-        auth_repo = AuthRepository(db=self.db)
-        user_id = await auth_repo.get_user_id_by_socials(login_type, email, social_id)
+            auth_repo = AuthRepository(db=self.db)
+            user_id = await auth_repo.get_user_id_by_socials(
+                login_type, email, social_id
+            )
 
-        # 3. 기저회원 아니면 회원가입
-        if not user_id:
-            user_id = await auth_repo.sign_up_user(login_type, kakao_data)
+            if not user_id:
+                user_id = await auth_repo.sign_up_user(login_type, kakao_data)
 
-        # 4. token 발행
-        access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
+            access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
+            onboarding_completed = await auth_repo.check_completed_onboarding(
+                user_id=user_id
+            )
 
-        # 5. 취향필터 선택했는 지 체크
-        onboarding_completed = await auth_repo.check_completed_onboarding(user_id)
+            return AuthToken(
+                access_token=access_token, refresh_token=refresh_token
+            ), LoginResponseDTO(onboarding_completed=onboarding_completed)
 
-        return AuthToken(
-            access_token=access_token, refresh_token=refresh_token
-        ), LoginResponseDTO(onboarding_completed=onboarding_completed)
+        except Exception as e:
+            if isinstance(e, httpx.HTTPStatusError):
+                raise e
+            elif isinstance(e, httpx.RequestError):
+                raise e
+            else:
+                raise UnknownException(detail=str(e))

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.exception import UnknownException
 from app.repositories.bakery_repo import BakeryRepository
 from app.repositories.search_repo import SearchRepository
 from app.schema.common import Paging
@@ -17,27 +18,29 @@ class SearchService:
     ):
         """키워드 검색 비즈니스 로직."""
 
-        # 1. 베이커리 검색
-        target_day_of_week = get_now_by_timezone().weekday()
+        try:
+            # 1. 베이커리 검색
+            target_day_of_week = get_now_by_timezone().weekday()
 
-        bakeries, has_next = await SearchRepository(
-            db=self.db
-        ).search_bakeries_by_keyword(
-            keyword=keyword,
-            user_id=user_id,
-            target_day_of_week=target_day_of_week,
-            page_no=page_no,
-            page_size=page_size,
-        )
+            bakeries, has_next = await SearchRepository(
+                db=self.db
+            ).search_bakeries_by_keyword(
+                keyword=keyword,
+                user_id=user_id,
+                target_day_of_week=target_day_of_week,
+                page_no=page_no,
+                page_size=page_size,
+            )
 
-        if not bakeries:
-            return SearchBakeryResponseDTO()
+            if not bakeries:
+                return SearchBakeryResponseDTO()
 
-        # 2. 베이커리 메뉴 검색
-        menus = await BakeryRepository(db=self.db).get_signature_menus(
-            bakery_ids=[b.bakery_id for b in bakeries]
-        )
+            # 2. 베이커리 메뉴 검색
+            menus = await BakeryRepository(db=self.db).get_signature_menus(
+                bakery_ids=[b.bakery_id for b in bakeries]
+            )
 
-        bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
-
-        return SearchBakeryResponseDTO(items=bakery_info, has_next=has_next)
+            bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
+            return SearchBakeryResponseDTO(items=bakery_info, has_next=has_next)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
