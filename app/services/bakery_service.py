@@ -1,6 +1,11 @@
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import NotFoundException, UnknownException
+from app.core.exception import (
+    AlreadyDislikedException,
+    AlreadyLikedException,
+    NotFoundException,
+    UnknownException,
+)
 from app.repositories.bakery_repo import BakeryRepository
 from app.schema.bakery import (
     BakeryDetailResponseDTO,
@@ -229,24 +234,39 @@ class BakeryService:
         """베이커리 찜하는 비즈니스 로직."""
         bakery_repo = BakeryRepository(db=self.db)
 
-        # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
-        await bakery_repo.check_already_liked_bakery(
-            user_id=user_id,
-            bakery_id=bakery_id,
-        )
-        # 2. 해당 베이커리 찜하기
-        await bakery_repo.like_bakery(user_id=user_id, bakery_id=bakery_id)
+        try:
+            # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
+            is_liked = await bakery_repo.check_already_liked_bakery(
+                user_id=user_id,
+                bakery_id=bakery_id,
+            )
+            if is_liked:
+                raise AlreadyLikedException()
+            # 2. 해당 베이커리 찜하기
+            await bakery_repo.like_bakery(user_id=user_id, bakery_id=bakery_id)
+        except Exception as e:
+            if isinstance(e, AlreadyLikedException):
+                raise e
+            raise UnknownException(detail=str(e))
 
     async def dislike_bakery(self, user_id: int, bakery_id: int):
         """베이커리 찜하는 비즈니스 로직."""
         bakery_repo = BakeryRepository(db=self.db)
 
-        # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
-        await bakery_repo.check_already_disliked_bakery(
-            user_id=user_id, bakery_id=bakery_id
-        )
-        # 2. 해당 베이커리 찜 삭제
-        await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+        try:
+            # 1. 이미 찜여부 체크하는 로직. ( 중복 찜 방지 차 )
+            is_disliked = await bakery_repo.check_already_disliked_bakery(
+                user_id=user_id, bakery_id=bakery_id
+            )
+            if not is_disliked:
+                raise AlreadyDislikedException()
+
+            # 2. 해당 베이커리 찜 삭제
+            await bakery_repo.dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+        except Exception as e:
+            if isinstance(e, AlreadyDislikedException):
+                raise e
+            raise UnknownException(detail=str(e))
 
     async def get_like_bakeries(
         self, user_id: int, sort_clause: str, page_no: int, page_size: int

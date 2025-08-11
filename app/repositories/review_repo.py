@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from app.core.exception import (
     AlreadyDislikedException,
     AlreadyLikedException,
-    NotFoundException,
     UnknownException,
 )
 from app.model.bakery import Bakery, BakeryMenu
