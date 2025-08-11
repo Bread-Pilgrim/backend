@@ -685,6 +685,7 @@ class BakeryRepository:
                 OperatingHour.open_time,
                 OperatingHour.is_opened,
             )
+            .distinct(Bakery.id)
             .select_from(Bakery)
             .join(
                 UserBakeryLikes,
