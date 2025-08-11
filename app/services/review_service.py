@@ -6,6 +6,8 @@ from fastapi import File, UploadFile
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import (
+    AlreadyDislikedException,
+    AlreadyLikedException,
     DailyReviewLimitExceededExecption,
     NotFoundException,
     UnknownException,
@@ -237,19 +239,37 @@ class Review:
 
         review_repo = ReviewRepository(db=self.db)
 
-        # 1. 이미 리뷰에 대한 좋아요 여부 체크
-        await review_repo.check_like_review(user_id=user_id, review_id=review_id)
-        # 2. 리뷰 좋아여
-        await review_repo.like_review(user_id=user_id, review_id=review_id)
-        # 3. 베이커리의 리뷰 개수 update
-        await review_repo.update_like_review(review_id=review_id, count_value=1)
+        try:
+            # 1. 이미 리뷰에 대한 좋아요 여부 체크
+            review = await review_repo.check_like_review(
+                user_id=user_id, review_id=review_id
+            )
+            if review:
+                raise AlreadyLikedException()
+            # 2. 리뷰 좋아여
+            await review_repo.like_review(user_id=user_id, review_id=review_id)
+            # 3. 베이커리의 리뷰 개수 update
+            await review_repo.update_like_review(review_id=review_id, count_value=1)
+        except Exception as e:
+            if isinstance(e, AlreadyLikedException):
+                raise e
+            raise UnknownException(detail=str(e))
 
     async def dislike_review(self, user_id: int, review_id: int):
         review_repo = ReviewRepository(db=self.db)
 
-        # 1. 이미 리뷰에 대한 좋아요 해지여부 체크
-        await review_repo.check_dislike_review(user_id=user_id, review_id=review_id)
-        # 2. 리뷰 좋아요 해지
-        await review_repo.dislike_review(user_id=user_id, review_id=review_id)
-        # 3. 베이커리의 리뷰 개수 update
-        await review_repo.update_like_review(review_id=review_id, count_value=-1)
+        try:
+            # 1. 이미 리뷰에 대한 좋아요 해지여부 체크
+            review = await review_repo.check_dislike_review(
+                user_id=user_id, review_id=review_id
+            )
+            if not review:
+                raise AlreadyDislikedException()
+            # 2. 리뷰 좋아요 해지
+            await review_repo.dislike_review(user_id=user_id, review_id=review_id)
+            # 3. 베이커리의 리뷰 개수 update
+            await review_repo.update_like_review(review_id=review_id, count_value=-1)
+        except Exception as e:
+            if isinstance(e, AlreadyDislikedException):
+                raise e
+            raise UnknownException(detail=str(e))

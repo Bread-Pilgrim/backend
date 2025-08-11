@@ -281,78 +281,43 @@ class ReviewRepository:
     async def check_like_review(self, user_id: int, review_id: int):
         """리뷰에 대한 좋아요여부 체크하는 쿼리."""
 
-        try:
-            review = (
-                self.db.query(ReviewLike)
-                .filter(
-                    ReviewLike.review_id == review_id, ReviewLike.user_id == user_id
-                )
-                .first()
-            )
-
-            if review:
-                raise AlreadyLikedException()
-        except AlreadyLikedException:
-            raise
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return (
+            self.db.query(ReviewLike)
+            .filter(ReviewLike.review_id == review_id, ReviewLike.user_id == user_id)
+            .first()
+        )
 
     async def like_review(self, user_id: int, review_id: int):
         """리뷰 좋아요 쿼리."""
 
-        try:
-            review = ReviewLike(user_id=user_id, review_id=review_id)
-            self.db.add(review)
-            self.db.flush()
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        review = ReviewLike(user_id=user_id, review_id=review_id)
+        self.db.add(review)
+        self.db.flush()
 
     async def update_like_review(self, review_id: int, count_value: int):
         """리뷰 count 업데이트 하는 쿼리."""
-        try:
-            review = self.db.query(Review).filter(Review.id == review_id).first()
-            review.like_count += count_value
-            self.db.commit()
 
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        review = self.db.query(Review).filter(Review.id == review_id).first()
+        review.like_count += count_value
 
     async def check_dislike_review(self, user_id: int, review_id: int):
         """리뷰에 대한 좋아요 해지여부 체크하는 쿼리."""
 
-        try:
-            review = (
-                self.db.query(ReviewLike)
-                .filter(
-                    ReviewLike.review_id == review_id, ReviewLike.user_id == user_id
-                )
-                .first()
-            )
-
-            if not review:
-                raise AlreadyDislikedException()
-        except AlreadyDislikedException:
-            raise
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return (
+            self.db.query(ReviewLike)
+            .filter(ReviewLike.review_id == review_id, ReviewLike.user_id == user_id)
+            .first()
+        )
 
     async def dislike_review(self, user_id: int, review_id: int):
         """리뷰 좋아요 해지 쿼리."""
 
-        try:
-            like_review = (
-                self.db.query(ReviewLike)
-                .filter(
-                    ReviewLike.user_id == user_id, ReviewLike.review_id == review_id
-                )
-                .first()
-            )
+        like_review = (
+            self.db.query(ReviewLike)
+            .filter(ReviewLike.user_id == user_id, ReviewLike.review_id == review_id)
+            .first()
+        )
 
-            if like_review:
-                self.db.delete(like_review)
-                self.db.flush()
-        except Exception as e:
-            self.db.rollback()
-            raise UnknownException(detail=str(e))
+        if like_review:
+            self.db.delete(like_review)
+            self.db.flush()
