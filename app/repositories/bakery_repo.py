@@ -6,7 +6,6 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
 from app.core.const import ETC_MENU_NAME
-from app.core.exception import UnknownException
 from app.model.bakery import (
     Bakery,
     BakeryMenu,
@@ -671,61 +670,57 @@ class BakeryRepository:
 
         limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
 
-        try:
-            stmt = (
-                select(
-                    Bakery.id,
-                    Bakery.name,
-                    Bakery.avg_rating,
-                    Bakery.review_count,
-                    Bakery.gu,
-                    Bakery.dong,
-                    Bakery.thumbnail,
-                    OperatingHour.close_time,
-                    OperatingHour.open_time,
-                    OperatingHour.is_opened,
-                )
-                .select_from(Bakery)
-                .join(
-                    UserBakeryLikes,
-                    and_(
-                        UserBakeryLikes.bakery_id == Bakery.id,
-                        UserBakeryLikes.user_id == user_id,
-                    ),
-                )
-                .join(
-                    OperatingHour,
-                    and_(
-                        OperatingHour.bakery_id == Bakery.id,
-                        OperatingHour.day_of_week == target_day_of_week,
-                    ),
-                    isouter=True,
-                )
-                .order_by(*order_by)
-                .limit(limit)
-                .offset(offset)
+        stmt = (
+            select(
+                Bakery.id,
+                Bakery.name,
+                Bakery.avg_rating,
+                Bakery.review_count,
+                Bakery.gu,
+                Bakery.dong,
+                Bakery.thumbnail,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
+                OperatingHour.is_opened,
             )
+            .select_from(Bakery)
+            .join(
+                UserBakeryLikes,
+                and_(
+                    UserBakeryLikes.bakery_id == Bakery.id,
+                    UserBakeryLikes.user_id == user_id,
+                ),
+            )
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+                isouter=True,
+            )
+            .order_by(*order_by)
+            .limit(limit)
+            .offset(offset)
+        )
 
-            res = self.db.execute(stmt).all()
-            has_next = len(res) > page_size
+        res = self.db.execute(stmt).all()
+        has_next = len(res) > page_size
 
-            return [
-                GuDongMenuBakery(
-                    bakery_id=r.id,
-                    bakery_name=r.name,
-                    avg_rating=r.avg_rating,
-                    review_count=r.review_count,
-                    gu=r.gu,
-                    dong=r.dong,
-                    img_url=r.thumbnail,
-                    open_status=operating_hours_to_open_status(
-                        is_opened=r.is_opened,
-                        close_time=r.close_time,
-                        open_time=r.open_time,
-                    ),
-                )
-                for r in res
-            ], has_next
-
-        except Exception as e:
-            raise UnknownException(detail=str(e))
+        return [
+            GuDongMenuBakery(
+                bakery_id=r.id,
+                bakery_name=r.name,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                gu=r.gu,
+                dong=r.dong,
+                img_url=r.thumbnail,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
+            )
+            for r in res
+        ], has_next

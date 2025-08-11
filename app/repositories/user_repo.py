@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 
-from app.core.exception import DuplicateException, UnknownException
+from app.core.exception import UnknownException
 from app.model.users import UserPreferences, Users
 
 

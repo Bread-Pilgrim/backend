@@ -4,11 +4,6 @@ from fastapi import UploadFile
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
-from app.core.exception import (
-    AlreadyDislikedException,
-    AlreadyLikedException,
-    UnknownException,
-)
 from app.model.bakery import Bakery, BakeryMenu
 from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
