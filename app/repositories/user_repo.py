@@ -4,7 +4,9 @@ from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import UnknownException
+from app.model.report import BreadReport
 from app.model.users import UserPreferences, Users
+from app.schema.users import BreadReportResponeDTO
 
 
 class UserRepository:
@@ -71,3 +73,34 @@ class UserRepository:
         except Exception as e:
             self.db.rollback()
             raise UnknownException(detail=str(e))
+
+    async def get_user_bread_report(self, user_id: int, target_months: List[int]):
+        """빵말정산 조회하는 쿼리."""
+
+        res = (
+            self.db.query(BreadReport)
+            .filter(
+                BreadReport.user_id == user_id, BreadReport.month.in_(target_months)
+            )
+            .all()
+        )
+
+        if res:
+            return [
+                BreadReportResponeDTO(
+                    year=r.year,
+                    month=r.month,
+                    visited_areas=r.visited_areas,
+                    bread_types=r.bread_types,
+                    daily_avg_quantity=r.daily_avg_quantity,
+                    weekly_distribution=r.weekly_distribution,
+                    total_quantity=r.total_quantity,
+                    total_price=r.total_price,
+                    price_diff_from_last_month=r.price_diff_from_last_month,
+                    review_count=r.review_count,
+                    liked_count=r.liked_count,
+                    received_likes_count=r.received_likes_count,
+                )
+                for r in res
+            ]
+        return []

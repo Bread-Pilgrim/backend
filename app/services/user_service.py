@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import (
@@ -11,6 +13,7 @@ from app.schema.users import (
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
 )
+from app.utils.date import get_now_by_timezone
 
 
 class UserService:
@@ -110,4 +113,19 @@ class UserService:
         except Exception as e:
             if isinstance(e, RequestDataMissingException):
                 raise e
+            raise UnknownException(str(e))
+
+    async def get_user_bread_report(self, user_id: int):
+        """빵말정산 조회하는 비즈니스 로직."""
+
+        try:
+            # 1. 리포트 내역 조회할 months
+            cur_m = get_now_by_timezone().month
+            target_months = [cur_m - 3, cur_m - 2, cur_m - 1]
+
+            # 2. 빵말정산 조회
+            return await UserRepository(db=self.db).get_user_bread_report(
+                user_id=user_id, target_months=target_months
+            )
+        except Exception as e:
             raise UnknownException(str(e))

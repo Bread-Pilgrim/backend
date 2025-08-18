@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, Depends
 
 from app.core.auth import get_user_id
@@ -5,6 +7,7 @@ from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
 from app.schema.users import (
+    BreadReportResponeDTO,
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
@@ -63,3 +66,16 @@ async def update_user_bakery_preferences(
     """유저 취향정보 변경하는 API"""
     await UserService(db=db).modify_user_preference(user_id=user_id, req=req)
     return BaseResponse(message="유저 취향 수정 성공")
+
+
+@router.get(
+    "/me/bread-report",
+    responses=ERROR_UNKNOWN,
+    response_model=BaseResponse[List[BreadReportResponeDTO]],
+)
+async def get_bread_report(user_id=Depends(get_user_id), db=Depends(get_db)):
+    """유저 빵말정산 API"""
+
+    return BaseResponse(
+        data=await UserService(db=db).get_user_bread_report(user_id=user_id)
+    )
