@@ -62,3 +62,24 @@ class BakeryMyReviewReponseDTO(BaseModel):
 class ReviewLikeResponseDTO(BaseModel):
     is_like: bool = Field(..., description="좋아요 여부")
     review_id: int = Field(..., description="리뷰 id")
+
+
+class UserReview(BaseModel):
+    review_id: int = Field(..., description="리뷰 ID")
+    bakery_id: int = Field(..., description="빵집 ID")
+    bakery_name: str = Field(..., description="빵집 이름")
+    review_content: str = Field(..., description="작성한 리뷰 내용")
+    review_rating: float = Field(..., description="별점")
+    review_like_count: int = Field(default=0, description="리뷰 좋아요개수")
+    is_like: bool = Field(default=False, description="내가 리뷰 좋아요 눌렀는지 여부")
+    review_menus: Optional[List[ReviewMenu]] = Field(
+        default=[], description="리뷰한 메뉴"
+    )
+    review_photos: Optional[List[ReviewPhoto]] = Field(
+        default=[], description="리뷰 사진"
+    )
+
+
+class UserReviewReponseDTO(BaseModel):
+    items: List[UserReview] = Field(default=[], description="조회된 리뷰 데이터.")
+    has_next: bool = Field(default=False, description="다음 페이지 유무")

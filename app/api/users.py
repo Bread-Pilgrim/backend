@@ -1,11 +1,12 @@
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.core.auth import get_user_id
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
+from app.schema.review import UserReviewReponseDTO
 from app.schema.users import (
     BreadReportResponeDTO,
     UpdateUserInfoRequestDTO,
@@ -78,4 +79,24 @@ async def get_bread_report(user_id=Depends(get_user_id), db=Depends(get_db)):
 
     return BaseResponse(
         data=await UserService(db=db).get_user_bread_report(user_id=user_id)
+    )
+
+
+@router.get(
+    "/me/reviews",
+    responses=ERROR_UNKNOWN,
+    response_model=BaseResponse[UserReviewReponseDTO],
+)
+async def get_my_reviews(
+    page_no: int = Query(default=1, description="페이지 번호"),
+    page_size: int = Query(default=15),
+    user_id: int = Depends(get_user_id),
+    db=Depends(get_db),
+):
+    """내 리뷰 조회하는 API."""
+
+    return BaseResponse(
+        data=await UserService(db=db).get_user_reviews(
+            page_no=page_no, page_size=page_size, user_id=user_id
+        )
     )
