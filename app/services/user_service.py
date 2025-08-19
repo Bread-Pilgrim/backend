@@ -118,17 +118,19 @@ class UserService:
                 raise e
             raise UnknownException(str(e))
 
-    async def get_user_bread_report(self, user_id: int):
+    async def get_user_bread_report(self, year: int, month: int, user_id: int):
         """빵말정산 조회하는 비즈니스 로직."""
 
         try:
-            # 1. 리포트 내역 조회할 months
-            cur_m = get_now_by_timezone().month
-            target_months = [cur_m - 3, cur_m - 2, cur_m - 1]
+            # 1. 리포트 내역 조회할 years
+            target_years = [year - 1, year] if month < 2 else [year]
 
-            # 2. 빵말정산 조회
+            # 2. 리포트 내역 조회할 months
+            target_months = [month - 2, month - 1, month]
+
+            # 3. 빵말정산 조회
             return await UserRepository(db=self.db).get_user_bread_report(
-                user_id=user_id, target_months=target_months
+                user_id=user_id, target_years=target_years, target_months=target_months
             )
         except Exception as e:
             raise UnknownException(str(e))

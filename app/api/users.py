@@ -72,13 +72,17 @@ async def update_user_bakery_preferences(
 @router.get(
     "/me/bread-report",
     responses=ERROR_UNKNOWN,
-    response_model=BaseResponse[List[BreadReportResponeDTO]],
+    response_model=BaseResponse[BreadReportResponeDTO | None],
 )
-async def get_bread_report(user_id=Depends(get_user_id), db=Depends(get_db)):
+async def get_bread_report(
+    year: int, month: int, user_id=Depends(get_user_id), db=Depends(get_db)
+):
     """유저 빵말정산 API"""
 
     return BaseResponse(
-        data=await UserService(db=db).get_user_bread_report(user_id=user_id)
+        data=await UserService(db=db).get_user_bread_report(
+            year=year, month=month, user_id=user_id
+        )
     )
 
 
