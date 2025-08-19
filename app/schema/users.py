@@ -61,11 +61,6 @@ class BreadReportResponeDTO(BaseModel):
     price_diff_from_last_month: Optional[int] = Field(
         default=None, description="저번달과의 구매금액 차"
     )
-    price_summary: Optional[dict] = Field(
-        default=None,
-        description="최근 세달치 총 소비금액",
-        examples=[{"2025-05": 3000, "2025-06": 50000, "2025-07": 20000}],
-    )
     review_count: Optional[int] = Field(default=None, description="리뷰 개수")
     liked_count: Optional[int] = Field(default=None, description="좋아요 개수")
     received_likes_count: Optional[int] = Field(
