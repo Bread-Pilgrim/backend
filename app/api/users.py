@@ -8,6 +8,7 @@ from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
 from app.schema.review import UserReviewReponseDTO
 from app.schema.users import (
+    BreadReportMonthlyResponseDTO,
     BreadReportResponeDTO,
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
@@ -58,6 +59,18 @@ async def update_user_info(
     return BaseResponse(message="유저정보 수정 성공")
 
 
+@router.get("/preferences")
+async def get_user_bakery_preferences(
+    user_id: int = Depends(get_user_id),
+    db=Depends(get_db),
+):
+    """유저 취향정보 조회하는 API"""
+
+    return BaseResponse(
+        data=await UserService(db=db).get_user_preferences(user_id=user_id)
+    )
+
+
 @router.patch("/preferences")
 async def update_user_bakery_preferences(
     req: UpdateUserPreferenceRequestDTO,
@@ -70,15 +83,39 @@ async def update_user_bakery_preferences(
 
 
 @router.get(
+    "/me/bread-report/monthly",
+    response_model=BaseResponse[BreadReportMonthlyResponseDTO],
+    responses=ERROR_UNKNOWN,
+)
+async def get_bread_report_monthly(
+    page_no: int = Query(default=1, description="페이지 번호"),
+    page_size: int = Query(default=15),
+    user_id=Depends(get_user_id),
+    db=Depends(get_db),
+):
+    """빵말정산 월 리스트 조회 API"""
+
+    return BaseResponse(
+        data=await UserService(db=db).get_user_bread_report_monthly(
+            page_no=page_no, page_size=page_size, user_id=user_id
+        )
+    )
+
+
+@router.get(
     "/me/bread-report",
     responses=ERROR_UNKNOWN,
-    response_model=BaseResponse[List[BreadReportResponeDTO]],
+    response_model=BaseResponse[BreadReportResponeDTO | None],
 )
-async def get_bread_report(user_id=Depends(get_user_id), db=Depends(get_db)):
+async def get_bread_report(
+    year: int, month: int, user_id=Depends(get_user_id), db=Depends(get_db)
+):
     """유저 빵말정산 API"""
 
     return BaseResponse(
-        data=await UserService(db=db).get_user_bread_report(user_id=user_id)
+        data=await UserService(db=db).get_user_bread_report(
+            year=year, month=month, user_id=user_id
+        )
     )
 
 

@@ -22,6 +22,19 @@ class UpdateUserInfoRequestDTO(BaseModel):
     name: Optional[str] = Field(None, description="이름")
 
 
+class UserPreferenceDTO(BaseModel):
+    """취향항목 모델."""
+
+    preference_id: int = Field(..., description="취향 ID")
+    preference_name: str = Field(..., description="취향 항목 이름")
+
+
+class UserPrefernceResponseDTO(BaseModel):
+    bread_types: List[UserPreferenceDTO] = Field(..., description="빵 타입")
+    flavors: List[UserPreferenceDTO] = Field(..., description="맛")
+    atmospheres: List[UserPreferenceDTO] = Field(..., description="분위기")
+
+
 class UpdateUserPreferenceRequestDTO(BaseModel):
     """유저 취향정보 수정 요청 모델."""
 
@@ -33,11 +46,23 @@ class UpdateUserPreferenceRequestDTO(BaseModel):
     )
 
 
+class BreadReportMonthlyDTO(BaseModel):
+    year: int = Field(..., description="연도")
+    month: int = Field(..., description="월")
+
+
+class BreadReportMonthlyResponseDTO(BaseModel):
+    items: List[BreadReportMonthlyDTO] = Field(
+        default=[], description="빵말정산 월 항목"
+    )
+    has_next: bool = Field(default=False, description="다음 페이지 여부")
+
+
 class BreadReportResponeDTO(BaseModel):
     """유저 빵말정산 리포트 응답 모델."""
 
-    year: Optional[int] = Field(default=None, description="연도")
-    month: Optional[int] = Field(default=None, description="월")
+    year: int = Field(..., description="연도")
+    month: int = Field(..., description="월")
     visited_areas: Optional[dict] = Field(
         default=None,
         description="방문한 지역 - {'방문지역 코드' : '방문한 횟수'} ",
@@ -48,26 +73,18 @@ class BreadReportResponeDTO(BaseModel):
         description="빵타입 - {'빵타입' : '구매한 횟수'} ",
         examples=[{"11": 3, "14": 8}],
     )
-    daily_avg_quantity: Optional[float] = Field(
-        default=None, description="빵 평균 소비량"
+    daily_avg_quantity: float = Field(default=0, description="빵 평균 소비량")
+    monthly_consumption_gap: float = Field(
+        default=0.0, description="전체유저와의 빵소비량 차이"
     )
+    total_quantity: int = Field(default=0, description="총 빵 소비량")
+    total_visit_count: int = Field(default=0, description="총 방문횟수")
+    total_prices: List[int] = Field(default=[0, 0, 0], description="총 빵 구매금액")
     weekly_distribution: Optional[dict] = Field(
         default=None,
         description="요일 별 소비량 - {'요일코드' : '소비횟수'} ",
         examples=[{"0": 1, "6": 3}],
     )
-    total_quantity: Optional[int] = Field(default=None, description="총 빵 소비량")
-    total_price: Optional[int] = Field(default=None, description="총 빵 구매금액")
-    price_diff_from_last_month: Optional[int] = Field(
-        default=None, description="저번달과의 구매금액 차"
-    )
-    price_summary: Optional[dict] = Field(
-        default=None,
-        description="최근 세달치 총 소비금액",
-        examples=[{"2025-05": 3000, "2025-06": 50000, "2025-07": 20000}],
-    )
-    review_count: Optional[int] = Field(default=None, description="리뷰 개수")
-    liked_count: Optional[int] = Field(default=None, description="좋아요 개수")
-    received_likes_count: Optional[int] = Field(
-        default=None, description="받은 좋아요 개수"
-    )
+    review_count: int = Field(default=0, description="리뷰 개수")
+    liked_count: int = Field(default=0, description="좋아요 개수")
+    received_likes_count: int = Field(default=0, description="받은 좋아요 개수")

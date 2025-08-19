@@ -7,9 +7,9 @@ from app.core.exception import UnknownException
 from app.model.bakery import Bakery
 from app.model.report import BreadReport
 from app.model.review import Review, ReviewLike
-from app.model.users import UserPreferences, Users
+from app.model.users import Preferences, UserPreferences, Users
 from app.schema.review import UserReview
-from app.schema.users import BreadReportResponeDTO
+from app.schema.users import BreadReportMonthlyDTO, BreadReportResponeDTO
 from app.utils.pagination import convert_limit_and_offset
 
 
@@ -64,6 +64,26 @@ class UserRepository:
         if user:
             user.is_preferences_set = True
 
+    async def get_user_preferences(self, user_id: int):
+        """유저 취향 조회하는 쿼리."""
+
+        res = (
+            self.db.query(
+                UserPreferences.preference_id, Preferences.type, Preferences.name
+            )
+            .join(Preferences, Preferences.id == UserPreferences.preference_id)
+            .filter(UserPreferences.user_id == user_id)
+        ).all()
+
+        return [
+            {
+                "preference_id": r.preference_id,
+                "preference_name": r.name,
+                "preference_type": r.type,
+            }
+            for r in res
+        ]
+
     async def bulk_delete_user_preferences(
         self, user_id: int, delete_preferences: List[int]
     ):
@@ -78,36 +98,39 @@ class UserRepository:
             self.db.rollback()
             raise UnknownException(detail=str(e))
 
-    async def get_user_bread_report(self, user_id: int, target_months: List[int]):
+    async def get_user_bread_report(
+        self, user_id: int, target_years: List[int], target_months: List[int]
+    ):
         """빵말정산 조회하는 쿼리."""
 
         res = (
             self.db.query(BreadReport)
             .filter(
-                BreadReport.user_id == user_id, BreadReport.month.in_(target_months)
+                BreadReport.user_id == user_id,
+                BreadReport.year.in_(target_years),
+                BreadReport.month.in_(target_months),
             )
+            .order_by(desc(BreadReport.id))
             .all()
         )
 
         if res:
-            return [
-                BreadReportResponeDTO(
-                    year=r.year,
-                    month=r.month,
-                    visited_areas=r.visited_areas,
-                    bread_types=r.bread_types,
-                    daily_avg_quantity=r.daily_avg_quantity,
-                    weekly_distribution=r.weekly_distribution,
-                    total_quantity=r.total_quantity,
-                    total_price=r.total_price,
-                    price_diff_from_last_month=r.price_diff_from_last_month,
-                    review_count=r.review_count,
-                    liked_count=r.liked_count,
-                    received_likes_count=r.received_likes_count,
-                )
-                for r in res
-            ]
-        return []
+            return BreadReportResponeDTO(
+                year=res[0].year,
+                month=res[0].month,
+                visited_areas=res[0].visited_areas,
+                bread_types=res[0].bread_types,
+                daily_avg_quantity=res[0].daily_avg_quantity,
+                weekly_distribution=res[0].weekly_distribution,
+                monthly_consumption_gap=res[0].monthly_consumption_gap,
+                total_visit_count=res[0].visit_count,
+                total_quantity=res[0].total_quantity,
+                total_prices=[r.total_price for r in res],
+                review_count=res[0].review_count,
+                liked_count=res[0].liked_count,
+                received_likes_count=res[0].received_likes_count,
+            )
+        return None
 
     async def get_user_reviews(self, page_no: int, page_size: int, user_id: int):
         """나의 리뷰 조회하는 쿼리."""
@@ -146,4 +169,33 @@ class UserRepository:
                 is_like=True if r.user_id else False,
             )
             for r in res[:page_size]
+        ]
+
+    async def get_user_bread_report_monthly(
+        self, page_no: int, page_size: int, user_id: int
+    ):
+        """유저 빵말정산 항목 조회하는 쿼리."""
+
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+
+        res = (
+            self.db.query(BreadReport.year, BreadReport.month)
+            .filter(BreadReport.user_id == user_id)
+            .order_by(desc(BreadReport.id))
+            .limit(limit + 1)
+            .offset(offset)
+            .all()
+        )
+
+        if not res:
+            return []
+
+        has_next = len(res) > page_size
+
+        return has_next, [
+            BreadReportMonthlyDTO(
+                year=r.year,
+                month=r.month,
+            )
+            for r in res
         ]

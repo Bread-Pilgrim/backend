@@ -12,9 +12,12 @@ from app.repositories.review_repo import ReviewRepository
 from app.repositories.user_repo import UserRepository
 from app.schema.review import ReviewMenu, ReviewPhoto, UserReview, UserReviewReponseDTO
 from app.schema.users import (
+    BreadReportMonthlyResponseDTO,
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
+    UserPreferenceDTO,
+    UserPrefernceResponseDTO,
 )
 from app.utils.date import get_now_by_timezone
 
@@ -78,10 +81,50 @@ class UserService:
     async def update_user_info(self, user_id: int, req: UpdateUserInfoRequestDTO):
         """유저 정보 수정하는 비즈니스 로직."""
 
-        target_field = req.model_dump(exclude_unset=True, exclude_none=True)
-        await UserRepository(db=self.db).update_user_info(
-            user_id=user_id, target_field=target_field
-        )
+        try:
+            target_field = req.model_dump(exclude_unset=True, exclude_none=True)
+            await UserRepository(db=self.db).update_user_info(
+                user_id=user_id, target_field=target_field
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def get_user_preferences(self, user_id: int):
+        """유저 조회하기"""
+
+        try:
+            user_preferences = await UserRepository(db=self.db).get_user_preferences(
+                user_id=user_id
+            )
+
+            return UserPrefernceResponseDTO(
+                bread_types=[
+                    UserPreferenceDTO(
+                        preference_id=u.get("preference_id", 1),
+                        preference_name=u.get("preference_name", ""),
+                    )
+                    for u in user_preferences
+                    if u.get("preference_type") == "bread_type"
+                ],  # 빵 타입
+                atmospheres=[
+                    UserPreferenceDTO(
+                        preference_id=u.get("preference_id", 1),
+                        preference_name=u.get("preference_name", ""),
+                    )
+                    for u in user_preferences
+                    if u.get("preference_type") == "atmosphere"
+                ],  # 분위기
+                flavors=[
+                    UserPreferenceDTO(
+                        preference_id=u.get("preference_id", 1),
+                        preference_name=u.get("preference_name", ""),
+                    )
+                    for u in user_preferences
+                    if u.get("preference_type") == "flavor"
+                ],  # 빵맛
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def modify_user_preference(
         self, user_id: int, req: UpdateUserPreferenceRequestDTO
@@ -118,17 +161,19 @@ class UserService:
                 raise e
             raise UnknownException(str(e))
 
-    async def get_user_bread_report(self, user_id: int):
+    async def get_user_bread_report(self, year: int, month: int, user_id: int):
         """빵말정산 조회하는 비즈니스 로직."""
 
         try:
-            # 1. 리포트 내역 조회할 months
-            cur_m = get_now_by_timezone().month
-            target_months = [cur_m - 3, cur_m - 2, cur_m - 1]
+            # 1. 리포트 내역 조회할 years
+            target_years = [year - 1, year] if month < 2 else [year]
 
-            # 2. 빵말정산 조회
+            # 2. 리포트 내역 조회할 months
+            target_months = [month - 2, month - 1, month]
+
+            # 3. 빵말정산 조회
             return await UserRepository(db=self.db).get_user_bread_report(
-                user_id=user_id, target_months=target_months
+                user_id=user_id, target_years=target_years, target_months=target_months
             )
         except Exception as e:
             raise UnknownException(str(e))
@@ -176,5 +221,20 @@ class UserService:
                     for r in reviews
                 ],
             )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def get_user_bread_report_monthly(
+        self, page_no: int, page_size: int, user_id: int
+    ):
+        """빵말정산 월 리스트 조회 API"""
+
+        try:
+            has_next, res = await UserRepository(
+                db=self.db
+            ).get_user_bread_report_monthly(
+                page_no=page_no, page_size=page_size, user_id=user_id
+            )
+            return BreadReportMonthlyResponseDTO(has_next=has_next, items=res)
         except Exception as e:
             raise UnknownException(detail=str(e))
