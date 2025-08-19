@@ -1,3 +1,6 @@
+from collections import defaultdict
+from datetime import datetime
+
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import (
@@ -5,12 +8,15 @@ from app.core.exception import (
     RequestDataMissingException,
     UnknownException,
 )
+from app.repositories.review_repo import ReviewRepository
 from app.repositories.user_repo import UserRepository
+from app.schema.review import ReviewMenu, ReviewPhoto, UserReview, UserReviewReponseDTO
 from app.schema.users import (
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
 )
+from app.utils.date import get_now_by_timezone
 
 
 class UserService:
@@ -111,3 +117,64 @@ class UserService:
             if isinstance(e, RequestDataMissingException):
                 raise e
             raise UnknownException(str(e))
+
+    async def get_user_bread_report(self, user_id: int):
+        """빵말정산 조회하는 비즈니스 로직."""
+
+        try:
+            # 1. 리포트 내역 조회할 months
+            cur_m = get_now_by_timezone().month
+            target_months = [cur_m - 3, cur_m - 2, cur_m - 1]
+
+            # 2. 빵말정산 조회
+            return await UserRepository(db=self.db).get_user_bread_report(
+                user_id=user_id, target_months=target_months
+            )
+        except Exception as e:
+            raise UnknownException(str(e))
+
+    async def get_user_reviews(self, page_no: int, page_size: int, user_id: int):
+        """내가 작성한 리뷰 조회하는 비즈니스 로직."""
+
+        try:
+            # 1. 리뷰성 정보 조회
+            has_next, reviews = await UserRepository(db=self.db).get_user_reviews(
+                page_no=page_no, page_size=page_size, user_id=user_id
+            )
+
+            if not reviews:
+                return UserReviewReponseDTO(has_next=False, items=[])
+
+            review_repo = ReviewRepository(db=self.db)
+
+            # 2. 리뷰한 베이커리 메뉴 조회
+            review_ids = [r.review_id for r in reviews]
+            review_menus = await review_repo.get_my_review_menus_by_bakery_id(
+                review_ids=review_ids
+            )
+
+            review_menu_maps = defaultdict(list)
+            for r in review_menus:
+                review_menu_maps[r.review_id].append(ReviewMenu(menu_name=r.name))
+
+            # 3. 리뷰한 사진 조회
+            photos = await review_repo.get_my_review_photos_by_bakery_id(
+                review_ids=review_ids
+            )
+            photo_maps = defaultdict(list)
+            for p in photos:
+                photo_maps[p.review_id].append(ReviewPhoto(img_url=p.img_url))
+
+            return UserReviewReponseDTO(
+                has_next=has_next,
+                items=[
+                    UserReview(
+                        **r.model_dump(exclude={"review_photos", "review_menus"}),
+                        review_photos=photo_maps.get(r.review_id, []),
+                        review_menus=review_menu_maps.get(r.review_id, []),
+                    )
+                    for r in reviews
+                ],
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))

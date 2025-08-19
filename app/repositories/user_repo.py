@@ -1,10 +1,16 @@
 from typing import List
 
-from sqlalchemy import inspect
+from sqlalchemy import desc, inspect
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import UnknownException
+from app.model.bakery import Bakery
+from app.model.report import BreadReport
+from app.model.review import Review, ReviewLike
 from app.model.users import UserPreferences, Users
+from app.schema.review import UserReview
+from app.schema.users import BreadReportResponeDTO
+from app.utils.pagination import convert_limit_and_offset
 
 
 class UserRepository:
@@ -71,3 +77,73 @@ class UserRepository:
         except Exception as e:
             self.db.rollback()
             raise UnknownException(detail=str(e))
+
+    async def get_user_bread_report(self, user_id: int, target_months: List[int]):
+        """빵말정산 조회하는 쿼리."""
+
+        res = (
+            self.db.query(BreadReport)
+            .filter(
+                BreadReport.user_id == user_id, BreadReport.month.in_(target_months)
+            )
+            .all()
+        )
+
+        if res:
+            return [
+                BreadReportResponeDTO(
+                    year=r.year,
+                    month=r.month,
+                    visited_areas=r.visited_areas,
+                    bread_types=r.bread_types,
+                    daily_avg_quantity=r.daily_avg_quantity,
+                    weekly_distribution=r.weekly_distribution,
+                    total_quantity=r.total_quantity,
+                    total_price=r.total_price,
+                    price_diff_from_last_month=r.price_diff_from_last_month,
+                    review_count=r.review_count,
+                    liked_count=r.liked_count,
+                    received_likes_count=r.received_likes_count,
+                )
+                for r in res
+            ]
+        return []
+
+    async def get_user_reviews(self, page_no: int, page_size: int, user_id: int):
+        """나의 리뷰 조회하는 쿼리."""
+
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+
+        res = (
+            self.db.query(
+                Review.id,
+                Review.content,
+                Review.rating,
+                Review.like_count,
+                Bakery.name,
+                Bakery.id.label("bakery_id"),
+                ReviewLike.user_id,
+            )
+            .join(Bakery, Bakery.id == Review.bakery_id)
+            .join(ReviewLike, ReviewLike.review_id == Review.id, isouter=True)
+            .filter(Review.user_id == user_id)
+            .order_by(desc(Review.created_at))
+            .limit(limit=limit + 1)
+            .offset(offset=offset)
+            .all()
+        )
+
+        has_next = len(res) > page_size
+
+        return has_next, [
+            UserReview(
+                review_id=r.id,
+                bakery_id=r.bakery_id,
+                bakery_name=r.name,
+                review_content=r.content,
+                review_rating=r.rating,
+                review_like_count=r.like_count,
+                is_like=True if r.user_id else False,
+            )
+            for r in res[:page_size]
+        ]
