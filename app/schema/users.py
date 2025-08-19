@@ -22,6 +22,19 @@ class UpdateUserInfoRequestDTO(BaseModel):
     name: Optional[str] = Field(None, description="이름")
 
 
+class UserPreferenceDTO(BaseModel):
+    """취향항목 모델."""
+
+    preference_id: int = Field(..., description="취향 ID")
+    preference_name: str = Field(..., description="취향 항목 이름")
+
+
+class UserPrefernceResponseDTO(BaseModel):
+    bread_types: List[UserPreferenceDTO] = Field(..., description="빵 타입")
+    flavors: List[UserPreferenceDTO] = Field(..., description="맛")
+    atmospheres: List[UserPreferenceDTO] = Field(..., description="분위기")
+
+
 class UpdateUserPreferenceRequestDTO(BaseModel):
     """유저 취향정보 수정 요청 모델."""
 

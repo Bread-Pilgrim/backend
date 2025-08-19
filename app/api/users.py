@@ -59,6 +59,18 @@ async def update_user_info(
     return BaseResponse(message="유저정보 수정 성공")
 
 
+@router.get("/preferences")
+async def get_user_bakery_preferences(
+    user_id: int = Depends(get_user_id),
+    db=Depends(get_db),
+):
+    """유저 취향정보 조회하는 API"""
+
+    return BaseResponse(
+        data=await UserService(db=db).get_user_preferences(user_id=user_id)
+    )
+
+
 @router.patch("/preferences")
 async def update_user_bakery_preferences(
     req: UpdateUserPreferenceRequestDTO,

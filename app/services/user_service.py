@@ -16,6 +16,8 @@ from app.schema.users import (
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
+    UserPreferenceDTO,
+    UserPrefernceResponseDTO,
 )
 from app.utils.date import get_now_by_timezone
 
@@ -79,10 +81,50 @@ class UserService:
     async def update_user_info(self, user_id: int, req: UpdateUserInfoRequestDTO):
         """유저 정보 수정하는 비즈니스 로직."""
 
-        target_field = req.model_dump(exclude_unset=True, exclude_none=True)
-        await UserRepository(db=self.db).update_user_info(
-            user_id=user_id, target_field=target_field
-        )
+        try:
+            target_field = req.model_dump(exclude_unset=True, exclude_none=True)
+            await UserRepository(db=self.db).update_user_info(
+                user_id=user_id, target_field=target_field
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def get_user_preferences(self, user_id: int):
+        """유저 조회하기"""
+
+        try:
+            user_preferences = await UserRepository(db=self.db).get_user_preferences(
+                user_id=user_id
+            )
+
+            return UserPrefernceResponseDTO(
+                bread_types=[
+                    UserPreferenceDTO(
+                        preference_id=u.get("preference_id", 1),
+                        preference_name=u.get("preference_name", ""),
+                    )
+                    for u in user_preferences
+                    if u.get("preference_type") == "bread_type"
+                ],  # 빵 타입
+                atmospheres=[
+                    UserPreferenceDTO(
+                        preference_id=u.get("preference_id", 1),
+                        preference_name=u.get("preference_name", ""),
+                    )
+                    for u in user_preferences
+                    if u.get("preference_type") == "atmosphere"
+                ],  # 분위기
+                flavors=[
+                    UserPreferenceDTO(
+                        preference_id=u.get("preference_id", 1),
+                        preference_name=u.get("preference_name", ""),
+                    )
+                    for u in user_preferences
+                    if u.get("preference_type") == "flavor"
+                ],  # 빵맛
+            )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
 
     async def modify_user_preference(
         self, user_id: int, req: UpdateUserPreferenceRequestDTO

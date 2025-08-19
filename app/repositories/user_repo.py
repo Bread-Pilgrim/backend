@@ -7,7 +7,7 @@ from app.core.exception import UnknownException
 from app.model.bakery import Bakery
 from app.model.report import BreadReport
 from app.model.review import Review, ReviewLike
-from app.model.users import UserPreferences, Users
+from app.model.users import Preferences, UserPreferences, Users
 from app.schema.review import UserReview
 from app.schema.users import BreadReportMonthlyDTO, BreadReportResponeDTO
 from app.utils.pagination import convert_limit_and_offset
@@ -63,6 +63,26 @@ class UserRepository:
         user = self.db.query(Users).filter(Users.id == user_id).first()
         if user:
             user.is_preferences_set = True
+
+    async def get_user_preferences(self, user_id: int):
+        """유저 취향 조회하는 쿼리."""
+
+        res = (
+            self.db.query(
+                UserPreferences.preference_id, Preferences.type, Preferences.name
+            )
+            .join(Preferences, Preferences.id == UserPreferences.preference_id)
+            .filter(UserPreferences.user_id == user_id)
+        ).all()
+
+        return [
+            {
+                "preference_id": r.preference_id,
+                "preference_name": r.name,
+                "preference_type": r.type,
+            }
+            for r in res
+        ]
 
     async def bulk_delete_user_preferences(
         self, user_id: int, delete_preferences: List[int]
