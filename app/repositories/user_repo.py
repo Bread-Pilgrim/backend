@@ -9,7 +9,7 @@ from app.model.report import BreadReport
 from app.model.review import Review, ReviewLike
 from app.model.users import UserPreferences, Users
 from app.schema.review import UserReview
-from app.schema.users import BreadReportResponeDTO
+from app.schema.users import BreadReportMonthlyDTO, BreadReportResponeDTO
 from app.utils.pagination import convert_limit_and_offset
 
 
@@ -149,4 +149,33 @@ class UserRepository:
                 is_like=True if r.user_id else False,
             )
             for r in res[:page_size]
+        ]
+
+    async def get_user_bread_report_monthly(
+        self, page_no: int, page_size: int, user_id: int
+    ):
+        """유저 빵말정산 항목 조회하는 쿼리."""
+
+        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+
+        res = (
+            self.db.query(BreadReport.year, BreadReport.month)
+            .filter(BreadReport.user_id == user_id)
+            .order_by(desc(BreadReport.id))
+            .limit(limit + 1)
+            .offset(offset)
+            .all()
+        )
+
+        if not res:
+            return []
+
+        has_next = len(res) > page_size
+
+        return has_next, [
+            BreadReportMonthlyDTO(
+                year=r.year,
+                month=r.month,
+            )
+            for r in res
         ]

@@ -33,6 +33,18 @@ class UpdateUserPreferenceRequestDTO(BaseModel):
     )
 
 
+class BreadReportMonthlyDTO(BaseModel):
+    year: int = Field(..., description="연도")
+    month: int = Field(..., description="월")
+
+
+class BreadReportMonthlyResponseDTO(BaseModel):
+    items: List[BreadReportMonthlyDTO] = Field(
+        default=[], description="빵말정산 월 항목"
+    )
+    has_next: bool = Field(default=False, description="다음 페이지 여부")
+
+
 class BreadReportResponeDTO(BaseModel):
     """유저 빵말정산 리포트 응답 모델."""
 

@@ -8,6 +8,7 @@ from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
 from app.schema.review import UserReviewReponseDTO
 from app.schema.users import (
+    BreadReportMonthlyResponseDTO,
     BreadReportResponeDTO,
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
@@ -67,6 +68,26 @@ async def update_user_bakery_preferences(
     """유저 취향정보 변경하는 API"""
     await UserService(db=db).modify_user_preference(user_id=user_id, req=req)
     return BaseResponse(message="유저 취향 수정 성공")
+
+
+@router.get(
+    "/me/bread-report/monthly",
+    response_model=BaseResponse[BreadReportMonthlyResponseDTO],
+    responses=ERROR_UNKNOWN,
+)
+async def get_bread_report_monthly(
+    page_no: int = Query(default=1, description="페이지 번호"),
+    page_size: int = Query(default=15),
+    user_id=Depends(get_user_id),
+    db=Depends(get_db),
+):
+    """빵말정산 월 리스트 조회 API"""
+
+    return BaseResponse(
+        data=await UserService(db=db).get_user_bread_report_monthly(
+            page_no=page_no, page_size=page_size, user_id=user_id
+        )
+    )
 
 
 @router.get(

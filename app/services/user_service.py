@@ -12,6 +12,7 @@ from app.repositories.review_repo import ReviewRepository
 from app.repositories.user_repo import UserRepository
 from app.schema.review import ReviewMenu, ReviewPhoto, UserReview, UserReviewReponseDTO
 from app.schema.users import (
+    BreadReportMonthlyResponseDTO,
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
@@ -178,5 +179,20 @@ class UserService:
                     for r in reviews
                 ],
             )
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def get_user_bread_report_monthly(
+        self, page_no: int, page_size: int, user_id: int
+    ):
+        """빵말정산 월 리스트 조회 API"""
+
+        try:
+            has_next, res = await UserRepository(
+                db=self.db
+            ).get_user_bread_report_monthly(
+                page_no=page_no, page_size=page_size, user_id=user_id
+            )
+            return BreadReportMonthlyResponseDTO(has_next=has_next, items=res)
         except Exception as e:
             raise UnknownException(detail=str(e))
