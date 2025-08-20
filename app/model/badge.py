@@ -35,7 +35,7 @@ class BadgeCondition(Base, DateTimeMixin):
     value = Column(Integer, nullable=False)
 
 
-class UserBadge(Base, DateTimeMixin):
+class UserBadge(Base):
     """유저가 획득한 뱃지 기록하는 테이블."""
 
     __tablename__ = "user_badges"

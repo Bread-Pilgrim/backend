@@ -245,3 +245,15 @@ class UserService:
             return BreadReportMonthlyResponseDTO(has_next=has_next, items=res)
         except Exception as e:
             raise UnknownException(detail=str(e))
+
+    async def represent_user_badge(self, badge_id: int, user_id: int):
+        """대표뱃지 설정하는 비즈니스 로직."""
+        try:
+            user_repo = UserRepository(db=self.db)
+            # 1. 이미 설정되어 있는 대표뱃지 비활성화
+            await user_repo.derepresent_badge_if_exist(user_id=user_id)
+            # 2. 대표뱃지 설정
+            await user_repo.represent_badge(badge_id=badge_id, user_id=user_id)
+
+        except Exception as e:
+            raise UnknownException(detail=str(e))

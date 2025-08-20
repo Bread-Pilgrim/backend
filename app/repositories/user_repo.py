@@ -230,3 +230,17 @@ class UserRepository:
             )
             for r in res
         ]
+
+    async def derepresent_badge_if_exist(self, user_id: int):
+        """대표뱃지가 있을 경우 해지하는 쿼리."""
+
+        self.db.query(UserBadge).filter(
+            UserBadge.user_id == user_id, UserBadge.is_representative == True
+        ).update({UserBadge.is_representative: False})
+
+    async def represent_badge(self, badge_id: int, user_id: int):
+        """특정 뱃지를 대표뱃지로 설정하는 쿼리."""
+
+        self.db.query(UserBadge).filter(
+            UserBadge.user_id == user_id, UserBadge.badge_id == badge_id
+        ).update({UserBadge.is_representative: True})
