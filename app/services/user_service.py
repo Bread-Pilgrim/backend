@@ -257,3 +257,14 @@ class UserService:
 
         except Exception as e:
             raise UnknownException(detail=str(e))
+
+    async def derepresent_user_badge(self, badge_id: int, user_id: int):
+        """대표뱃지 해지하는 비즈니스 로직."""
+
+        try:
+            await UserRepository(db=self.db).derepresent_user_badge(
+                badge_id=badge_id, user_id=user_id
+            )
+
+        except Exception as e:
+            raise UnknownException(detail=str(e))

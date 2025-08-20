@@ -244,3 +244,10 @@ class UserRepository:
         self.db.query(UserBadge).filter(
             UserBadge.user_id == user_id, UserBadge.badge_id == badge_id
         ).update({UserBadge.is_representative: True})
+
+    async def derepresent_user_badge(self, badge_id: int, user_id: int):
+        """특정 뱃지를 대표뱃지에서 해지하는 쿼리."""
+
+        self.db.query(UserBadge).filter(
+            UserBadge.user_id == user_id, UserBadge.badge_id == badge_id
+        ).update({UserBadge.is_representative: False})

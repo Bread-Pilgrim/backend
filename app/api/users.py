@@ -164,3 +164,17 @@ async def represent_user_badge(
 
     await UserService(db=db).represent_user_badge(badge_id=badge_id, user_id=user_id)
     return BaseResponse(message="대표뱃지 설정 성공")
+
+
+@router.post(
+    "/me/badges/{badge_id}/derepresent",
+    response_model=BaseResponse,
+    responses=ERROR_UNKNOWN,
+)
+async def derepresent_user_badge(
+    badge_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """대표뱃지 해지하는 API."""
+
+    await UserService(db=db).derepresent_user_badge(badge_id=badge_id, user_id=user_id)
+    return BaseResponse(message="대표뱃지 해지 성공")
