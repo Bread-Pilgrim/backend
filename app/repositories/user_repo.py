@@ -4,18 +4,49 @@ from sqlalchemy import desc, inspect
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import UnknownException
+from app.model.badge import Badge, UserBadge
 from app.model.bakery import Bakery
 from app.model.report import BreadReport
 from app.model.review import Review, ReviewLike
 from app.model.users import Preferences, UserPreferences, Users
 from app.schema.review import UserReview
-from app.schema.users import BreadReportMonthlyDTO, BreadReportResponeDTO
+from app.schema.users import (
+    BreadReportMonthlyDTO,
+    BreadReportResponeDTO,
+    UserProfileResponseDTO,
+)
 from app.utils.pagination import convert_limit_and_offset
 
 
 class UserRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
+
+    async def get_user_profile(self, user_id: int):
+        """유저 프로필 조회 쿼리."""
+
+        res = (
+            self.db.query(
+                Users.nickname,
+                Users.profile_img,
+                Badge.name.label("badge_name"),
+                UserBadge.is_representative,
+            )
+            .select_from(UserBadge)
+            .join(Badge, UserBadge.badge_id == Badge.id)
+            .join(Users, Users.id == UserBadge.user_id)
+            .filter(UserBadge.user_id == user_id)
+            .order_by(UserBadge.is_representative.desc(), UserBadge.id.asc())
+            .first()
+        )
+
+        if res:
+            return UserProfileResponseDTO(
+                nickname=res.nickname,
+                profile_img=res.profile_img,
+                badge_name=res.badge_name,
+                is_representative=res.is_representative,
+            )
 
     async def find_user_by_nickname(self, nickname: str, user_id: int) -> bool:
         """nickname 조회하는 쿼리.."""

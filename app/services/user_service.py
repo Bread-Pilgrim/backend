@@ -26,6 +26,13 @@ class UserService:
     def __init__(self, db: Session):
         self.db = db
 
+    async def get_user_profile(self, user_id: int):
+        """유저 프로필 조회하는 비즈니스 로직."""
+        try:
+            return await UserRepository(db=self.db).get_user_profile(user_id=user_id)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
     async def set_user_preference_onboarding(
         self, user_id: int, req: UserOnboardRequestDTO
     ):

@@ -13,10 +13,23 @@ from app.schema.users import (
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
+    UserProfileResponseDTO,
 )
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["user"])
+
+
+@router.get(
+    "/me",
+    response_model=BaseResponse[UserProfileResponseDTO],
+    responses={
+        **ERROR_UNKNOWN,
+    },
+)
+async def get_user_profile(user_id: int = Depends(get_user_id), db=Depends(get_db)):
+    """유저 프로필을 조회하는 API."""
+    return BaseResponse(data=await UserService(db=db).get_user_profile(user_id=user_id))
 
 
 @router.post(
