@@ -12,6 +12,7 @@ class BaseResponse(GenericModel, Generic[T]):
     status_code: int = 200
     message: str = "성공"
     data: Optional[T] = None
+    error_usecase: Optional[str] = None
     token: AuthToken | None = None
 
 
