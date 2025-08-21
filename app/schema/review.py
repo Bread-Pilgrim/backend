@@ -56,7 +56,9 @@ class BakeryReviewReponseDTO(BaseModel):
 
 class BakeryMyReviewReponseDTO(BaseModel):
     items: List[MyBakeryReview] = Field(default=[], description="조회된 리뷰 데이터.")
-    has_next: bool = Field(default=False, description="다음 페이지 유무")
+    next_cursor: Optional[str] = Field(
+        default=None, description="다음페이지 조회를 위한 cursor_value 값"
+    )
 
 
 class ReviewLikeResponseDTO(BaseModel):
