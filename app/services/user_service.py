@@ -245,17 +245,17 @@ class UserService:
             raise UnknownException(detail=str(e))
 
     async def get_user_bread_report_monthly(
-        self, page_no: int, page_size: int, user_id: int
+        self, cursor_value: str, page_size: int, user_id: int
     ):
         """빵말정산 월 리스트 조회 API"""
 
         try:
-            has_next, res = await UserRepository(
+            next_cursor, res = await UserRepository(
                 db=self.db
             ).get_user_bread_report_monthly(
-                page_no=page_no, page_size=page_size, user_id=user_id
+                cursor_value=cursor_value, page_size=page_size, user_id=user_id
             )
-            return BreadReportMonthlyResponseDTO(has_next=has_next, items=res)
+            return BreadReportMonthlyResponseDTO(next_cursor=next_cursor, items=res)
         except Exception as e:
             raise UnknownException(detail=str(e))
 

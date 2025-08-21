@@ -203,18 +203,21 @@ class UserRepository:
         ]
 
     async def get_user_bread_report_monthly(
-        self, page_no: int, page_size: int, user_id: int
+        self, cursor_value: str, page_size: int, user_id: int
     ):
         """유저 빵말정산 항목 조회하는 쿼리."""
 
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+        filters = [BreadReport.user_id == user_id]
+        if cursor_value == "0":
+            filters.append(BreadReport.id > cursor_value)
+        else:
+            filters.append(BreadReport.id <= cursor_value)
 
         res = (
-            self.db.query(BreadReport.year, BreadReport.month)
-            .filter(BreadReport.user_id == user_id)
+            self.db.query(BreadReport.id, BreadReport.year, BreadReport.month)
+            .filter(*filters)
             .order_by(desc(BreadReport.id))
-            .limit(limit + 1)
-            .offset(offset)
+            .limit(page_size + 1)
             .all()
         )
 
@@ -222,13 +225,14 @@ class UserRepository:
             return []
 
         has_next = len(res) > page_size
+        next_cursor = str(res[-1].id) if has_next else None
 
-        return has_next, [
+        return next_cursor, [
             BreadReportMonthlyDTO(
                 year=r.year,
                 month=r.month,
             )
-            for r in res
+            for r in res[:page_size]
         ]
 
     async def derepresent_badge_if_exist(self, user_id: int):
