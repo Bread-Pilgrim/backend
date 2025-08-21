@@ -30,21 +30,10 @@ def parse_cursor_value(cursor_value: str, sort_by: str):
         raise InvalidSortParameterException()
 
 
-def build_cursor_filter(sort_column, sort_value, cursor_id, direction):
-    """커서 기반으로 WHERE 조건을 생성하는 메소드."""
-
-    if sort_value is None or cursor_id is None:
-        return None
-    if direction == "desc":
-        return or_(
-            sort_column < sort_value,
-            and_(sort_column == sort_value, Review.id < cursor_id),
-        )
-    else:
-        return or_(
-            sort_column > sort_value,
-            and_(sort_column == sort_value, Review.id > cursor_id),
-        )
+# def build_cursor_filter(table_name, column_name, cursor_value: str, filters):
+#     """커서 기반으로 WHERE 조건을 생성하는 메소드."""
+#     if cursor_value == "0":
+#         return filters.append()
 
 
 def build_order_by_with_reviews(sort_column, direction):
@@ -78,3 +67,17 @@ def convert_limit_and_offset(page_no: int, page_size: int):
     offset = (page_no - 1) * page_size
 
     return limit, offset
+
+
+def build_next_cursor(res, target_column: str, page_size: int):
+    """next_cursor값 반환하는 메소드."""
+
+    has_next = len(res) > page_size
+    if not has_next:
+        return None
+
+    last = res[page_size - 1]
+    if hasattr(last, "_mapping"):
+        return str(last._mapping[target_column])  # dict처럼 접근
+    else:
+        return str(getattr(last, target_column, None))
