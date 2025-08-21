@@ -56,7 +56,7 @@ class UserService:
             if is_exist:
                 raise DuplicateException(
                     detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
-                    error_code="DUPLICATE_NICKNAME",
+                    error_usecase="DUPLICATE_NICKNAME",
                 )
 
             # 2. 취향설정 여부 체크
@@ -65,7 +65,7 @@ class UserService:
             if has_set:
                 raise DuplicateException(
                     detail="이미 취향설정을 완료한 유저입니다.",
-                    error_code="DUPLICATE_NICKNAME",
+                    error_usecase="ALREADY_ONBOARDED",
                 )
 
             # 3. 유저-취향 N:M 테이블 데이터 적재
@@ -81,7 +81,7 @@ class UserService:
             await user_repo.update_preference_state(user_id=user_id)
         except Exception as e:
             if isinstance(e, DuplicateException):
-                raise
+                raise e
             else:
                 raise UnknownException(str(e))
 
@@ -89,11 +89,24 @@ class UserService:
         """유저 정보 수정하는 비즈니스 로직."""
 
         try:
+            user_repo = UserRepository(db=self.db)
             target_field = req.model_dump(exclude_unset=True, exclude_none=True)
-            await UserRepository(db=self.db).update_user_info(
-                user_id=user_id, target_field=target_field
-            )
+
+            if target_field.get("nickname"):
+                is_exist = await user_repo.find_user_by_nickname(
+                    nickname=target_field.get("nickname", ""), user_id=user_id
+                )
+
+                if is_exist:
+                    raise DuplicateException(
+                        detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
+                        error_usecase="DUPLICATE_NICKNAME",
+                    )
+
+            await user_repo.update_user_info(user_id=user_id, target_field=target_field)
         except Exception as e:
+            if isinstance(e, DuplicateException):
+                raise e
             raise UnknownException(detail=str(e))
 
     async def get_user_preferences(self, user_id: int):
