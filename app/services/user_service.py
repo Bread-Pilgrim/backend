@@ -26,6 +26,13 @@ class UserService:
     def __init__(self, db: Session):
         self.db = db
 
+    async def get_user_profile(self, user_id: int):
+        """유저 프로필 조회하는 비즈니스 로직."""
+        try:
+            return await UserRepository(db=self.db).get_user_profile(user_id=user_id)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
     async def set_user_preference_onboarding(
         self, user_id: int, req: UserOnboardRequestDTO
     ):
@@ -49,7 +56,7 @@ class UserService:
             if is_exist:
                 raise DuplicateException(
                     detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
-                    error_code="DUPLICATE_NICKNAME",
+                    error_usecase="DUPLICATE_NICKNAME",
                 )
 
             # 2. 취향설정 여부 체크
@@ -58,7 +65,7 @@ class UserService:
             if has_set:
                 raise DuplicateException(
                     detail="이미 취향설정을 완료한 유저입니다.",
-                    error_code="DUPLICATE_NICKNAME",
+                    error_usecase="ALREADY_ONBOARDED",
                 )
 
             # 3. 유저-취향 N:M 테이블 데이터 적재
@@ -74,7 +81,7 @@ class UserService:
             await user_repo.update_preference_state(user_id=user_id)
         except Exception as e:
             if isinstance(e, DuplicateException):
-                raise
+                raise e
             else:
                 raise UnknownException(str(e))
 
@@ -82,11 +89,24 @@ class UserService:
         """유저 정보 수정하는 비즈니스 로직."""
 
         try:
+            user_repo = UserRepository(db=self.db)
             target_field = req.model_dump(exclude_unset=True, exclude_none=True)
-            await UserRepository(db=self.db).update_user_info(
-                user_id=user_id, target_field=target_field
-            )
+
+            if target_field.get("nickname"):
+                is_exist = await user_repo.find_user_by_nickname(
+                    nickname=target_field.get("nickname", ""), user_id=user_id
+                )
+
+                if is_exist:
+                    raise DuplicateException(
+                        detail="사용중인 닉네임이에요. 다른 닉네임으로 설정해주세요!",
+                        error_usecase="DUPLICATE_NICKNAME",
+                    )
+
+            await user_repo.update_user_info(user_id=user_id, target_field=target_field)
         except Exception as e:
+            if isinstance(e, DuplicateException):
+                raise e
             raise UnknownException(detail=str(e))
 
     async def get_user_preferences(self, user_id: int):
@@ -178,17 +198,17 @@ class UserService:
         except Exception as e:
             raise UnknownException(str(e))
 
-    async def get_user_reviews(self, page_no: int, page_size: int, user_id: int):
+    async def get_user_reviews(self, cursor_value: str, page_size: int, user_id: int):
         """내가 작성한 리뷰 조회하는 비즈니스 로직."""
 
         try:
             # 1. 리뷰성 정보 조회
-            has_next, reviews = await UserRepository(db=self.db).get_user_reviews(
-                page_no=page_no, page_size=page_size, user_id=user_id
+            next_cursor, reviews = await UserRepository(db=self.db).get_user_reviews(
+                cursor_value=cursor_value, page_size=page_size, user_id=user_id
             )
 
             if not reviews:
-                return UserReviewReponseDTO(has_next=False, items=[])
+                return UserReviewReponseDTO(next_cursor=None, items=[])
 
             review_repo = ReviewRepository(db=self.db)
 
@@ -211,7 +231,7 @@ class UserService:
                 photo_maps[p.review_id].append(ReviewPhoto(img_url=p.img_url))
 
             return UserReviewReponseDTO(
-                has_next=has_next,
+                next_cursor=next_cursor,
                 items=[
                     UserReview(
                         **r.model_dump(exclude={"review_photos", "review_menus"}),
@@ -225,16 +245,39 @@ class UserService:
             raise UnknownException(detail=str(e))
 
     async def get_user_bread_report_monthly(
-        self, page_no: int, page_size: int, user_id: int
+        self, cursor_value: str, page_size: int, user_id: int
     ):
         """빵말정산 월 리스트 조회 API"""
 
         try:
-            has_next, res = await UserRepository(
+            next_cursor, res = await UserRepository(
                 db=self.db
             ).get_user_bread_report_monthly(
-                page_no=page_no, page_size=page_size, user_id=user_id
+                cursor_value=cursor_value, page_size=page_size, user_id=user_id
             )
-            return BreadReportMonthlyResponseDTO(has_next=has_next, items=res)
+            return BreadReportMonthlyResponseDTO(next_cursor=next_cursor, items=res)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def represent_user_badge(self, badge_id: int, user_id: int):
+        """대표뱃지 설정하는 비즈니스 로직."""
+        try:
+            user_repo = UserRepository(db=self.db)
+            # 1. 이미 설정되어 있는 대표뱃지 비활성화
+            await user_repo.derepresent_badge_if_exist(user_id=user_id)
+            # 2. 대표뱃지 설정
+            await user_repo.represent_badge(badge_id=badge_id, user_id=user_id)
+
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def derepresent_user_badge(self, badge_id: int, user_id: int):
+        """대표뱃지 해지하는 비즈니스 로직."""
+
+        try:
+            await UserRepository(db=self.db).derepresent_user_badge(
+                badge_id=badge_id, user_id=user_id
+            )
+
         except Exception as e:
             raise UnknownException(detail=str(e))

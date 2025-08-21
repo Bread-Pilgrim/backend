@@ -18,6 +18,7 @@ class CustomException(Exception):
         self,
         detail: Optional[str] = None,
         error_code: Optional[str] = None,
+        error_usecase: Optional[str] = None,
         headers: Optional[Dict[str, Any]] = None,
     ):
         self.http_status_code = self.STATUS_CODE
@@ -25,6 +26,7 @@ class CustomException(Exception):
             status_code=self.ERROR_CODE,
             message=detail or self.DEFAULT_MESSAGE,
             data=error_code if error_code else None,
+            error_usecase=error_usecase if error_usecase else None,
         )
         self.headers = headers
 

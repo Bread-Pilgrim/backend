@@ -59,7 +59,9 @@ class LoadMoreBakeryResponseDTO(BaseModel):
     """더보기 빵집 응답모델."""
 
     items: List[LoadMoreBakery] = Field(default=[], description="조회된 빵집 데이터.")
-    has_next: bool = Field(default=False, description="다음 페이지 유무")
+    next_cursor: Optional[str] = Field(
+        default=None, description="다음 페이지 조회를 위한 커서값"
+    )
 
 
 class BakeryDetail(BakeryMenu):

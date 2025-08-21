@@ -14,7 +14,7 @@ class SearchService:
         self.db = db
 
     async def search_bakeries_by_keyword(
-        self, keyword: str, user_id: int, page_no: int, page_size: int
+        self, keyword: str, user_id: int, cursor_value: str, page_size: int
     ):
         """키워드 검색 비즈니스 로직."""
 
@@ -22,13 +22,13 @@ class SearchService:
             # 1. 베이커리 검색
             target_day_of_week = get_now_by_timezone().weekday()
 
-            bakeries, has_next = await SearchRepository(
+            next_cursor, bakeries = await SearchRepository(
                 db=self.db
             ).search_bakeries_by_keyword(
                 keyword=keyword,
                 user_id=user_id,
                 target_day_of_week=target_day_of_week,
-                page_no=page_no,
+                cursor_value=cursor_value,
                 page_size=page_size,
             )
 
@@ -41,6 +41,6 @@ class SearchService:
             )
 
             bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
-            return SearchBakeryResponseDTO(items=bakery_info, has_next=has_next)
+            return SearchBakeryResponseDTO(items=bakery_info, next_cursor=next_cursor)
         except Exception as e:
             raise UnknownException(detail=str(e))

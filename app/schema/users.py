@@ -3,6 +3,15 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+class UserProfileResponseDTO(BaseModel):
+    """유저 프로필 응답 모델."""
+
+    nickname: str = Field(..., description="유저 닉네임")
+    profile_img: Optional[str] = Field(default=None, description="유저 프로필")
+    badge_name: str = Field(..., description="대표 뱃지명")
+    is_representative: bool = Field(default=False, description="대표 뱃지 여부")
+
+
 class UserOnboardRequestDTO(BaseModel):
     """유저 취향등록 요청 모델."""
 
@@ -55,7 +64,9 @@ class BreadReportMonthlyResponseDTO(BaseModel):
     items: List[BreadReportMonthlyDTO] = Field(
         default=[], description="빵말정산 월 항목"
     )
-    has_next: bool = Field(default=False, description="다음 페이지 여부")
+    next_cursor: Optional[str] = Field(
+        default=None, description="다음 페이지 조회를 위한 커서값"
+    )
 
 
 class BreadReportResponeDTO(BaseModel):

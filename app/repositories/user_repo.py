@@ -4,18 +4,49 @@ from sqlalchemy import desc, inspect
 from sqlalchemy.orm.session import Session
 
 from app.core.exception import UnknownException
+from app.model.badge import Badge, UserBadge
 from app.model.bakery import Bakery
 from app.model.report import BreadReport
 from app.model.review import Review, ReviewLike
 from app.model.users import Preferences, UserPreferences, Users
 from app.schema.review import UserReview
-from app.schema.users import BreadReportMonthlyDTO, BreadReportResponeDTO
+from app.schema.users import (
+    BreadReportMonthlyDTO,
+    BreadReportResponeDTO,
+    UserProfileResponseDTO,
+)
 from app.utils.pagination import convert_limit_and_offset
 
 
 class UserRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
+
+    async def get_user_profile(self, user_id: int):
+        """유저 프로필 조회 쿼리."""
+
+        res = (
+            self.db.query(
+                Users.nickname,
+                Users.profile_img,
+                Badge.name.label("badge_name"),
+                UserBadge.is_representative,
+            )
+            .select_from(UserBadge)
+            .join(Badge, UserBadge.badge_id == Badge.id)
+            .join(Users, Users.id == UserBadge.user_id)
+            .filter(UserBadge.user_id == user_id)
+            .order_by(UserBadge.is_representative.desc(), UserBadge.id.asc())
+            .first()
+        )
+
+        if res:
+            return UserProfileResponseDTO(
+                nickname=res.nickname,
+                profile_img=res.profile_img,
+                badge_name=res.badge_name,
+                is_representative=res.is_representative,
+            )
 
     async def find_user_by_nickname(self, nickname: str, user_id: int) -> bool:
         """nickname 조회하는 쿼리.."""
@@ -132,10 +163,15 @@ class UserRepository:
             )
         return None
 
-    async def get_user_reviews(self, page_no: int, page_size: int, user_id: int):
+    async def get_user_reviews(self, cursor_value: str, page_size: int, user_id: int):
         """나의 리뷰 조회하는 쿼리."""
 
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+        filters = [Review.user_id == user_id]
+
+        if cursor_value == "0":
+            filters.append(Review.id > cursor_value)
+        else:
+            filters.append(Review.id <= cursor_value)
 
         res = (
             self.db.query(
@@ -149,16 +185,16 @@ class UserRepository:
             )
             .join(Bakery, Bakery.id == Review.bakery_id)
             .join(ReviewLike, ReviewLike.review_id == Review.id, isouter=True)
-            .filter(Review.user_id == user_id)
-            .order_by(desc(Review.created_at))
-            .limit(limit=limit + 1)
-            .offset(offset=offset)
+            .filter(*filters)
+            .order_by(desc(Review.id))
+            .limit(limit=page_size + 1)
             .all()
         )
 
         has_next = len(res) > page_size
+        next_cursor = str(res[-1].id) if has_next else None
 
-        return has_next, [
+        return next_cursor, [
             UserReview(
                 review_id=r.id,
                 bakery_id=r.bakery_id,
@@ -172,18 +208,21 @@ class UserRepository:
         ]
 
     async def get_user_bread_report_monthly(
-        self, page_no: int, page_size: int, user_id: int
+        self, cursor_value: str, page_size: int, user_id: int
     ):
         """유저 빵말정산 항목 조회하는 쿼리."""
 
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+        filters = [BreadReport.user_id == user_id]
+        if cursor_value == "0":
+            filters.append(BreadReport.id > cursor_value)
+        else:
+            filters.append(BreadReport.id <= cursor_value)
 
         res = (
-            self.db.query(BreadReport.year, BreadReport.month)
-            .filter(BreadReport.user_id == user_id)
+            self.db.query(BreadReport.id, BreadReport.year, BreadReport.month)
+            .filter(*filters)
             .order_by(desc(BreadReport.id))
-            .limit(limit + 1)
-            .offset(offset)
+            .limit(page_size + 1)
             .all()
         )
 
@@ -191,11 +230,33 @@ class UserRepository:
             return []
 
         has_next = len(res) > page_size
+        next_cursor = str(res[-1].id) if has_next else None
 
-        return has_next, [
+        return next_cursor, [
             BreadReportMonthlyDTO(
                 year=r.year,
                 month=r.month,
             )
-            for r in res
+            for r in res[:page_size]
         ]
+
+    async def derepresent_badge_if_exist(self, user_id: int):
+        """대표뱃지가 있을 경우 해지하는 쿼리."""
+
+        self.db.query(UserBadge).filter(
+            UserBadge.user_id == user_id, UserBadge.is_representative == True
+        ).update({UserBadge.is_representative: False})
+
+    async def represent_badge(self, badge_id: int, user_id: int):
+        """특정 뱃지를 대표뱃지로 설정하는 쿼리."""
+
+        self.db.query(UserBadge).filter(
+            UserBadge.user_id == user_id, UserBadge.badge_id == badge_id
+        ).update({UserBadge.is_representative: True})
+
+    async def derepresent_user_badge(self, badge_id: int, user_id: int):
+        """특정 뱃지를 대표뱃지에서 해지하는 쿼리."""
+
+        self.db.query(UserBadge).filter(
+            UserBadge.user_id == user_id, UserBadge.badge_id == badge_id
+        ).update({UserBadge.is_representative: False})

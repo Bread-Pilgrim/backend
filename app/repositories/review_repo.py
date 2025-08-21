@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from fastapi import UploadFile
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, desc, or_, select
 from sqlalchemy.orm import Session
 
 from app.model.bakery import Bakery, BakeryMenu
@@ -9,7 +9,11 @@ from app.model.review import Review, ReviewBakeryMenu, ReviewLike, ReviewPhoto
 from app.model.users import Users
 from app.schema.review import BakeryReview, MyBakeryReview
 from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
-from app.utils.pagination import build_order_by_with_reviews, convert_limit_and_offset
+from app.utils.pagination import (
+    build_next_cursor,
+    build_order_by_with_reviews,
+    convert_limit_and_offset,
+)
 
 
 class ReviewRepository:
@@ -17,11 +21,19 @@ class ReviewRepository:
         self.db = db
 
     async def get_my_reviews_by_bakery_id(
-        self, bakery_id: int, user_id: int, page_no: int, page_size: int
+        self, bakery_id: int, user_id: int, cursor_value: str, page_size: int
     ):
         """리뷰 주요데이터 조회하는 쿼리."""
 
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+        filters = [
+            Users.id == user_id,
+            Review.bakery_id == bakery_id,
+        ]
+
+        if cursor_value == "0":
+            filters.append(Review.id > cursor_value)
+        else:
+            filters.append(Review.id <= cursor_value)
 
         stmt = (
             select(
@@ -40,19 +52,17 @@ class ReviewRepository:
                 and_(ReviewLike.review_id == Review.id, ReviewLike.user_id == user_id),
                 isouter=True,
             )
-            .filter(
-                Users.id == user_id,
-                Review.bakery_id == bakery_id,
-            )
-            .order_by(Review.id.desc())
-            .limit(limit)
-            .offset(offset)
+            .filter(*filters)
+            .order_by(desc(Review.id))
+            .limit(page_size + 1)
         )
 
         res = self.db.execute(stmt).mappings().all()
-        has_next = len(res) > page_size
+        next_cursor = build_next_cursor(
+            res=res, target_column="id", page_size=page_size
+        )
 
-        return [
+        return next_cursor, [
             MyBakeryReview(
                 review_id=r.id,
                 user_name=r.name,
@@ -63,7 +73,7 @@ class ReviewRepository:
                 review_like_count=r.like_count,
             )
             for r in res[:page_size]
-        ], has_next
+        ]
 
     async def get_my_review_photos_by_bakery_id(self, review_ids: List[int]):
         """리뷰 내 사진 조회하는 쿼리."""

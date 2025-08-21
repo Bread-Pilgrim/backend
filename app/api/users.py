@@ -13,10 +13,23 @@ from app.schema.users import (
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
+    UserProfileResponseDTO,
 )
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["user"])
+
+
+@router.get(
+    "/me",
+    response_model=BaseResponse[UserProfileResponseDTO],
+    responses={
+        **ERROR_UNKNOWN,
+    },
+)
+async def get_user_profile(user_id: int = Depends(get_user_id), db=Depends(get_db)):
+    """유저 프로필을 조회하는 API."""
+    return BaseResponse(data=await UserService(db=db).get_user_profile(user_id=user_id))
 
 
 @router.post(
@@ -88,7 +101,10 @@ async def update_user_bakery_preferences(
     responses=ERROR_UNKNOWN,
 )
 async def get_bread_report_monthly(
-    page_no: int = Query(default=1, description="페이지 번호"),
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
+    ),
     page_size: int = Query(default=15),
     user_id=Depends(get_user_id),
     db=Depends(get_db),
@@ -97,7 +113,7 @@ async def get_bread_report_monthly(
 
     return BaseResponse(
         data=await UserService(db=db).get_user_bread_report_monthly(
-            page_no=page_no, page_size=page_size, user_id=user_id
+            cursor_value=cursor_value, page_size=page_size, user_id=user_id
         )
     )
 
@@ -125,7 +141,10 @@ async def get_bread_report(
     response_model=BaseResponse[UserReviewReponseDTO],
 )
 async def get_my_reviews(
-    page_no: int = Query(default=1, description="페이지 번호"),
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
+    ),
     page_size: int = Query(default=15),
     user_id: int = Depends(get_user_id),
     db=Depends(get_db),
@@ -134,6 +153,34 @@ async def get_my_reviews(
 
     return BaseResponse(
         data=await UserService(db=db).get_user_reviews(
-            page_no=page_no, page_size=page_size, user_id=user_id
+            cursor_value=cursor_value, page_size=page_size, user_id=user_id
         )
     )
+
+
+@router.post(
+    "/me/badges/{badge_id}/represent",
+    response_model=BaseResponse,
+    responses=ERROR_UNKNOWN,
+)
+async def represent_user_badge(
+    badge_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """대표뱃지 설정하는 API."""
+
+    await UserService(db=db).represent_user_badge(badge_id=badge_id, user_id=user_id)
+    return BaseResponse(message="대표뱃지 설정 성공")
+
+
+@router.post(
+    "/me/badges/{badge_id}/derepresent",
+    response_model=BaseResponse,
+    responses=ERROR_UNKNOWN,
+)
+async def derepresent_user_badge(
+    badge_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """대표뱃지 해지하는 API."""
+
+    await UserService(db=db).derepresent_user_badge(badge_id=badge_id, user_id=user_id)
+    return BaseResponse(message="대표뱃지 해지 성공")

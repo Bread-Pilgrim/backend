@@ -1,4 +1,12 @@
-from sqlalchemy import Column, Integer, SmallInteger, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Integer,
+    SmallInteger,
+    String,
+    Text,
+    UniqueConstraint,
+)
 
 from app.model.base import Base
 from app.model.datetime_mixin import DateTimeMixin
@@ -27,7 +35,7 @@ class BadgeCondition(Base, DateTimeMixin):
     value = Column(Integer, nullable=False)
 
 
-class UserBadge(Base, DateTimeMixin):
+class UserBadge(Base):
     """유저가 획득한 뱃지 기록하는 테이블."""
 
     __tablename__ = "user_badges"
@@ -36,3 +44,4 @@ class UserBadge(Base, DateTimeMixin):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
     badge_id = Column(Integer, nullable=False)
+    is_representative = Column(Boolean, default=False, comment="대표뱃지 여부")

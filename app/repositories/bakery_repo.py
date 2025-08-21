@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, desc, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
@@ -115,7 +115,7 @@ class BakeryRepository:
 
     async def get_more_bakeries_by_preference(
         self,
-        page_no: int,
+        cursor_value: str,
         page_size: int,
         area_codes: list[str],
         user_id: int,
@@ -123,17 +123,20 @@ class BakeryRepository:
     ):
         """(더보기) 유저의 취향이 반영된 빵집 조회하는 쿼리"""
 
-        # limit offset
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
-
-        # where clause
-        conditions = [
+        filters = [
             UserPreferences.user_id == user_id,
             BakeryPhoto.is_signature == True,
         ]
 
+        # 지역코드에 따른 where절 변경
         if area_codes != ["14"]:
-            conditions.append(Bakery.commercial_area_id.in_(area_codes))
+            filters.append(Bakery.commercial_area_id.in_(area_codes))
+
+        # cusor_value 페이징
+        if cursor_value == "0":
+            filters.append(Bakery.id > cursor_value)
+        else:
+            filters.append(Bakery.id <= cursor_value)
 
         stmt = (
             select(
@@ -179,17 +182,17 @@ class BakeryRepository:
                 ),
                 isouter=True,
             )
-            .where(and_(*conditions))
-            .order_by(Bakery.id.asc())
-            .limit(limit=limit)
-            .offset(offset=offset)
+            .where(and_(*filters))
+            .order_by(desc(Bakery.id))
+            .limit(page_size + 1)
         )
 
         res = self.db.execute(stmt).mappings().all()
 
         has_next = len(res) > page_size
+        next_cursor = str(res[-1].id) if has_next else None
 
-        return [
+        return next_cursor, [
             LoadMoreBakery(
                 bakery_id=r.id,
                 bakery_name=r.name,
@@ -206,7 +209,7 @@ class BakeryRepository:
                 dong=r.dong,
             )
             for r in res[:page_size]
-        ], has_next
+        ]
 
     async def get_signature_menus(self, bakery_ids: list[int]):
         """베이커리 내 대표메뉴 조회하는 쿼리."""
@@ -290,18 +293,22 @@ class BakeryRepository:
         area_codes: list[str],
         user_id: int,
         target_day_of_week: int,
-        page_no: int,
+        cursor_value: str,
         page_size: int,
     ):
         """(더보기) hot한 빵집 조회하는 쿼리"""
 
-        # limit offset
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
-
         # where clause
         filters = [BakeryPhoto.is_signature == True]
+
         if area_codes != ["14"]:
             filters.append(Bakery.commercial_area_id.in_(area_codes))
+
+        # cusor_value 페이징
+        if cursor_value == "0":
+            filters.append(Bakery.id > cursor_value)
+        else:
+            filters.append(Bakery.id <= cursor_value)
 
         stmt = (
             select(
@@ -342,18 +349,15 @@ class BakeryRepository:
                 isouter=True,
             )
             .where(and_(*filters))
-            .order_by(
-                Bakery.id.desc(),
-                Bakery.avg_rating.desc(),
-            )
-            .limit(limit=limit)
-            .offset(offset=offset)
+            .order_by(desc(Bakery.id), desc(Bakery.avg_rating))
+            .limit(page_size + 1)
         )
 
         res = self.db.execute(stmt).mappings().all()
         has_next = len(res) > page_size
+        next_cursor = str(res[-1].id) if has_next else None
 
-        return [
+        return next_cursor, [
             LoadMoreBakery(
                 bakery_id=r.id,
                 commercial_area_id=r.commercial_area_id,
@@ -370,7 +374,7 @@ class BakeryRepository:
                 dong=r.dong,
             )
             for r in res[:page_size]
-        ], has_next
+        ]
 
     async def get_bakery_detail(self, bakery_id: int, target_day_of_week: int):
         """베이커리 상세정보 조회하는 쿼리."""
