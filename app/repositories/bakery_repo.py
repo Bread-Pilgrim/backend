@@ -293,18 +293,22 @@ class BakeryRepository:
         area_codes: list[str],
         user_id: int,
         target_day_of_week: int,
-        page_no: int,
+        cursor_value: str,
         page_size: int,
     ):
         """(더보기) hot한 빵집 조회하는 쿼리"""
 
-        # limit offset
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
-
         # where clause
         filters = [BakeryPhoto.is_signature == True]
+
         if area_codes != ["14"]:
             filters.append(Bakery.commercial_area_id.in_(area_codes))
+
+        # cusor_value 페이징
+        if cursor_value == "0":
+            filters.append(Bakery.id > cursor_value)
+        else:
+            filters.append(Bakery.id <= cursor_value)
 
         stmt = (
             select(
@@ -345,18 +349,15 @@ class BakeryRepository:
                 isouter=True,
             )
             .where(and_(*filters))
-            .order_by(
-                Bakery.id.desc(),
-                Bakery.avg_rating.desc(),
-            )
-            .limit(limit=limit)
-            .offset(offset=offset)
+            .order_by(desc(Bakery.id), desc(Bakery.avg_rating))
+            .limit(page_size + 1)
         )
 
         res = self.db.execute(stmt).mappings().all()
         has_next = len(res) > page_size
+        next_cursor = str(res[-1].id) if has_next else None
 
-        return [
+        return next_cursor, [
             LoadMoreBakery(
                 bakery_id=r.id,
                 commercial_area_id=r.commercial_area_id,
@@ -373,7 +374,7 @@ class BakeryRepository:
                 dong=r.dong,
             )
             for r in res[:page_size]
-        ], has_next
+        ]
 
     async def get_bakery_detail(self, bakery_id: int, target_day_of_week: int):
         """베이커리 상세정보 조회하는 쿼리."""

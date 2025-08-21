@@ -100,7 +100,7 @@ class BakeryService:
             raise UnknownException(detail=str(e))
 
     async def get_hot_bakeries(
-        self, page_no: int, user_id: int, page_size: int, area_code: str
+        self, cursor_value: str, user_id: int, page_size: int, area_code: str
     ) -> LoadMoreBakeryResponseDTO:
         """(더보기용) hot한 빵집 조회하는 비즈니스 로직."""
 
@@ -112,11 +112,11 @@ class BakeryService:
             bakery_repo = BakeryRepository(self.db)
 
             # 빵집 정보
-            bakeries, has_next = await bakery_repo.get_more_hot_bakeries(
+            next_cursor, bakeries = await bakery_repo.get_more_hot_bakeries(
                 area_codes=area_codes,
                 user_id=user_id,
                 target_day_of_week=target_day_of_week,
-                page_no=page_no,
+                cursor_value=cursor_value,
                 page_size=page_size,
             )
 
@@ -130,7 +130,9 @@ class BakeryService:
 
             bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-            return LoadMoreBakeryResponseDTO(items=bakery_infos, next_cursor=None)
+            return LoadMoreBakeryResponseDTO(
+                items=bakery_infos, next_cursor=next_cursor
+            )
         except Exception as e:
             raise UnknownException(detail=str(e))
 
