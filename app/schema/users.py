@@ -64,7 +64,9 @@ class BreadReportMonthlyResponseDTO(BaseModel):
     items: List[BreadReportMonthlyDTO] = Field(
         default=[], description="빵말정산 월 항목"
     )
-    has_next: bool = Field(default=False, description="다음 페이지 여부")
+    next_cursor: Optional[str] = Field(
+        default=None, description="다음 페이지 조회를 위한 커서값"
+    )
 
 
 class BreadReportResponeDTO(BaseModel):

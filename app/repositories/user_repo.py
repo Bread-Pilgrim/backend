@@ -163,10 +163,15 @@ class UserRepository:
             )
         return None
 
-    async def get_user_reviews(self, page_no: int, page_size: int, user_id: int):
+    async def get_user_reviews(self, cursor_value: str, page_size: int, user_id: int):
         """나의 리뷰 조회하는 쿼리."""
 
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
+        filters = [Review.user_id == user_id]
+
+        if cursor_value == "0":
+            filters.append(Review.id > cursor_value)
+        else:
+            filters.append(Review.id <= cursor_value)
 
         res = (
             self.db.query(
@@ -180,16 +185,16 @@ class UserRepository:
             )
             .join(Bakery, Bakery.id == Review.bakery_id)
             .join(ReviewLike, ReviewLike.review_id == Review.id, isouter=True)
-            .filter(Review.user_id == user_id)
-            .order_by(desc(Review.created_at))
-            .limit(limit=limit + 1)
-            .offset(offset=offset)
+            .filter(*filters)
+            .order_by(desc(Review.id))
+            .limit(limit=page_size + 1)
             .all()
         )
 
         has_next = len(res) > page_size
+        next_cursor = str(res[-1].id) if has_next else None
 
-        return has_next, [
+        return next_cursor, [
             UserReview(
                 review_id=r.id,
                 bakery_id=r.bakery_id,

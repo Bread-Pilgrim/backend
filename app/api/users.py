@@ -141,7 +141,10 @@ async def get_bread_report(
     response_model=BaseResponse[UserReviewReponseDTO],
 )
 async def get_my_reviews(
-    page_no: int = Query(default=1, description="페이지 번호"),
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
+    ),
     page_size: int = Query(default=15),
     user_id: int = Depends(get_user_id),
     db=Depends(get_db),
@@ -150,7 +153,7 @@ async def get_my_reviews(
 
     return BaseResponse(
         data=await UserService(db=db).get_user_reviews(
-            page_no=page_no, page_size=page_size, user_id=user_id
+            cursor_value=cursor_value, page_size=page_size, user_id=user_id
         )
     )
 

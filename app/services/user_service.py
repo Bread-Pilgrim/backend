@@ -198,17 +198,17 @@ class UserService:
         except Exception as e:
             raise UnknownException(str(e))
 
-    async def get_user_reviews(self, page_no: int, page_size: int, user_id: int):
+    async def get_user_reviews(self, cursor_value: str, page_size: int, user_id: int):
         """내가 작성한 리뷰 조회하는 비즈니스 로직."""
 
         try:
             # 1. 리뷰성 정보 조회
-            has_next, reviews = await UserRepository(db=self.db).get_user_reviews(
-                page_no=page_no, page_size=page_size, user_id=user_id
+            next_cursor, reviews = await UserRepository(db=self.db).get_user_reviews(
+                cursor_value=cursor_value, page_size=page_size, user_id=user_id
             )
 
             if not reviews:
-                return UserReviewReponseDTO(has_next=False, items=[])
+                return UserReviewReponseDTO(next_cursor=None, items=[])
 
             review_repo = ReviewRepository(db=self.db)
 
@@ -231,7 +231,7 @@ class UserService:
                 photo_maps[p.review_id].append(ReviewPhoto(img_url=p.img_url))
 
             return UserReviewReponseDTO(
-                has_next=has_next,
+                next_cursor=next_cursor,
                 items=[
                     UserReview(
                         **r.model_dump(exclude={"review_photos", "review_menus"}),
