@@ -293,7 +293,10 @@ async def get_reviews_by_bakery_id(
 )
 async def get_my_bakery_review(
     bakery_id: int,
-    page_no: int = Query(default=1, description="페이지 번호"),
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
+    ),
     page_size: int = Query(default=5),
     user_id=Depends(get_user_id),
     db=Depends(get_db),
@@ -304,7 +307,7 @@ async def get_my_bakery_review(
         data=await Review(db=db).get_my_reviews_by_bakery_id(
             bakery_id=bakery_id,
             user_id=user_id,
-            page_no=page_no,
+            cursor_value=cursor_value,
             page_size=page_size,
         )
     )
