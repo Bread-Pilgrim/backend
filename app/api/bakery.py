@@ -68,7 +68,10 @@ async def get_preference_bakery(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    page_no: int = Query(default=1, description="페이지 번호"),
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
+    ),
     page_size: int = Query(default=15),
     user_id=Depends(get_user_id),
     db=Depends(get_db),
@@ -77,7 +80,7 @@ async def get_preference_bakery(
 
     return BaseResponse(
         data=await BakeryService(db=db).get_more_bakeries_by_preference(
-            page_no=page_no,
+            cursor_value=cursor_value,
             page_size=page_size,
             area_code=area_code,
             user_id=user_id,
@@ -146,10 +149,10 @@ async def get_visited_bakery(
         default="CREATED_AT.DESC",
         description="""
      \n
-    최신 작성순 : CREATED_AT.DESC 
-    리뷰 많은 순 : REVIEW_COUNT.DESC 
-    별점 높은순 : AVG_RATING.DESC 
-    별점 낮은순 : AVG_RATING.ASC 
+    최신 작성순 : CREATED_AT.DESC
+    리뷰 많은 순 : REVIEW_COUNT.DESC
+    별점 높은순 : AVG_RATING.DESC
+    별점 낮은순 : AVG_RATING.ASC
     가나다 순: NAME.ASC
     """,
     ),
@@ -180,10 +183,10 @@ async def get_like_bakery(
         default="CREATED_AT.DESC",
         description="""
      \n
-    최신 작성순 : CREATED_AT.DESC 
-    리뷰 많은 순 : REVIEW_COUNT.DESC 
-    별점 높은순 : AVG_RATING.DESC 
-    별점 낮은순 : AVG_RATING.ASC 
+    최신 작성순 : CREATED_AT.DESC
+    리뷰 많은 순 : REVIEW_COUNT.DESC
+    별점 높은순 : AVG_RATING.DESC
+    별점 낮은순 : AVG_RATING.ASC
     가나다 순: NAME.ASC
     """,
     ),
@@ -260,10 +263,10 @@ async def get_reviews_by_bakery_id(
         default="LIKE_COUNT.DESC",
         description="""
     원래는 '필드' '정렬방향' 다르게 하려고 했는데, 일단 통합으로 가겠음. \n
-    좋아요순 : LIKE_COUNT.DESC 
-    최신 작성순 : CREATED_AT.DESC 
-    높은 평가순 : RATING.DESC 
-    낮은 평가순 : RATING.ASC 
+    좋아요순 : LIKE_COUNT.DESC
+    최신 작성순 : CREATED_AT.DESC
+    높은 평가순 : RATING.DESC
+    낮은 평가순 : RATING.ASC
     """,
     ),
     user_id=Depends(get_user_id),
