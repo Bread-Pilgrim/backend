@@ -76,7 +76,7 @@ def build_next_cursor(res, target_column: str, page_size: int):
     if not has_next:
         return None
 
-    last = res[page_size - 1]
+    last = res[-1]
     if hasattr(last, "_mapping"):
         return str(last._mapping[target_column])  # dict처럼 접근
     else:
