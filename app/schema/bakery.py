@@ -130,7 +130,9 @@ class GuDongMenuBakery(CommonBakery):
 
 class GuDongMenuBakeryResponseDTO(BaseModel):
     items: List[GuDongMenuBakery] = Field(default=[])
-    has_next: bool = Field(default=False, description="다음 페이지 유무")
+    next_cursor: Optional[str] = Field(
+        default=None, description="다음 페이지 조회를 위한 커서값"
+    )
 
 
 class WrittenReview(BaseModel):

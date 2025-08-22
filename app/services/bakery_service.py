@@ -184,20 +184,22 @@ class BakeryService:
             raise UnknownException(detail=str(e))
 
     async def get_visited_bakery(
-        self, user_id: int, sort_clause: str, page_no: int, page_size: int
+        self, user_id: int, sort_clause: str, cursor_value: str, page_size: int
     ):
         try:
             bakery_repo = BakeryRepository(db=self.db)
 
-            # 1. 베이커리 검색
             sort_by, direction = build_sort_clause(sort_clause=sort_clause)
+
             target_day_of_week = get_now_by_timezone().weekday()
-            bakeries, has_next = await bakery_repo.get_visited_bakery(
+
+            # 1. 베이커리 검색
+            next_cursor, bakeries = await bakery_repo.get_visited_bakery(
                 user_id=user_id,
                 sort_by=sort_by,
                 direction=direction,
                 target_day_of_week=target_day_of_week,
-                page_no=page_no,
+                cursor_value=cursor_value,
                 page_size=page_size,
             )
 
@@ -210,8 +212,11 @@ class BakeryService:
             )
             bakery_info = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-            return GuDongMenuBakeryResponseDTO(items=bakery_info, has_next=has_next)
+            return GuDongMenuBakeryResponseDTO(
+                items=bakery_info, next_cursor=next_cursor
+            )
         except Exception as e:
+            print(str(e))
             raise UnknownException(detail=str(e))
 
     async def check_is_eligible_to_write_review(self, bakery_id: int, user_id: int):
@@ -273,7 +278,7 @@ class BakeryService:
             raise UnknownException(detail=str(e))
 
     async def get_like_bakeries(
-        self, user_id: int, sort_clause: str, page_no: int, page_size: int
+        self, user_id: int, sort_clause: str, cursor_value: str, page_size: int
     ):
         """내가 찜한 빵집 조회하는 비즈니스 로직."""
         bakery_repo = BakeryRepository(db=self.db)
@@ -281,12 +286,12 @@ class BakeryService:
         target_day_of_week = get_now_by_timezone().weekday()
         try:
             # 1. 베이커리 조회
-            bakeries, has_next = await bakery_repo.get_like_bakeries(
+            next_cursor, bakeries = await bakery_repo.get_like_bakeries(
                 user_id=user_id,
                 target_day_of_week=target_day_of_week,
                 sort_by=sort_by,
                 direction=direction,
-                page_no=page_no,
+                cursor_value=cursor_value,
                 page_size=page_size,
             )
 
@@ -300,6 +305,8 @@ class BakeryService:
 
             bakery_infos = merge_menus_with_bakeries(bakeries=bakeries, menus=menus)
 
-            return GuDongMenuBakeryResponseDTO(items=bakery_infos, has_next=has_next)
+            return GuDongMenuBakeryResponseDTO(
+                items=bakery_infos, next_cursor=next_cursor
+            )
         except Exception as e:
             raise UnknownException(detail=str(e))

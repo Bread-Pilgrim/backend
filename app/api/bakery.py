@@ -146,7 +146,10 @@ async def get_hot_bakeries(
 
 @router.get("/visited")
 async def get_visited_bakery(
-    page_no: int = Query(default=1, description="페이지 번호"),
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0||0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
+    ),
     page_size: int = Query(default=5),
     sort_clause: str = Query(
         default="CREATED_AT.DESC",
@@ -167,7 +170,7 @@ async def get_visited_bakery(
     return BaseResponse(
         data=await BakeryService(db=db).get_visited_bakery(
             user_id=user_id,
-            page_no=page_no,
+            cursor_value=cursor_value,
             sort_clause=sort_clause,
             page_size=page_size,
         )
@@ -180,13 +183,16 @@ async def get_visited_bakery(
     responses=ERROR_UNKNOWN,
 )
 async def get_like_bakery(
-    page_no: int = Query(default=1, description="페이지 번호"),
+    cursor_value: str = Query(
+        default="0",
+        description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
+    ),
     page_size: int = Query(default=5),
     sort_clause: str = Query(
         default="CREATED_AT.DESC",
         description="""
      \n
-    최신 작성순 : CREATED_AT.DESC
+    최신 저장순 : CREATED_AT.DESC
     리뷰 많은 순 : REVIEW_COUNT.DESC
     별점 높은순 : AVG_RATING.DESC
     별점 낮은순 : AVG_RATING.ASC
@@ -202,7 +208,7 @@ async def get_like_bakery(
         data=await BakeryService(db=db).get_like_bakeries(
             user_id=user_id,
             sort_clause=sort_clause,
-            page_no=page_no,
+            cursor_value=cursor_value,
             page_size=page_size,
         )
     )
