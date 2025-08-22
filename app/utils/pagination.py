@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import and_, asc, desc, or_
+from sqlalchemy import Tuple, and_, asc, desc, func, or_, tuple_
 
 from app.core.exception import InvalidSortParameterException
 from app.model.bakery import Bakery
@@ -15,7 +16,7 @@ def parse_value(value_str: str, sort_by: str):
     elif sort_by in {"rating", "like_count"}:
         return float(value_str)
     else:
-        raise ValueError(f"Unsupported sort_by: {sort_by}")
+        return value_str
 
 
 def parse_cursor_value(cursor_value: str, sort_by: str):
@@ -78,6 +79,26 @@ def build_next_cursor(res, target_column: str, page_size: int):
 
     last = res[-1]
     if hasattr(last, "_mapping"):
-        return str(last._mapping[target_column])  # dict처럼 접근
+        return str(last._mapping[target_column])
     else:
         return str(getattr(last, target_column, None))
+
+
+def build_multi_next_cursor(
+    res, target_sort_by_column: str, distinct_column: str, page_size: int
+):
+    """다중정렬 next_cursor값 반환하는 메소드."""
+
+    has_next = len(res) > page_size
+    if not has_next:
+        return None
+
+    last = res[-2]
+    if hasattr(last, "_mapping"):
+        first_arg = str(last._mapping[target_sort_by_column])
+        last_arg = str(last._mapping[distinct_column])
+    else:
+        first_arg = str(getattr(last, target_sort_by_column, None))
+        last_arg = str(getattr(last, distinct_column, None))
+
+    return f"{first_arg}||{last_arg}"
