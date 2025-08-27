@@ -183,6 +183,7 @@ class UserRepository:
                 Bakery.id.label("bakery_id"),
                 ReviewLike.user_id,
             )
+            .distinct(Review.id)
             .join(Bakery, Bakery.id == Review.bakery_id)
             .join(ReviewLike, ReviewLike.review_id == Review.id, isouter=True)
             .filter(*filters)
