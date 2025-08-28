@@ -28,10 +28,12 @@ from app.schema.bakery import (
 )
 from app.utils.converter import operating_hours_to_open_status
 from app.utils.pagination import (
+    build_multi_cursor_filter,
     build_multi_next_cursor,
-    build_next_cursor,
-    parse_cursor_value,
+    build_multi_next_cursor_real,
+    build_order_by,
 )
+from app.utils.parser import parse_cursor_value
 
 
 class BakeryRepository:
@@ -735,14 +737,27 @@ class BakeryRepository:
     ):
         """찜한 베이커리 조회하는 쿼리."""
 
-        row_number = (
-            func.row_number()
-            .over(partition_by=Bakery.id, order_by=UserBakeryLikes.created_at.desc())
-            .label("rn")
+        # 실제 정렬에 들어갈 컬럼 Review.like_count
+        if sort_by == "created_at":
+            sort_column = getattr(UserBakeryLikes, sort_by)
+        else:
+            sort_column = getattr(Bakery, sort_by)
+        # 보조 정렬을 위하나 고유성 가지고 잇는 컬럼 Review.id
+        sort_pk_column = getattr(Bakery, "id")
+        # order by 형태 완성
+        order_by = build_order_by(sort_column, sort_pk_column, direction)
+
+        # like_count:review_id -> like_count 실제값, review_id 실제값
+        sort_value, cursor_id = parse_cursor_value(cursor_value, sort_by)
+        filters = build_multi_cursor_filter(
+            sort_column=sort_column,
+            sort_pk_column=sort_pk_column,
+            sort_value=sort_value,
+            cursor_id=cursor_id,
+            direction=direction,
         )
 
-        # 내부 서브쿼리
-        inner_stmt = (
+        stmt = (
             select(
                 Bakery.id,
                 Bakery.name,
@@ -751,49 +766,34 @@ class BakeryRepository:
                 Bakery.gu,
                 Bakery.dong,
                 Bakery.thumbnail,
-                UserBakeryLikes.created_at,
-                OperatingHour.open_time,
                 OperatingHour.close_time,
+                OperatingHour.open_time,
                 OperatingHour.is_opened,
-                row_number,
+                UserBakeryLikes.created_at,
             )
             .join(
                 UserBakeryLikes,
-                (UserBakeryLikes.bakery_id == Bakery.id)
-                & (UserBakeryLikes.user_id == user_id),
+                and_(
+                    UserBakeryLikes.bakery_id == Bakery.id,
+                    UserBakeryLikes.user_id == user_id,
+                ),
             )
-            .join(OperatingHour, OperatingHour.bakery_id == Bakery.id, isouter=True)
-        )
-
-        print("sort_by >>>> ", sort_by, sort_by == "created_at", direction)
-
-        if sort_by == "created_at":
-            sort_column = getattr(Bakery, sort_by)
-        else:
-            sort_column = getattr(UserBakeryLikes, sort_by)
-
-        if cursor_value != "0" and direction == "desc":
-            inner_stmt = inner_stmt.where(sort_column <= cursor_value)
-        elif cursor_value != "0" and direction == "asc":
-            inner_stmt = inner_stmt.where(sort_column >= cursor_value)
-
-        inner_stmt = inner_stmt.subquery()
-
-        # 외부 select
-        if direction.lower() == "desc":
-            order_by_clause = [desc(inner_stmt.c[sort_by]), asc(inner_stmt.c.id)]
-        else:
-            order_by_clause = [asc(inner_stmt.c[sort_by]), asc(inner_stmt.c.id)]
-
-        outer_stmt = (
-            select(inner_stmt)
-            .where(inner_stmt.c.rn == 1)
-            .order_by(*order_by_clause)
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+                isouter=True,
+            )
+            .filter(*filters)
+            .order_by(*order_by)
             .limit(page_size + 1)
         )
-        res = self.db.execute(outer_stmt).mappings().all()
-        next_cursor = build_next_cursor(
-            res=res, target_column=sort_by, page_size=page_size
+
+        res = self.db.execute(stmt).mappings().all()
+        next_cursor = build_multi_next_cursor_real(
+            sort_by=sort_by, res=res, page_size=page_size
         )
 
         return next_cursor, [

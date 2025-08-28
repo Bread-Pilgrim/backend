@@ -10,8 +10,8 @@ from app.model.users import Users
 from app.schema.review import BakeryReview, MyBakeryReview
 from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
 from app.utils.pagination import (
-    build_mulit_next_cursor_real,
     build_multi_cursor_filter,
+    build_multi_next_cursor_real,
     build_next_cursor,
     build_order_by,
 )
@@ -172,7 +172,7 @@ class ReviewRepository:
 
         res = self.db.execute(stmt).mappings().all()
 
-        next_cursor = build_mulit_next_cursor_real(
+        next_cursor = build_multi_next_cursor_real(
             sort_by=sort_by, res=res, page_size=page_size
         )
 

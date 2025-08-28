@@ -90,7 +90,7 @@ def build_multi_cursor_filter(
 
     is_desc = direction == "desc"
 
-    if sort_value is None or cursor_id is None:
+    if sort_value is None and cursor_id is None:
         return []
 
     if is_desc:
@@ -116,12 +116,10 @@ def build_multi_cursor_filter(
         ]
 
 
-def build_mulit_next_cursor_real(sort_by, res, page_size: int):
+def build_multi_next_cursor_real(sort_by, res, page_size: int):
     has_next = len(res) > page_size
     if has_next:
         next_cursor, next_cusor_pk = res[-1][sort_by], res[-1].id
         return f"{next_cursor}||{next_cusor_pk}"
     else:
         return None
-
-    print(column_key)
