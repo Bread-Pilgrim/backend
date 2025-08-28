@@ -12,6 +12,7 @@ from app.core.exception import (
     NotFoundException,
     UnknownException,
 )
+from app.model.review import Review as ReviewSchema
 from app.repositories.review_repo import ReviewRepository
 from app.schema.common import Paging
 from app.schema.review import (
@@ -24,8 +25,8 @@ from app.schema.review import (
 )
 from app.utils.converter import convert_img_to_webp, to_cursor_str
 from app.utils.date import get_now_by_timezone
-from app.utils.pagination import build_cursor
-from app.utils.parser import build_sort_clause
+from app.utils.pagination import build_multi_cursor_filter, build_order_by
+from app.utils.parser import build_sort_clause, parse_cursor_value
 from app.utils.upload import upload_multiple_to_supabase_storage
 from app.utils.validator import upload_image_file_validation
 
@@ -38,14 +39,17 @@ class Review:
         self,
         user_id: int,
         bakery_id: int,
-        page_no: int,
+        cursor_value: str,
         page_size: int,
         sort_clause: str,
     ):
         """베이커리 리뷰 조회하는 비즈니스 로직."""
 
         review_repo = ReviewRepository(db=self.db)
-        sort_by, direction = build_sort_clause(sort_clause=sort_clause)
+
+        sort_by, direction = build_sort_clause(
+            sort_clause=sort_clause
+        )  # like_count, desc 이런식
 
         try:
             # 0. 베이커리 리뷰 평균치
@@ -62,10 +66,10 @@ class Review:
             )
 
             # 1. 리뷰 주요 데이터 조회
-            review_infos, has_next = await review_repo.get_review_by_bakery_id(
+            next_cursor, review_infos = await review_repo.get_review_by_bakery_id(
                 user_id=user_id,
                 bakery_id=bakery_id,
-                page_no=page_no,
+                cursor_value=cursor_value,
                 sort_by=sort_by,
                 direction=direction,
                 page_size=page_size,
@@ -93,7 +97,7 @@ class Review:
                 return BakeryReviewReponseDTO(
                     avg_rating=avg_rating,
                     review_count=review_count,
-                    has_next=has_next,
+                    next_cursor=next_cursor,
                     items=[
                         BakeryReview(
                             **r.model_dump(exclude={"review_photos", "review_menus"}),

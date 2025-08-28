@@ -10,10 +10,12 @@ from app.model.users import Users
 from app.schema.review import BakeryReview, MyBakeryReview
 from app.utils.date import get_now_by_timezone, get_today_end, get_today_start
 from app.utils.pagination import (
+    build_mulit_next_cursor_real,
+    build_multi_cursor_filter,
     build_next_cursor,
-    build_order_by_with_reviews,
-    convert_limit_and_offset,
+    build_order_by,
 )
+from app.utils.parser import parse_cursor_value
 
 
 class ReviewRepository:
@@ -109,24 +111,44 @@ class ReviewRepository:
         self,
         user_id: int,
         bakery_id: int,
-        page_no: int,
+        cursor_value: str,
         sort_by: str,
         direction: str,
         page_size: int,
     ):
         """리뷰 주요데이터 조회하는 쿼리."""
 
-        # limit offset
-        limit, offset = convert_limit_and_offset(page_no=page_no, page_size=page_size)
-
-        # 정렬할 필드 추출 (Review.like_count 이런식)
+        # 실제 정렬에 들어갈 컬럼 Review.like_count
         sort_column = getattr(Review, sort_by)
-        order_by = build_order_by_with_reviews(sort_column, direction)
+        # 보조 정렬을 위하나 고유성 가지고 잇는 컬럼 Review.id
+        sort_pk_column = getattr(Review, "id")
+        # order by 형태 완성
+        order_by = build_order_by(sort_column, sort_pk_column, direction)
+
+        # like_count:review_id -> like_count 실제값, review_id 실제값
+        sort_value, cursor_id = parse_cursor_value(cursor_value, sort_by)
+        filters = build_multi_cursor_filter(
+            sort_column=sort_column,
+            sort_pk_column=sort_pk_column,
+            sort_value=sort_value,
+            cursor_id=cursor_id,
+            direction=direction,
+        )
+
+        filters.append(
+            and_(
+                Review.bakery_id == bakery_id,
+                or_(
+                    Review.is_private == False,
+                    and_(Review.is_private == True, Review.user_id == user_id),
+                ),
+            )
+        )
 
         stmt = (
             select(
                 Bakery.avg_rating,
-                Users.name,
+                Users.nickname,
                 Users.profile_img,
                 Review.id,
                 Review.content,
@@ -143,39 +165,30 @@ class ReviewRepository:
                 and_(ReviewLike.review_id == Review.id, ReviewLike.user_id == user_id),
                 isouter=True,
             )
-            .filter(
-                and_(
-                    Review.bakery_id == bakery_id,
-                    or_(
-                        Review.is_private == False,
-                        and_(Review.is_private == True, Review.user_id == user_id),
-                    ),
-                )
-            )
+            .filter(*filters)
             .order_by(*order_by)
-            .limit(limit)
-            .offset(offset)
+            .limit(page_size + 1)
         )
 
         res = self.db.execute(stmt).mappings().all()
-        has_next = len(res) > page_size
 
-        return (
-            [
-                BakeryReview(
-                    review_id=r.id,
-                    user_name=r.name,
-                    profile_img=r.profile_img,
-                    is_like=bool(r.user_id),
-                    review_content=r.content,
-                    review_rating=r.rating,
-                    review_like_count=r.like_count,
-                    review_created_at=r.created_at,
-                )
-                for r in res[:page_size]
-            ],
-            has_next,
+        next_cursor = build_mulit_next_cursor_real(
+            sort_by=sort_by, res=res, page_size=page_size
         )
+
+        return next_cursor, [
+            BakeryReview(
+                review_id=r.id,
+                user_name=r.nickname,
+                profile_img=r.profile_img,
+                is_like=bool(r.user_id),
+                review_content=r.content,
+                review_rating=r.rating,
+                review_like_count=r.like_count,
+                review_created_at=r.created_at,
+            )
+            for r in res[:page_size]
+        ]
 
     async def get_today_review(self, user_id: int, bakery_id: int):
         """오늘 작성한 리뷰 있는 지 조회하는 쿼리."""
