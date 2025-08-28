@@ -188,9 +188,7 @@ class BakeryService:
     ):
         try:
             bakery_repo = BakeryRepository(db=self.db)
-
             sort_by, direction = build_sort_clause(sort_clause=sort_clause)
-
             target_day_of_week = get_now_by_timezone().weekday()
 
             # 1. 베이커리 검색

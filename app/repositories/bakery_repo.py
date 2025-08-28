@@ -1,12 +1,11 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import and_, asc, desc, func, nullsfirst, nullslast, or_, select
+from sqlalchemy import and_, asc, desc, func, select
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
 from app.core.const import ETC_MENU_NAME
-from app.core.exception import UnknownException
 from app.model.bakery import (
     Bakery,
     BakeryMenu,
@@ -534,38 +533,36 @@ class BakeryRepository:
     ):
         """방문한 빵집 (내가 리뷰 쓴 빵집 ) 조회하는 쿼리."""
 
-        sb = (sort_by or "").lower()
-        if sb not in ("created_at", "review_count", "avg_rating", "name"):
-            raise UnknownException(detail=f"Unsupported sort_by: {sort_by}")
+        # 실제 정렬에 들어갈 컬럼 Review.like_count
+        if sort_by == "created_at":
+            sort_column = getattr(Review, sort_by)
+        else:
+            sort_column = getattr(Bakery, sort_by)
 
-        is_desc = (direction or "").upper() == "DESC"
+        # 보조 정렬을 위하나 고유성 가지고 잇는 컬럼 Review.id
+        sort_pk_column = getattr(Bakery, "id")
+        # order by 형태 완성
+        order_by = build_order_by(sort_column, sort_pk_column, direction)
 
-        # 1) 유저×빵집별 마지막 리뷰시각 준비 (created_at 정렬에 사용)
-        last_review_subq = (
-            select(
-                Review.bakery_id.label("bakery_id"),
-                func.max(Review.created_at).label("last_reviewed_at"),
-            )
-            .where(Review.user_id == user_id)
-            .group_by(Review.bakery_id)
-            .subquery()
+        # like_count:review_id -> like_count 실제값, review_id 실제값
+        sort_value, cursor_id = parse_cursor_value(cursor_value, sort_by)
+        filters = build_multi_cursor_filter(
+            sort_column=sort_column,
+            sort_pk_column=sort_pk_column,
+            sort_value=sort_value,
+            cursor_id=cursor_id,
+            direction=direction,
         )
 
-        # 2) 정렬 1순위 컬럼 동적 매핑
-        #    - name은 lower(name)로 정렬 일관성 확보
-        #    - created_at은 서브쿼리 컬럼 사용
-        sort_map = {
-            "created_at": last_review_subq.c.last_reviewed_at,
-            "review_count": Bakery.review_count,
-            "avg_rating": Bakery.avg_rating,
-            "name": func.lower(Bakery.name),
-        }
-        primary_col = sort_map[sb]
+        row_number = (
+            func.row_number()
+            .over(partition_by=Bakery.id, order_by=order_by)
+            .label("rn")
+        )
 
-        # 3) 기본 SELECT (필요한 부가정보 조인)
-        base = (
+        subq = (
             select(
-                Bakery.id.label("bakery_id"),
+                Bakery.id,
                 Bakery.name,
                 Bakery.gu,
                 Bakery.dong,
@@ -575,10 +572,12 @@ class BakeryRepository:
                 OperatingHour.is_opened,
                 OperatingHour.open_time,
                 OperatingHour.close_time,
-                primary_col.label("sort_value"),
-                last_review_subq.c.last_reviewed_at.label("last_reviewed_at"),
+                Review.created_at,
+                row_number,
             )
-            .join(last_review_subq, last_review_subq.c.bakery_id == Bakery.id)
+            .join(
+                Review, and_(Review.bakery_id == Bakery.id, Review.user_id == user_id)
+            )
             .join(
                 OperatingHour,
                 and_(
@@ -587,76 +586,33 @@ class BakeryRepository:
                 ),
                 isouter=True,
             )
-            .join(
-                UserBakeryLikes,
-                and_(
-                    UserBakeryLikes.bakery_id == Bakery.id,
-                    UserBakeryLikes.user_id == user_id,
-                ),
-                isouter=True,
-            )
+            .filter(*filters)
+            .subquery()
         )
 
-        # 4) 커서 파싱
-        #    - name 정렬이면 커서의 sort_value도 소문자 기준이어야 함
-        sort_value, cursor_bakery_id = parse_cursor_value(
-            cursor_value=cursor_value, sort_by=sb
+        stmt = (
+            select(subq)
+            .where(subq.c.rn == 1)
+            .order_by(desc(subq.c[sort_by]), subq.c.id)
+            .limit(page_size + 1)
         )
 
-        # 5) 키셋 커서 조건 (사전식 비교)
-        if cursor_value != "0||0":
-            if is_desc:
-                cursor_pred = or_(
-                    primary_col < sort_value,
-                    and_(primary_col == sort_value, Bakery.id < cursor_bakery_id),
-                )
-            else:
-                cursor_pred = or_(
-                    primary_col > sort_value,
-                    and_(primary_col == sort_value, Bakery.id > cursor_bakery_id),
-                )
-            base = base.where(cursor_pred)
-
-        # 6) ORDER BY (항상 타이브레이커로 Bakery.id 포함)
-        def with_nulls(col):
-            # DESC일 때 NULLS LAST, ASC일 때 NULLS FIRST를 기본값으로 설정 (UX상 자연스러움)
-            return nullslast(desc(col)) if is_desc else nullsfirst(asc(col))
-
-        order_by_cols = [
-            with_nulls(primary_col),
-            (desc(Bakery.id) if is_desc else asc(Bakery.id)),
-        ]
-
-        stmt = base.order_by(*order_by_cols).limit(page_size + 1)
-
-        # 7) 실행 및 결과
-        res = self.db.execute(stmt).all()
-
-        # 8) next_cursor 구성 (항상 sort_value, bakery_id 사용)
-        next_cursor = build_multi_next_cursor(
-            res=res,
-            target_sort_by_column="sort_value",
-            distinct_column="bakery_id",
-            page_size=page_size,
+        res = self.db.execute(stmt).mappings().all()
+        next_cursor = build_multi_next_cursor_real(
+            sort_by=sort_by, res=res, page_size=page_size
         )
 
-        next_cursor = build_multi_next_cursor(
-            res=res,
-            target_sort_by_column=(
-                "last_reviewed_at" if sort_by == "created_at" else sort_by
-            ),
-            distinct_column="bakery_id",  # 커서 두 번째 조각은 항상 bakery_id
-            page_size=page_size,
-        )
+        for i in res[:page_size]:
+            print("> bakery", i.id)
 
         return next_cursor, [
             GuDongMenuBakery(
-                bakery_id=r.bakery_id,
+                bakery_id=r.id,
                 bakery_name=r.name,
-                avg_rating=r.avg_rating,
-                review_count=r.review_count,
                 gu=r.gu,
                 dong=r.dong,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
                 img_url=r.thumbnail,
                 open_status=operating_hours_to_open_status(
                     is_opened=r.is_opened,
