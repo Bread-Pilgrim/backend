@@ -8,35 +8,6 @@ from app.model.bakery import Bakery
 from app.model.review import Review
 
 
-def parse_value(value_str: str, sort_by: str):
-    """커서 문자열을 정렬 필드에 맞는 타입으로 변환하는 메소드."""
-
-    if sort_by == "created_at":
-        return datetime.fromisoformat(value_str)
-    elif sort_by in {"rating", "like_count"}:
-        return float(value_str)
-    else:
-        return value_str
-
-
-def parse_cursor_value(cursor_value: str, sort_by: str):
-    """sort_value:review_id 형태의 커서를 파싱하여 비교 가능한 값으로 분리하는 메소드."""
-
-    if cursor_value == "0||0":
-        return None, None
-    try:
-        sort_value_str, id_str = cursor_value.split("||")
-        return parse_value(sort_value_str, sort_by), int(id_str)
-    except Exception:
-        raise InvalidSortParameterException()
-
-
-# def build_cursor_filter(table_name, column_name, cursor_value: str, filters):
-#     """커서 기반으로 WHERE 조건을 생성하는 메소드."""
-#     if cursor_value == "0":
-#         return filters.append()
-
-
 def build_order_by_with_reviews(sort_column, direction):
     """정렬 컬럼과 id를 기준으로 안정적인 ORDER BY 리스트 생성하는 메소드."""
 
@@ -44,15 +15,6 @@ def build_order_by_with_reviews(sort_column, direction):
         return [desc(sort_column), desc(Review.id)]
     else:
         return [asc(sort_column), desc(Review.id)]
-
-
-def build_order_by(sort_column, direction):
-    """정렬 컬럼과 id를 기준으로 안정적인 ORDER BY 리스트 생성하는 메소드."""
-
-    if direction == "desc":
-        return [desc(Bakery.id), desc(sort_column)]
-    else:
-        return [desc(Bakery.id), asc(sort_column)]
 
 
 def build_cursor(sort_value, review_id):
@@ -102,3 +64,64 @@ def build_multi_next_cursor(
         last_arg = str(getattr(last, distinct_column, None))
 
     return f"{first_arg}||{last_arg}"
+
+
+def build_order_by(sort_column, sort_pk_column, direction):
+    """정렬 컬럼과 id를 기준으로 안정적인 ORDER BY 리스트 생성하는 메소드."""
+
+    if direction == "desc":
+        return [desc(sort_column), desc(sort_pk_column)]
+    else:
+        return [asc(sort_column), asc(sort_pk_column)]
+
+
+def build_multi_cursor_filter(
+    sort_column, sort_pk_column, sort_value, cursor_id, direction: str
+):
+    """다중정렬 커서의 where절 반환하는 메소드.
+
+    Args:
+        sort_column (_type_): Review.created_at
+        sort_pk_column (_type_): Review.id
+        sort_value (_type_): 2025-08-18 14:26:12.951
+        cursor_id (_type_): 23
+        direction (str): desc || asc
+    """
+
+    is_desc = direction == "desc"
+
+    if sort_value is None or cursor_id is None:
+        return []
+
+    if is_desc:
+
+        return [
+            or_(
+                sort_column < sort_value,
+                and_(
+                    sort_column == sort_value,
+                    sort_pk_column <= cursor_id,
+                ),
+            )
+        ]
+    else:
+        return [
+            or_(
+                sort_column > sort_value,
+                and_(
+                    sort_column == sort_value,
+                    sort_pk_column >= cursor_id,
+                ),
+            )
+        ]
+
+
+def build_mulit_next_cursor_real(sort_by, res, page_size: int):
+    has_next = len(res) > page_size
+    if has_next:
+        next_cursor, next_cusor_pk = res[-1][sort_by], res[-1].id
+        return f"{next_cursor}||{next_cusor_pk}"
+    else:
+        return None
+
+    print(column_key)
