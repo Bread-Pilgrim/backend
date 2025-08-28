@@ -15,7 +15,7 @@ class ReviewPhoto(BaseModel):
 
 
 class MyBakeryReview(BaseModel):
-    user_name: str = Field(..., description="유저 이름")
+    user_name: str = Field(..., description="유저 닉네임")
     profile_img: Optional[str] = Field(default=None, description="유저 프로필 이미지")
     is_like: bool = Field(default=False, description="내가 리뷰 좋아요 눌렀는지 여부")
     review_id: int = Field(..., description="리뷰 id")
@@ -31,7 +31,7 @@ class MyBakeryReview(BaseModel):
 
 
 class BakeryReview(BaseModel):
-    user_name: str = Field(..., description="유저 이름")
+    user_name: str = Field(..., description="유저 닉네임")
     profile_img: Optional[str] = Field(default=None, description="유저 프로필 이미지")
     is_like: bool = Field(default=False, description="내가 리뷰 좋아요 눌렀는지 여부")
     review_id: int = Field(..., description="리뷰 id")

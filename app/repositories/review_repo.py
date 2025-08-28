@@ -39,7 +39,7 @@ class ReviewRepository:
 
         stmt = (
             select(
-                Users.name,
+                Users.nickname,
                 Users.profile_img,
                 Review.id,
                 Review.content,
@@ -67,7 +67,7 @@ class ReviewRepository:
         return next_cursor, [
             MyBakeryReview(
                 review_id=r.id,
-                user_name=r.name,
+                user_name=r.nickname,
                 profile_img=r.profile_img,
                 is_like=True if r.user_id else False,
                 review_content=r.content,
