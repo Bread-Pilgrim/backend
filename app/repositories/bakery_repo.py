@@ -569,6 +569,7 @@ class BakeryRepository:
                 Bakery.avg_rating,
                 Bakery.review_count,
                 Bakery.thumbnail,
+                Bakery.commercial_area_id,
                 OperatingHour.is_opened,
                 OperatingHour.open_time,
                 OperatingHour.close_time,
@@ -613,6 +614,7 @@ class BakeryRepository:
                 dong=r.dong,
                 avg_rating=r.avg_rating,
                 review_count=r.review_count,
+                commercial_area_id=r.commercial_area_id,
                 img_url=r.thumbnail,
                 open_status=operating_hours_to_open_status(
                     is_opened=r.is_opened,
@@ -722,6 +724,7 @@ class BakeryRepository:
                 Bakery.gu,
                 Bakery.dong,
                 Bakery.thumbnail,
+                Bakery.commercial_area_id,
                 OperatingHour.close_time,
                 OperatingHour.open_time,
                 OperatingHour.is_opened,
@@ -760,6 +763,7 @@ class BakeryRepository:
                 review_count=r.review_count,
                 gu=r.gu,
                 dong=r.dong,
+                commercial_area_id=r.commercial_area_id,
                 img_url=r.thumbnail,
                 open_status=operating_hours_to_open_status(
                     is_opened=r.is_opened,

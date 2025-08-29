@@ -144,7 +144,11 @@ async def get_hot_bakeries(
     )
 
 
-@router.get("/visited")
+@router.get(
+    "/visited",
+    response_model=BaseResponse[GuDongMenuBakeryResponseDTO],
+    responses=ERROR_UNKNOWN,
+)
 async def get_visited_bakery(
     cursor_value: str = Query(
         default="0||0",
