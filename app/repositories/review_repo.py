@@ -45,6 +45,7 @@ class ReviewRepository:
                 Review.content,
                 Review.rating,
                 Review.like_count,
+                Review.created_at,
                 ReviewLike.user_id,
             )
             .select_from(Users)
@@ -73,6 +74,7 @@ class ReviewRepository:
                 review_content=r.content,
                 review_rating=r.rating,
                 review_like_count=r.like_count,
+                review_created_at=r.created_at,
             )
             for r in res[:page_size]
         ]

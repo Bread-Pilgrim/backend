@@ -119,6 +119,7 @@ class SimpleBakeryMenu(BaseModel):
 class GuDongMenuBakery(CommonBakery):
     """방문한 빵집"""
 
+    commercial_area_id: int = Field(..., description="지역코드")
     avg_rating: float = Field(..., description="평균별점")
     review_count: int = Field(..., description="리뷰 개수")
     gu: str = Field(..., description="베이커리 자치구")

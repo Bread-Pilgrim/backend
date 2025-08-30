@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import and_, asc, desc
+from sqlalchemy import and_, asc, desc, null
 from sqlalchemy.orm import Session
 
 from app.model.badge import Badge, UserBadge
@@ -27,9 +27,8 @@ class BadgeRepository:
                 UserBadge,
                 and_(UserBadge.badge_id == Badge.id, UserBadge.user_id == user_id),
             )
-            .order_by(
-                desc(UserBadge.is_representative).nulls_last(), asc(UserBadge.badge_id)
-            )
+            .filter(Badge.img_url.isnot(null()))
+            .order_by(desc(UserBadge.is_representative).nulls_last(), asc(Badge.id))
             .all()
         )
 
