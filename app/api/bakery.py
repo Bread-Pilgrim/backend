@@ -241,12 +241,14 @@ async def check_is_eligible_to_write_review(
     responses={**ERROR_UNKNOWN, **ERROR_NOT_FOUND},
 )
 async def get_bakery_detail(
-    bakery_id: int, _: None = Depends(get_user_id), db=Depends(get_db)
+    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
 ):
     """베이커리 상세 조회 API."""
 
     return BaseResponse(
-        data=await BakeryService(db=db).get_bakery_detail(bakery_id=bakery_id)
+        data=await BakeryService(db=db).get_bakery_detail(
+            user_id=user_id, bakery_id=bakery_id
+        )
     )
 
 
