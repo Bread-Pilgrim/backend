@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Column,
     Float,
@@ -81,3 +82,10 @@ class MenuPhoto(Base, DateTimeMixin):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     menu_id = Column(Integer, nullable=False)
     img_url = Column(Text, comment="이미지 경로")
+
+
+class RecentBakeryView(Base, DateTimeMixin):
+    __tablename__ = "recent_bakery_views"
+
+    user_id = Column(BigInteger, ForeignKey("users.id"), primary_key=True)
+    bakery_id = Column(BigInteger, ForeignKey("bakeries.id"), primary_key=True)
