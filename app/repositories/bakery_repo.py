@@ -24,6 +24,7 @@ from app.schema.bakery import (
     BakeryOperatingHour,
     GuDongMenuBakery,
     LoadMoreBakery,
+    RecentViewedBakery,
     RecommendBakery,
     SimpleBakeryMenu,
 )
@@ -788,4 +789,55 @@ class BakeryRepository:
                 ),
             )
             for r in res[:page_size]
+        ]
+
+    async def get_recent_viewed_bakeries(self, user_id: int, target_day_of_week: int):
+        """최근 조회한 빵집 20개 조회하는 쿼리."""
+
+        res = (
+            self.db.query(
+                Bakery.id,
+                Bakery.name,
+                Bakery.commercial_area_id,
+                Bakery.thumbnail,
+                Bakery.avg_rating,
+                Bakery.review_count,
+                OperatingHour.is_opened,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
+            )
+            .join(
+                RecentBakeryView,
+                and_(
+                    RecentBakeryView.bakery_id == Bakery.id,
+                    RecentBakeryView.user_id == user_id,
+                ),
+            )
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+                isouter=True,
+            )
+            .limit(20)
+            .all()
+        )
+
+        return [
+            RecentViewedBakery(
+                bakery_id=r.id,
+                bakery_name=r.name,
+                commercial_area_id=r.commercial_area_id,
+                img_url=r.thumbnail,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
+            )
+            for r in res
         ]

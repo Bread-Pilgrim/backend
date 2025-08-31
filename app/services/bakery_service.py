@@ -313,3 +313,14 @@ class BakeryService:
             )
         except Exception as e:
             raise UnknownException(detail=str(e))
+
+    async def get_recent_viewed_bakeries(self, user_id: int):
+        """최근에 조회한 베이커리 조회하는 비즈니스 로직."""
+
+        try:
+            target_day_of_week = get_now_by_timezone().weekday()
+            return await BakeryRepository(db=self.db).get_recent_viewed_bakeries(
+                user_id=user_id, target_day_of_week=target_day_of_week
+            )
+        except Exception as e:
+            raise UnknownException(str(e))

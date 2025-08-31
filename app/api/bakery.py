@@ -21,6 +21,7 @@ from app.schema.bakery import (
     BakeryLikeResponseDTO,
     GuDongMenuBakeryResponseDTO,
     LoadMoreBakeryResponseDTO,
+    RecentViewedBakery,
     RecommendBakery,
     SimpleBakeryMenu,
     WrittenReview,
@@ -215,6 +216,16 @@ async def get_like_bakery(
             cursor_value=cursor_value,
             page_size=page_size,
         )
+    )
+
+
+@router.get("/recent", response_model=BaseResponse[List[RecentViewedBakery]])
+async def get_recent_viewed_bakeries(
+    user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """최근 조회한 빵집 조회하는 API."""
+    return BaseResponse(
+        data=await BakeryService(db=db).get_recent_viewed_bakeries(user_id=user_id)
     )
 
 
