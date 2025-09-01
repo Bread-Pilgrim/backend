@@ -8,6 +8,7 @@ from app.core.config import Configs
 from app.core.exception import UnknownException
 from app.model.users import Users
 from app.repositories.auth_repo import AuthRepository
+from app.repositories.badge_repo import BadgeRepository
 from app.schema.auth import AuthToken, LoginRequestDTO, LoginResponseDTO
 from app.utils.kakao import parse_kakao_user_info
 
@@ -71,6 +72,10 @@ class AuthService:
 
             if not user_id:
                 user_id = await auth_repo.sign_up_user(login_type, kakao_data)
+                # 새싹 뱃지 획득
+                await BadgeRepository(db=self.db).achieve_badge(
+                    user_id=user_id, condition_type="signup"
+                )
 
             access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
             onboarding_completed = await auth_repo.check_completed_onboarding(
