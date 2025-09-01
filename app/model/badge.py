@@ -24,7 +24,7 @@ class Badge(Base, DateTimeMixin):
     category = Column(SmallInteger)
 
 
-class BadgeCondition(Base, DateTimeMixin):
+class BadgeCondition(Base):
     """뱃지 획득 컨디션 테이블."""
 
     __tablename__ = "badge_conditions"
@@ -45,3 +45,17 @@ class UserBadge(Base):
     user_id = Column(Integer, nullable=False)
     badge_id = Column(Integer, nullable=False)
     is_representative = Column(Boolean, default=False, comment="대표뱃지 여부")
+
+
+class UserMetrics(Base):
+    __tablename__ = "user_metrics"
+
+    user_id = Column(Integer, primary_key=True)
+    review_count = Column(Integer, default=0)
+    pastry_bread_count = Column(Integer, default=0)
+    meal_bread_count = Column(Integer, default=0)
+    healthy_bread_count = Column(Integer, default=0)
+    baked_bread_count = Column(Integer, default=0)
+    retro_bread_count = Column(Integer, default=0)
+    dessert_bread_count = Column(Integer, default=0)
+    sandwich_bread_count = Column(Integer, default=0)
