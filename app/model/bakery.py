@@ -20,7 +20,9 @@ class Bakery(Base, DateTimeMixin):
     __tablename__ = "bakeries"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(40), nullable=False, comment="빵집이름")
+    name = Column(
+        String(40, collation="ko_KR.utf8"), nullable=False, comment="빵집이름"
+    )
     address = Column(String(128), nullable=False, comment="주소 전문")
     gu = Column(String(24), comment="구 아름")
     dong = Column(String(24), comment="동 이름")
