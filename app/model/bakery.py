@@ -48,6 +48,9 @@ class BakeryMenu(Base, DateTimeMixin):
     price = Column(Integer, comment="가격")
     bakery_id = Column(Integer, nullable=False)
     flavor_id = Column(Integer, nullable=True, comment="preference.type = flavor 번호")
+    bread_type_id = Column(
+        Integer, nullable=True, comment="preference.type = bread_type 번호"
+    )
 
 
 class BakeryPhoto(Base, DateTimeMixin):

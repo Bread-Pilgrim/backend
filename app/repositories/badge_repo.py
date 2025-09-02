@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy import and_, asc, desc, null
 from sqlalchemy.orm import Session
 
-from app.model.badge import Badge, BadgeCondition, UserBadge
+from app.model.badge import Badge, BadgeCondition, UserBadge, UserMetrics
 from app.schema.badge import BadgeItem
 
 
@@ -66,3 +66,8 @@ class BadgeRepository:
             )
 
             self.db.commit()
+
+    async def initialize_user_badge_metrics(self, user_id: int):
+        """뱃지트리거용 메트릭 초기화 쿼리."""
+
+        self.db.add(UserMetrics(user_id=user_id))
