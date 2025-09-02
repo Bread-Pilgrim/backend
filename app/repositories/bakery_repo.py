@@ -611,7 +611,7 @@ class BakeryRepository:
         stmt = (
             select(subq)
             .where(subq.c.rn == 1)
-            .order_by(desc(subq.c[sort_by]), subq.c.id)
+            .order_by(subq.c[sort_by], subq.c.id)
             .limit(page_size + 1)
         )
 
@@ -619,10 +619,6 @@ class BakeryRepository:
         next_cursor = build_multi_next_cursor_real(
             sort_by=sort_by, res=res, page_size=page_size
         )
-
-        for i in res[:page_size]:
-            print("> bakery", i.id)
-
         return next_cursor, [
             GuDongMenuBakery(
                 bakery_id=r.id,
