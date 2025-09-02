@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 
 from sqlalchemy import and_, asc, desc, func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
 
@@ -13,6 +14,7 @@ from app.model.bakery import (
     BakeryPreference,
     MenuPhoto,
     OperatingHour,
+    RecentBakeryView,
 )
 from app.model.review import Review
 from app.model.users import UserBakeryLikes, UserPreferences
@@ -22,6 +24,7 @@ from app.schema.bakery import (
     BakeryOperatingHour,
     GuDongMenuBakery,
     LoadMoreBakery,
+    RecentViewedBakery,
     RecommendBakery,
     SimpleBakeryMenu,
 )
@@ -466,6 +469,20 @@ class BakeryRepository:
 
         return [r.img_url for r in res if r.img_url] if res else []
 
+    async def insert_recent_viewed_bakeries(self, user_id: int, bakery_id: int):
+        """최근 조회한 베이커리 테이블에 적재하는 쿼리."""
+
+        stmt = (
+            insert(RecentBakeryView)
+            .values(
+                user_id=user_id,
+                bakery_id=bakery_id,
+            )
+            .on_conflict_do_nothing(index_elements=["user_id", "bakery_id"])
+        )
+
+        self.db.execute(stmt)
+
     async def get_bakery_operating_hours(self, bakery_id: int):
         """베이커리 전체 영업시간 가져오는 쿼리."""
 
@@ -594,7 +611,7 @@ class BakeryRepository:
         stmt = (
             select(subq)
             .where(subq.c.rn == 1)
-            .order_by(desc(subq.c[sort_by]), subq.c.id)
+            .order_by(subq.c[sort_by], subq.c.id)
             .limit(page_size + 1)
         )
 
@@ -602,10 +619,6 @@ class BakeryRepository:
         next_cursor = build_multi_next_cursor_real(
             sort_by=sort_by, res=res, page_size=page_size
         )
-
-        for i in res[:page_size]:
-            print("> bakery", i.id)
-
         return next_cursor, [
             GuDongMenuBakery(
                 bakery_id=r.id,
@@ -772,4 +785,55 @@ class BakeryRepository:
                 ),
             )
             for r in res[:page_size]
+        ]
+
+    async def get_recent_viewed_bakeries(self, user_id: int, target_day_of_week: int):
+        """최근 조회한 빵집 20개 조회하는 쿼리."""
+
+        res = (
+            self.db.query(
+                Bakery.id,
+                Bakery.name,
+                Bakery.commercial_area_id,
+                Bakery.thumbnail,
+                Bakery.avg_rating,
+                Bakery.review_count,
+                OperatingHour.is_opened,
+                OperatingHour.close_time,
+                OperatingHour.open_time,
+            )
+            .join(
+                RecentBakeryView,
+                and_(
+                    RecentBakeryView.bakery_id == Bakery.id,
+                    RecentBakeryView.user_id == user_id,
+                ),
+            )
+            .join(
+                OperatingHour,
+                and_(
+                    OperatingHour.bakery_id == Bakery.id,
+                    OperatingHour.day_of_week == target_day_of_week,
+                ),
+                isouter=True,
+            )
+            .limit(20)
+            .all()
+        )
+
+        return [
+            RecentViewedBakery(
+                bakery_id=r.id,
+                bakery_name=r.name,
+                commercial_area_id=r.commercial_area_id,
+                img_url=r.thumbnail,
+                avg_rating=r.avg_rating,
+                review_count=r.review_count,
+                open_status=operating_hours_to_open_status(
+                    is_opened=r.is_opened,
+                    close_time=r.close_time,
+                    open_time=r.open_time,
+                ),
+            )
+            for r in res
         ]

@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy import and_, asc, desc, null
 from sqlalchemy.orm import Session
 
-from app.model.badge import Badge, UserBadge
+from app.model.badge import Badge, BadgeCondition, UserBadge, UserMetrics
 from app.schema.badge import BadgeItem
 
 
@@ -43,3 +43,31 @@ class BadgeRepository:
             )
             for r in res
         ]
+
+    async def achieve_badge(self, user_id: int, condition_type: str, value=1):
+        """뱃지 획득 시 적재하는 쿼리."""
+
+        achieved_badge = (
+            self.db.query(BadgeCondition.badge_id)
+            .filter(
+                BadgeCondition.condition_type == condition_type,
+                BadgeCondition.value == value,
+            )
+            .first()
+        )
+
+        if achieved_badge:
+            self.db.add(
+                UserBadge(
+                    user_id=user_id,
+                    badge_id=achieved_badge.badge_id,
+                    is_representative=False,
+                )
+            )
+
+            self.db.commit()
+
+    async def initialize_user_badge_metrics(self, user_id: int):
+        """뱃지트리거용 메트릭 초기화 쿼리."""
+
+        self.db.add(UserMetrics(user_id=user_id))

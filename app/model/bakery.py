@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Column,
     Float,
@@ -19,7 +20,9 @@ class Bakery(Base, DateTimeMixin):
     __tablename__ = "bakeries"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(40), nullable=False, comment="빵집이름")
+    name = Column(
+        String(40, collation="ko_KR.utf8"), nullable=False, comment="빵집이름"
+    )
     address = Column(String(128), nullable=False, comment="주소 전문")
     gu = Column(String(24), comment="구 아름")
     dong = Column(String(24), comment="동 이름")
@@ -45,6 +48,9 @@ class BakeryMenu(Base, DateTimeMixin):
     price = Column(Integer, comment="가격")
     bakery_id = Column(Integer, nullable=False)
     flavor_id = Column(Integer, nullable=True, comment="preference.type = flavor 번호")
+    bread_type_id = Column(
+        Integer, nullable=True, comment="preference.type = bread_type 번호"
+    )
 
 
 class BakeryPhoto(Base, DateTimeMixin):
@@ -81,3 +87,10 @@ class MenuPhoto(Base, DateTimeMixin):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     menu_id = Column(Integer, nullable=False)
     img_url = Column(Text, comment="이미지 경로")
+
+
+class RecentBakeryView(Base, DateTimeMixin):
+    __tablename__ = "recent_bakery_views"
+
+    user_id = Column(BigInteger, ForeignKey("users.id"), primary_key=True)
+    bakery_id = Column(BigInteger, ForeignKey("bakeries.id"), primary_key=True)

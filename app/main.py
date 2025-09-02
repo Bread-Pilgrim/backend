@@ -7,6 +7,7 @@ from app.api import (
     badge,
     bakery,
     common,
+    notice,
     preferences,
     review,
     search,
@@ -60,6 +61,7 @@ app.include_router(common.router)
 app.include_router(review.router)
 app.include_router(search.router)
 app.include_router(badge.router)
+app.include_router(notice.router)
 
 # Exception
 app.add_exception_handler(UnknownException, exception_handler)

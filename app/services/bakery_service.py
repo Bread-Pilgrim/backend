@@ -136,7 +136,7 @@ class BakeryService:
         except Exception as e:
             raise UnknownException(detail=str(e))
 
-    async def get_bakery_detail(self, bakery_id: int):
+    async def get_bakery_detail(self, user_id: int, bakery_id: int):
         """베이커리 상세 조회하는 비즈니스 로직."""
 
         bakery_repo = BakeryRepository(db=self.db)
@@ -160,6 +160,11 @@ class BakeryService:
             # 4. 베이커리 영업시간 가져오기
             operating_hours = await bakery_repo.get_bakery_operating_hours(
                 bakery_id=bakery_id
+            )
+
+            # 5. 최근 조회한 베이커리 테이블에 적재하기
+            await bakery_repo.insert_recent_viewed_bakeries(
+                user_id=user_id, bakery_id=bakery.bakery_id
             )
 
             return BakeryDetailResponseDTO(
@@ -308,3 +313,14 @@ class BakeryService:
             )
         except Exception as e:
             raise UnknownException(detail=str(e))
+
+    async def get_recent_viewed_bakeries(self, user_id: int):
+        """최근에 조회한 베이커리 조회하는 비즈니스 로직."""
+
+        try:
+            target_day_of_week = get_now_by_timezone().weekday()
+            return await BakeryRepository(db=self.db).get_recent_viewed_bakeries(
+                user_id=user_id, target_day_of_week=target_day_of_week
+            )
+        except Exception as e:
+            raise UnknownException(str(e))

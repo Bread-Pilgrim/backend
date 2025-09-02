@@ -66,18 +66,12 @@ def build_multi_next_cursor(
     return f"{first_arg}||{last_arg}"
 
 
-def build_order_by(sort_column, sort_pk_column, direction, is_crossed: bool = False):
+def build_order_by(sort_column, sort_pk_column, direction):
     """정렬 컬럼과 id를 기준으로 안정적인 ORDER BY 리스트 생성하는 메소드."""
-    if is_crossed:
-        if direction == "desc":
-            return [desc(sort_pk_column), desc(sort_column)]
-        else:
-            return [asc(sort_pk_column), asc(sort_column)]
+    if direction == "desc":
+        return [desc(sort_column), desc(sort_pk_column)]
     else:
-        if direction == "desc":
-            return [desc(sort_column), desc(sort_pk_column)]
-        else:
-            return [asc(sort_column), asc(sort_pk_column)]
+        return [asc(sort_column), asc(sort_pk_column)]
 
 
 def build_multi_cursor_filter(

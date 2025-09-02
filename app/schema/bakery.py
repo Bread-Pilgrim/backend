@@ -143,3 +143,12 @@ class WrittenReview(BaseModel):
 class BakeryLikeResponseDTO(BaseModel):
     is_like: bool = Field(..., description="찜여부")
     bakery_id: int = Field(..., description="빵집 id")
+
+
+class RecentViewedBakery(CommonBakery):
+    avg_rating: float = Field(..., description="평균별점")
+    review_count: int = Field(..., description="리뷰 개수")
+    commercial_area_id: int = Field(
+        ...,
+        description="베이커리 상권지역코드 - 상세보기 클릭시 근처 관광지 추천에 필요",
+    )

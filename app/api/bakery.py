@@ -21,6 +21,7 @@ from app.schema.bakery import (
     BakeryLikeResponseDTO,
     GuDongMenuBakeryResponseDTO,
     LoadMoreBakeryResponseDTO,
+    RecentViewedBakery,
     RecommendBakery,
     SimpleBakeryMenu,
     WrittenReview,
@@ -218,6 +219,16 @@ async def get_like_bakery(
     )
 
 
+@router.get("/recent", response_model=BaseResponse[List[RecentViewedBakery]])
+async def get_recent_viewed_bakeries(
+    user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """최근 조회한 빵집 조회하는 API."""
+    return BaseResponse(
+        data=await BakeryService(db=db).get_recent_viewed_bakeries(user_id=user_id)
+    )
+
+
 @router.get(
     "/{bakery_id}/review/eligibility",
     response_model=BaseResponse[WrittenReview],
@@ -241,12 +252,14 @@ async def check_is_eligible_to_write_review(
     responses={**ERROR_UNKNOWN, **ERROR_NOT_FOUND},
 )
 async def get_bakery_detail(
-    bakery_id: int, _: None = Depends(get_user_id), db=Depends(get_db)
+    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
 ):
     """베이커리 상세 조회 API."""
 
     return BaseResponse(
-        data=await BakeryService(db=db).get_bakery_detail(bakery_id=bakery_id)
+        data=await BakeryService(db=db).get_bakery_detail(
+            user_id=user_id, bakery_id=bakery_id
+        )
     )
 
 
