@@ -608,10 +608,15 @@ class BakeryRepository:
             .subquery()
         )
 
+        is_desc = direction == "desc"
+
         stmt = (
             select(subq)
             .where(subq.c.rn == 1)
-            .order_by(subq.c[sort_by], subq.c.id)
+            .order_by(
+                desc(subq.c[sort_by]) if is_desc else subq.c[sort_by],
+                desc(subq.c.id) if is_desc else subq.c.id,
+            )
             .limit(page_size + 1)
         )
 
