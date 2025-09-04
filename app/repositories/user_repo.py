@@ -181,6 +181,7 @@ class UserRepository:
                 Review.like_count,
                 Review.created_at,
                 Bakery.name,
+                Bakery.commercial_area_id,
                 Bakery.id.label("bakery_id"),
                 ReviewLike.user_id,
             )
@@ -199,6 +200,7 @@ class UserRepository:
         return next_cursor, [
             UserReview(
                 review_id=r.id,
+                commercial_area_id=r.commercial_area_id,
                 review_created_at=r.created_at,
                 bakery_id=r.bakery_id,
                 bakery_name=r.name,
