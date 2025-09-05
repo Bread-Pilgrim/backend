@@ -1,6 +1,6 @@
-from typing import Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 
 from app.schema.auth import AuthToken
@@ -12,6 +12,7 @@ class BaseResponse(GenericModel, Generic[T]):
     status_code: int = 200
     message: str = "성공"
     data: Optional[T] = None
+    extra: Optional[T] = Field(default=None, description="클라가 반응할 정보.")
     error_usecase: Optional[str] = None
     token: AuthToken | None = None
 
