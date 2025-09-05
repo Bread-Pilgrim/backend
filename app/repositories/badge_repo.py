@@ -6,10 +6,18 @@ from sqlalchemy.orm import Session
 from app.model.badge import Badge, BadgeCondition, UserBadge, UserMetrics
 from app.schema.badge import BadgeItem
 
+REVIEW_THRESHOLDS = [1, 10, 50, 100, 500]
+BREAD_THRESHOLDS = [10, 100, 500]
+
 
 class BadgeRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
+
+    async def initialize_user_badge_metrics(self, user_id: int):
+        """뱃지트리거용 메트릭 초기화 쿼리."""
+
+        self.db.add(UserMetrics(user_id=user_id))
 
     async def get_badges(self, user_id) -> List[BadgeItem]:
         """벳지 데이터를 조회하는 쿼리."""
@@ -66,8 +74,3 @@ class BadgeRepository:
             )
 
             self.db.commit()
-
-    async def initialize_user_badge_metrics(self, user_id: int):
-        """뱃지트리거용 메트릭 초기화 쿼리."""
-
-        self.db.add(UserMetrics(user_id=user_id))
