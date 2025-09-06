@@ -267,6 +267,9 @@ class Review:
             )
 
             if checked:
+                # 8.5 뱃지 적재
+                badge_ids = [c.badge_id for c in checked]
+                await badge_repo.achieve_badges(user_id=user_id, badge_ids=badge_ids)
                 return checked
         except Exception as e:
             if isinstance(e, DailyReviewLimitExceededExecption):

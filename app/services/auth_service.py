@@ -75,7 +75,7 @@ class AuthService:
 
                 badge_repo = BadgeRepository(db=self.db)
                 # 새싹 뱃지 획득
-                await badge_repo.achieve_badge(user_id=user_id, condition_type="signup")
+                await badge_repo.achieve_badges(user_id=user_id, badge_ids=[1])
                 # user_badge metric 초기화
                 await badge_repo.initialize_user_badge_metrics(user_id=user_id)
 
