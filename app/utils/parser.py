@@ -1,18 +1,8 @@
 from datetime import datetime
 
+from app.core.const import BADGE_METRICS
 from app.core.exception import InvalidSortParameterException
 from app.model.badge import UserMetrics
-
-BADGE_METRICS = {
-    10: "meal_bread_count",
-    11: "healthy_bread_count",
-    12: "baked_bread_count",
-    13: "retro_bread_count",
-    14: "dessert_bread_count",
-    15: "sandwich_bread_count",
-    16: "cake_bread_count",
-    41: "pastry_bread_count",
-}
 
 
 def parse_comma_to_list(area_code: str) -> list[str]:
@@ -70,3 +60,18 @@ def build_update_metrics_on_review(consumed_menus: dict):
             update_dict[metric_column] = metric_column + metric_quantity
 
     return update_dict
+
+
+def build_select_columns_metrics_on_review(menu_metrics: dict):
+    """조회할 메트릭 컬럼 리스트 반환하는 메소드."""
+    select_columns = [
+        UserMetrics.review_count,
+    ]
+
+    for m in menu_metrics:
+        bread_type_id = m.get("bread_type_id")
+        metric_column_name = BADGE_METRICS.get(bread_type_id)
+        if metric_column_name:
+            select_columns.append(getattr(UserMetrics, metric_column_name))
+
+    return select_columns

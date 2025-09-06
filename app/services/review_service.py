@@ -5,6 +5,7 @@ from typing import List, Optional
 from fastapi import File, UploadFile
 from sqlalchemy.orm.session import Session
 
+from app.core.base import BaseResponse
 from app.core.exception import (
     AlreadyDislikedException,
     AlreadyLikedException,
@@ -254,6 +255,20 @@ class Review:
                 user_id=user_id,
                 update_metrics=update_metrics,
             )
+
+            #  8.3 뱃지 메트릭 컬럼 생성
+            select_columns = build_select_columns_metrics_on_review(
+                menu_metrics=consumed_menus_json
+            )
+            # 8.4 뱃지 획득가능성 체크
+            checked = await badge_repo.check_achieve_badges(
+                user_id=user_id,
+                select_columns=select_columns,
+                menu_metrics=consumed_menus_json,
+            )
+
+            if checked:
+                return checked
         except Exception as e:
             if isinstance(e, DailyReviewLimitExceededExecption):
                 raise e

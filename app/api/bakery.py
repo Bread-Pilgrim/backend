@@ -369,7 +369,7 @@ async def write_bakery_review(
 ):
     """베이커리 리뷰 작성하는 API."""
 
-    await Review(db=db).write_bakery_review(
+    extra = await Review(db=db).write_bakery_review(
         bakery_id=bakery_id,
         rating=rating,
         content=content,
@@ -378,6 +378,9 @@ async def write_bakery_review(
         consumed_menus=consumed_menus,
         review_imgs=review_imgs,
     )
+
+    if extra:
+        return BaseResponse(extra=extra)
 
     return BaseResponse()
 
