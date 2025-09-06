@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from zoneinfo import ZoneInfo
 
 
@@ -13,12 +13,12 @@ def get_now_by_timezone(tz: str = "Asia/Seoul"):
 def get_today_start():
     """하루의 시작시간을 반환하는 메소드."""
 
-    today = datetime.today()
-    return datetime.combine(today.date(), time.min)
+    now_utc = datetime.now(timezone.utc)
+    return datetime.combine(now_utc.date(), time.min, tzinfo=timezone.utc)
 
 
 def get_today_end():
     """하루의 끝 시간을 반환하는 메소드."""
 
-    today = datetime.today()
-    return datetime.combine(today.date(), time.max)
+    now_utc = datetime.now(timezone.utc)
+    return datetime.combine(now_utc.date(), time.max, tzinfo=timezone.utc)

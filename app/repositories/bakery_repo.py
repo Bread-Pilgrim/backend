@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import and_, asc, desc, func, select
+from sqlalchemy import and_, asc, delete, desc, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.session import Session
@@ -833,6 +833,7 @@ class BakeryRepository:
                 ),
                 isouter=True,
             )
+            .order_by(desc(RecentBakeryView.created_at))
             .limit(20)
             .all()
         )
@@ -853,3 +854,9 @@ class BakeryRepository:
             )
             for r in res
         ]
+
+    async def delete_recent_viewed_bakeries(self, user_id: int):
+        """최근에 조회한 빵집 삭제하는 쿼리."""
+
+        stmt = delete(RecentBakeryView).where(RecentBakeryView.user_id == user_id)
+        self.db.execute(stmt)

@@ -229,6 +229,17 @@ async def get_recent_viewed_bakeries(
     )
 
 
+@router.delete("/recent", response_model=BaseResponse, responses=ERROR_UNKNOWN)
+async def delete_recent_viewed_bakeries(
+    user_id: int = Depends(get_user_id), db=Depends(get_db)
+):
+    """최근 조회한 빵집 전체 삭제 API."""
+
+    return BaseResponse(
+        data=await BakeryService(db=db).delete_recent_viewed_bakeries(user_id=user_id)
+    )
+
+
 @router.get(
     "/{bakery_id}/review/eligibility",
     response_model=BaseResponse[WrittenReview],

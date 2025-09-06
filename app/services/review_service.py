@@ -190,11 +190,10 @@ class Review:
         # TODO 테스트 유저 조건 제거하기
 
         try:
-            if user_id != 2 and user_id != 1:
+            if user_id != 2 and user_id != 7:
                 reviewed_today = await review_repo.get_today_review(
                     user_id=user_id, bakery_id=bakery_id
                 )
-
                 if reviewed_today:
                     raise DailyReviewLimitExceededExecption()
 
