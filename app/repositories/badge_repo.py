@@ -1,13 +1,25 @@
 from typing import List
 
-from sqlalchemy import and_, asc, desc, null
+from sqlalchemy import and_, asc, desc, null, select
 from sqlalchemy.orm import Session
 
 from app.model.badge import Badge, BadgeCondition, UserBadge, UserMetrics
+from app.model.bakery import BakeryMenu
 from app.schema.badge import BadgeItem
 
 REVIEW_THRESHOLDS = [1, 10, 50, 100, 500]
 BREAD_THRESHOLDS = [10, 100, 500]
+
+BREAD_TYPE_FIELDS = [
+    "pastry_bread_count",
+    "meal_bread_count",
+    "healthy_bread_count",
+    "baked_bread_count",
+    "retro_bread_count",
+    "dessert_bread_count",
+    "sandwich_bread_count",
+    "cake_bread_count",
+]
 
 
 class BadgeRepository:
@@ -74,3 +86,11 @@ class BadgeRepository:
             )
 
             self.db.commit()
+
+    async def update_metrics_on_review(self, user_id: int, update_metrics):
+        """리뷰했을 때, metric 업데이트 하는 쿼리."""
+
+        self.db.query(UserMetrics).filter(UserMetrics.user_id == user_id).update(
+            update_metrics,
+            synchronize_session=False,
+        )

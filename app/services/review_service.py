@@ -12,7 +12,9 @@ from app.core.exception import (
     NotFoundException,
     UnknownException,
 )
+from app.model.badge import UserMetrics
 from app.model.review import Review as ReviewSchema
+from app.repositories.badge_repo import BadgeRepository
 from app.repositories.review_repo import ReviewRepository
 from app.schema.common import Paging
 from app.schema.review import (
@@ -26,7 +28,12 @@ from app.schema.review import (
 from app.utils.converter import convert_img_to_webp, to_cursor_str
 from app.utils.date import get_now_by_timezone
 from app.utils.pagination import build_multi_cursor_filter, build_order_by
-from app.utils.parser import build_sort_clause, parse_cursor_value
+from app.utils.parser import (
+    build_select_columns_metrics_on_review,
+    build_sort_clause,
+    build_update_metrics_on_review,
+    parse_cursor_value,
+)
 from app.utils.upload import upload_multiple_to_supabase_storage
 from app.utils.validator import upload_image_file_validation
 
@@ -182,7 +189,7 @@ class Review:
         # TODO 테스트 유저 조건 제거하기
 
         try:
-            if user_id != 2:
+            if user_id != 2 and user_id != 1:
                 reviewed_today = await review_repo.get_today_review(
                     user_id=user_id, bakery_id=bakery_id
                 )
@@ -220,7 +227,7 @@ class Review:
                 bakery_id=bakery_id, rating=rating, review_imgs=review_imgs
             )
 
-            # 6. 리뷰 이미지 insert
+            # 7. 리뷰 이미지 insert
             if review_imgs:
                 # 5.1 파일 첨부 시, 올바른 이미지 확장자인지 체크
                 upload_image_file_validation(img_list=review_imgs)
@@ -233,6 +240,20 @@ class Review:
                 await review_repo.bulk_insert_review_imgs(
                     review_id=review_id, filenames=filenames
                 )
+
+            # ----------------------------- 리뷰 | 소비한 빵 타입 metrics
+            badge_repo = BadgeRepository(db=self.db)
+
+            # 8.1 업데이트할 value 생성
+            update_metrics = build_update_metrics_on_review(
+                consumed_menus=consumed_menus_json
+            )
+
+            # 8.2 리뷰 metrics 업데이트
+            await badge_repo.update_metrics_on_review(
+                user_id=user_id,
+                update_metrics=update_metrics,
+            )
         except Exception as e:
             if isinstance(e, DailyReviewLimitExceededExecption):
                 raise e
