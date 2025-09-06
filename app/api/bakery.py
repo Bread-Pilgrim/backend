@@ -358,7 +358,9 @@ async def write_bakery_review(
     rating: float = Form(..., description="별점"),
     content: str = Form(..., description="리뷰내용"),
     is_private: bool = Form(..., description="나만보기 여부"),
-    consumed_menus: str = Form(..., description='[{"menu_id": 1, "quantity" : 20}]'),
+    consumed_menus: str = Form(
+        ..., description='[{"menu_id": 18, "quantity" : 2, bread_type_id : 10}]'
+    ),
     review_imgs: Optional[List[UploadFile]] = File(
         default=None, description="이미지 파일", max_length=5
     ),
