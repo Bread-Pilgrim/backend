@@ -113,6 +113,7 @@ class SimpleBakeryMenu(BaseModel):
 
     menu_id: int = Field(..., description="메뉴 ID")
     menu_name: str = Field(..., description="메뉴 이름")
+    bread_type_id: int = Field(..., description="빵 타입 id")
     is_signature: bool = Field(..., description="대표메뉴 여부")
 
 

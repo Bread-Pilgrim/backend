@@ -72,6 +72,10 @@ class ReviewLikeResponseDTO(BaseModel):
 class UserReview(BaseModel):
     review_id: int = Field(..., description="리뷰 ID")
     bakery_id: int = Field(..., description="빵집 ID")
+    commercial_area_id: int = Field(
+        ...,
+        description="베이커리 상권지역코드 - 상세보기 클릭시 근처 관광지 추천에 필요",
+    )
     bakery_name: str = Field(..., description="빵집 이름")
     review_content: str = Field(..., description="작성한 리뷰 내용")
     review_rating: float = Field(..., description="별점")

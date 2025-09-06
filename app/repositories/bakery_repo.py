@@ -517,14 +517,22 @@ class BakeryRepository:
         """베이커리 메뉴 조회하는 쿼리."""
 
         res = (
-            self.db.query(BakeryMenu.id, BakeryMenu.name, BakeryMenu.is_signature)
+            self.db.query(
+                BakeryMenu.id,
+                BakeryMenu.name,
+                BakeryMenu.is_signature,
+                BakeryMenu.bread_type_id,
+            )
             .filter(BakeryMenu.bakery_id == bakery_id)
             .all()
         )
 
         menus = [
             SimpleBakeryMenu(
-                menu_id=r.id, menu_name=r.name, is_signature=r.is_signature
+                menu_id=r.id,
+                menu_name=r.name,
+                is_signature=r.is_signature,
+                bread_type_id=r.bread_type_id,
             )
             for r in res
         ]
@@ -533,7 +541,10 @@ class BakeryRepository:
 
             menus.append(
                 SimpleBakeryMenu(
-                    menu_id=-1, menu_name=ETC_MENU_NAME, is_signature=False
+                    menu_id=-1,
+                    menu_name=ETC_MENU_NAME,
+                    is_signature=False,
+                    bread_type_id=42,
                 )
             )
         return menus

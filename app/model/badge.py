@@ -59,3 +59,4 @@ class UserMetrics(Base):
     retro_bread_count = Column(Integer, default=0)
     dessert_bread_count = Column(Integer, default=0)
     sandwich_bread_count = Column(Integer, default=0)
+    cake_bread_count = Column(Integer, default=0)

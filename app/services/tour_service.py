@@ -23,7 +23,7 @@ config = Configs()
 
 CAT_CODE = {
     "A01": "자연",
-    "A02": "인문(문화/예술/역사)",
+    "A02": "인문",
     "A03": "레포츠",
     "A04": "쇼핑",
     "C01": "추천코스",
@@ -137,9 +137,10 @@ class TourService:
         sigungu_codes = area_to_sigungu(area_code)
         # 다중 관광지 카테고리 리스트로 변환
         tour_cats = parse_comma_to_list(tour_cat)
+        combos = [(s, c) for s in sigungu_codes for c in tour_cats]
 
         params_base = {
-            "numOfRows": math.ceil(40 / (len(sigungu_codes) * len(tour_cats))),
+            "numOfRows": math.ceil(40 / len(combos)),
             "pageNo": 1,
             "MobileOS": "ETC",
             "MobileApp": "bread-pilgrim",
