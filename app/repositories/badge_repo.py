@@ -44,7 +44,7 @@ class BadgeRepository:
 
                     after_quantity = query_result[b]
                     for t in BREAD_THRESHOLDS:
-                        if after_quantity >= t and quantity < t:
+                        if after_quantity >= t and t > after_quantity - quantity:
                             achieved_badges.append(
                                 and_(
                                     BadgeCondition.condition_type == b,
