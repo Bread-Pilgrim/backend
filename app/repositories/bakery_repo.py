@@ -833,6 +833,7 @@ class BakeryRepository:
                 ),
                 isouter=True,
             )
+            .order_by(desc(RecentBakeryView.created_at))
             .limit(20)
             .all()
         )
