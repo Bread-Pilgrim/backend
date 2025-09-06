@@ -324,3 +324,13 @@ class BakeryService:
             )
         except Exception as e:
             raise UnknownException(str(e))
+
+    async def delete_recent_viewed_bakeries(self, user_id: int):
+        """최근에 조회한 베이커리 삭제하는 비즈니스 로직."""
+
+        try:
+            await BakeryRepository(db=self.db).delete_recent_viewed_bakeries(
+                user_id=user_id
+            )
+        except Exception as e:
+            raise UnknownException(str(e))
