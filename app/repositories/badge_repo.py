@@ -44,7 +44,7 @@ class BadgeRepository:
 
                     after_quantity = query_result[b]
                     for t in BREAD_THRESHOLDS:
-                        if after_quantity >= t and quantity < t:
+                        if after_quantity >= t and t > after_quantity - quantity:
                             achieved_badges.append(
                                 and_(
                                     BadgeCondition.condition_type == b,
@@ -92,28 +92,17 @@ class BadgeRepository:
             for r in res
         ]
 
-    async def achieve_badge(self, user_id: int, condition_type: str, value=1):
-        """뱃지 획득 시 적재하는 쿼리."""
+    async def achieve_badges(self, user_id: int, badge_ids: List[int]):
+        """유저가 획득할 뱃지 적재하는 쿼리."""
 
-        achieved_badge = (
-            self.db.query(BadgeCondition.badge_id)
-            .filter(
-                BadgeCondition.condition_type == condition_type,
-                BadgeCondition.value == value,
-            )
-            .first()
-        )
-
-        if achieved_badge:
-            self.db.add(
-                UserBadge(
-                    user_id=user_id,
-                    badge_id=achieved_badge.badge_id,
-                    is_representative=False,
-                )
+        badges = []
+        for b in badge_ids:
+            badges.append(
+                UserBadge(user_id=user_id, badge_id=b, is_representative=False)
             )
 
-            self.db.commit()
+        self.db.add_all(badges)
+        self.db.commit()
 
     async def update_metrics_on_review(self, user_id: int, update_metrics):
         """리뷰했을 때, metric 업데이트 하는 쿼리."""
