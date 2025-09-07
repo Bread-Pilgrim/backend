@@ -1,11 +1,6 @@
-from datetime import datetime, timedelta
-
-import jwt
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
 from fastapi import APIRouter, Depends, Header, Request
 
-from app.core.auth import get_apple_client_secret, get_user_id, verify_token
+from app.core.auth import verify_token
 from app.core.base import BaseResponse
 from app.core.config import Configs
 from app.core.database import get_db

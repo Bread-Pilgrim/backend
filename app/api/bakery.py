@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 
-from app.core.auth import get_user_id
+from app.core.auth import get_auth_context
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import (
@@ -45,15 +45,19 @@ async def get_bakeries_by_preference(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    user_id=Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """(홈) 유저 취향기반으로 한 추천 빵집 조회 API"""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     return BaseResponse(
         data=await BakeryService(db=db).get_recommend_bakeries_by_preference(
             area_code=area_code, user_id=user_id
-        )
+        ),
+        token=token,
     )
 
 
@@ -74,10 +78,13 @@ async def get_preference_bakery(
         description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=15),
-    user_id=Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """(더보기) 유저 취향기반으로 한 추천 빵집 조회 API"""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await BakeryService(db=db).get_more_bakeries_by_preference(
@@ -85,7 +92,8 @@ async def get_preference_bakery(
             page_size=page_size,
             area_code=area_code,
             user_id=user_id,
-        )
+        ),
+        token=token,
     )
 
 
@@ -101,15 +109,19 @@ async def get_recommend_bakery_by_area(
     area_code: str = Query(
         description="지역 코드 (쉼표로 여러 개 전달 가능, 예: '1, 2, 3')"
     ),
-    user_id: int = Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """(홈) Hot한 빵집 조회 API."""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     return BaseResponse(
         data=await BakeryService(db=db).get_bakery_by_area(
             area_code=area_code, user_id=user_id
-        )
+        ),
+        token=token,
     )
 
 
@@ -130,10 +142,13 @@ async def get_hot_bakeries(
         description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=15),
-    user_id: int = Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """(더보기용) Hot한 빵집 조회하는 API."""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await BakeryService(db=db).get_hot_bakeries(
@@ -141,7 +156,8 @@ async def get_hot_bakeries(
             user_id=user_id,
             cursor_value=cursor_value,
             page_size=page_size,
-        )
+        ),
+        token=token,
     )
 
 
@@ -167,10 +183,13 @@ async def get_visited_bakery(
     가나다 순: NAME.ASC
     """,
     ),
-    user_id: int = Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """내가 방문한 빵집 조회하는 API."""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await BakeryService(db=db).get_visited_bakery(
@@ -178,7 +197,8 @@ async def get_visited_bakery(
             cursor_value=cursor_value,
             sort_clause=sort_clause,
             page_size=page_size,
-        )
+        ),
+        token=token,
     )
 
 
@@ -204,10 +224,13 @@ async def get_like_bakery(
     가나다 순: NAME.ASC
     """,
     ),
-    user_id: int = Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """내가 찜한 빵집 조회하는 API."""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await BakeryService(db=db).get_like_bakeries(
@@ -215,28 +238,38 @@ async def get_like_bakery(
             sort_clause=sort_clause,
             cursor_value=cursor_value,
             page_size=page_size,
-        )
+        ),
+        token=token,
     )
 
 
 @router.get("/recent", response_model=BaseResponse[List[RecentViewedBakery]])
 async def get_recent_viewed_bakeries(
-    user_id: int = Depends(get_user_id), db=Depends(get_db)
+    auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """최근 조회한 빵집 조회하는 API."""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     return BaseResponse(
-        data=await BakeryService(db=db).get_recent_viewed_bakeries(user_id=user_id)
+        data=await BakeryService(db=db).get_recent_viewed_bakeries(user_id=user_id),
+        token=token,
     )
 
 
 @router.delete("/recent", response_model=BaseResponse, responses=ERROR_UNKNOWN)
 async def delete_recent_viewed_bakeries(
-    user_id: int = Depends(get_user_id), db=Depends(get_db)
+    auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """최근 조회한 빵집 전체 삭제 API."""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     return BaseResponse(
-        data=await BakeryService(db=db).delete_recent_viewed_bakeries(user_id=user_id)
+        data=await BakeryService(db=db).delete_recent_viewed_bakeries(user_id=user_id),
+        token=token,
     )
 
 
@@ -246,14 +279,18 @@ async def delete_recent_viewed_bakeries(
     responses=ERROR_UNKNOWN,
 )
 async def check_is_eligible_to_write_review(
-    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+    bakery_id: int, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """리뷰 작성 가능여부 체크하는 API."""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await BakeryService(db=db).check_is_eligible_to_write_review(
             bakery_id=bakery_id, user_id=user_id
-        )
+        ),
+        token=token,
     )
 
 
@@ -263,25 +300,31 @@ async def check_is_eligible_to_write_review(
     responses={**ERROR_UNKNOWN, **ERROR_NOT_FOUND},
 )
 async def get_bakery_detail(
-    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+    bakery_id: int, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """베이커리 상세 조회 API."""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await BakeryService(db=db).get_bakery_detail(
             user_id=user_id, bakery_id=bakery_id
-        )
+        ),
+        token=token,
     )
 
 
 @router.get("/{bakery_id}/menus", response_model=BaseResponse[List[SimpleBakeryMenu]])
 async def get_bakery_menus(
-    bakery_id: int, _: None = Depends(get_user_id), db=Depends(get_db)
+    bakery_id: int, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """베이커리 메뉴 조회 API."""
 
+    token = auth_ctx.get("token")
     return BaseResponse(
-        data=await BakeryService(db=db).get_bakery_menus(bakery_id=bakery_id)
+        data=await BakeryService(db=db).get_bakery_menus(bakery_id=bakery_id),
+        token=token,
     )
 
 
@@ -312,10 +355,13 @@ async def get_reviews_by_bakery_id(
     낮은 평가순 : RATING.ASC
     """,
     ),
-    user_id=Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """특정 베이커리의 리뷰 조회하는 API."""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await Review(db=db).get_reviews_by_bakery_id(
@@ -324,7 +370,8 @@ async def get_reviews_by_bakery_id(
             cursor_value=cursor_value,
             page_size=page_size,
             sort_clause=sort_clause,
-        )
+        ),
+        token=token,
     )
 
 
@@ -338,10 +385,13 @@ async def get_my_bakery_review(
         description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=5),
-    user_id=Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """특정 베이커리에 내가 작성한 리뷰를 조회하는 API"""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await Review(db=db).get_my_reviews_by_bakery_id(
@@ -349,7 +399,8 @@ async def get_my_bakery_review(
             user_id=user_id,
             cursor_value=cursor_value,
             page_size=page_size,
-        )
+        ),
+        token=token,
     )
 
 
@@ -375,10 +426,13 @@ async def write_bakery_review(
     review_imgs: Optional[List[UploadFile]] = File(
         default=None, description="이미지 파일", max_length=5
     ),
-    user_id=Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """베이커리 리뷰 작성하는 API."""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     extra = await Review(db=db).write_bakery_review(
         bakery_id=bakery_id,
@@ -391,9 +445,9 @@ async def write_bakery_review(
     )
 
     if extra:
-        return BaseResponse(extra=extra)
+        return BaseResponse(extra=extra, token=token)
 
-    return BaseResponse()
+    return BaseResponse(token=token)
 
 
 @router.post(
@@ -402,16 +456,21 @@ async def write_bakery_review(
     responses={**ERROR_UNKNOWN, **ERROR_ALREADY_LIKED},
 )
 async def like_bakery(
-    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+    bakery_id: int, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """베이커리 찜하는 API"""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     await BakeryService(db=db).like_bakery(
         user_id=user_id,
         bakery_id=bakery_id,
     )
 
-    return BaseResponse(data=BakeryLikeResponseDTO(is_like=True, bakery_id=bakery_id))
+    return BaseResponse(
+        data=BakeryLikeResponseDTO(is_like=True, bakery_id=bakery_id), token=token
+    )
 
 
 @router.delete(
@@ -420,10 +479,14 @@ async def like_bakery(
     responses={**ERROR_UNKNOWN, **ERROR_ALREADY_DISLIKED},
 )
 async def dislike_bakery(
-    bakery_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+    bakery_id: int, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """베이커리 찜취소 하는 API"""
 
-    await BakeryService(db=db).dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
-    return BaseResponse(data=BakeryLikeResponseDTO(is_like=False, bakery_id=bakery_id))
+    await BakeryService(db=db).dislike_bakery(user_id=user_id, bakery_id=bakery_id)
+    return BaseResponse(
+        data=BakeryLikeResponseDTO(is_like=False, bakery_id=bakery_id), token=token
+    )

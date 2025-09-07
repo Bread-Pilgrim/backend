@@ -1,5 +1,5 @@
-# 1시간 | 2주
-EXPIRE_IN = {"ACCESS": 60 * 60 * 1, "REFRESH": 60 * 60 * 24 * 14}
+# 2시간 | 4주
+EXPIRE_IN = {"ACCESS": 60 * 60 * 2, "REFRESH": 60 * 60 * 24 * 28}
 
 ETC_MENU_NAME = "기타메뉴"
 
