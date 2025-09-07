@@ -6,6 +6,7 @@ from app.core.auth import get_user_id
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
+from app.schema.badge import AchievedBadge
 from app.schema.review import UserReviewReponseDTO
 from app.schema.users import (
     BreadReportMonthlyResponseDTO,
@@ -59,7 +60,17 @@ async def complete_onboarding(
     """유저의 온보딩완료 처리하는 API(취향설정, 닉네임 설정)"""
 
     await UserService(db=db).set_user_preference_onboarding(user_id=user_id, req=req)
-    return BaseResponse(message="유저 취향설정 성공")
+    return BaseResponse(
+        message="유저 취향설정 성공",
+        extra=[
+            AchievedBadge(
+                badge_id=1,
+                badge_name="새싹빵러",
+                badge_img="0cc535f1-d128-420c-b737-6dd7fd36c819.png",
+                description="처음이 소중해요~ 빵지순례 시작을 축하해요!",
+            )
+        ],
+    )
 
 
 @router.patch(
