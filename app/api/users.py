@@ -32,6 +32,13 @@ async def get_user_profile(user_id: int = Depends(get_user_id), db=Depends(get_d
     return BaseResponse(data=await UserService(db=db).get_user_profile(user_id=user_id))
 
 
+@router.delete("/me", response_model=BaseResponse, responses=ERROR_UNKNOWN)
+async def delete_user_me(user_id: int = Depends(get_user_id), db=Depends(get_db)):
+    """회원 탈퇴하는 API."""
+    await UserService(db=db).delete_user(user_id=user_id)
+    return BaseResponse(message="탈퇴 완료되었습니다.")
+
+
 @router.post(
     "/me/onboarding",
     response_model=BaseResponse,
