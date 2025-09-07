@@ -232,7 +232,7 @@ class UserRepository:
         )
 
         if not res:
-            return []
+            return None, []
 
         has_next = len(res) > page_size
         next_cursor = str(res[-1].id) if has_next else None
