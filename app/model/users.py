@@ -22,6 +22,7 @@ class Users(Base, DateTimeMixin):
     profile_img = Column(String(128), nullable=True, comment="프로필 썸네일")
     gender = Column(String(4), nullable=True)
     is_preferences_set = Column(Boolean, default=False, nullable=True)
+    is_active = Column(Boolean, default=True, comment="활성 유저 여부")
 
 
 class UserPreferences(Base):

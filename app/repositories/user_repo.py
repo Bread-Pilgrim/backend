@@ -48,6 +48,12 @@ class UserRepository:
                 is_representative=res.is_representative,
             )
 
+    async def delete_user(self, user_id: int):
+        """회원 탈퇴하는 쿼리."""
+        self.db.query(Users).filter(Users.id == user_id).update(
+            {Users.is_active: False}
+        )
+
     async def find_user_by_nickname(self, nickname: str, user_id: int) -> bool:
         """nickname 조회하는 쿼리.."""
 
@@ -232,7 +238,7 @@ class UserRepository:
         )
 
         if not res:
-            return []
+            return None, []
 
         has_next = len(res) > page_size
         next_cursor = str(res[-1].id) if has_next else None

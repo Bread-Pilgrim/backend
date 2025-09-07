@@ -1,3 +1,6 @@
+# 30분 | 4주
+EXPIRE_IN = {"ACCESS": 60 * 30, "REFRESH": 60 * 60 * 24 * 28}
+
 ETC_MENU_NAME = "기타메뉴"
 
 REVIEW_THRESHOLDS = [1, 10, 50, 100, 500]

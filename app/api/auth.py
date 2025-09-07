@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Header, Request
 
-from app.core.auth import verify_token
+from app.core.auth import get_auth_context, verify_token
 from app.core.base import BaseResponse
 from app.core.config import Configs
 from app.core.database import get_db
 from app.core.exception import ERROR_DATA_MISSING, ERROR_UNKNOWN
+from app.core.redis import get_redis
 from app.schema.auth import LoginRequestDTO, LoginResponseDTO
 from app.services.auth_service import AuthService
 
@@ -33,10 +34,25 @@ async def login_and_signup(
     req: LoginRequestDTO,
     access_token: str = Header(),
     db=Depends(get_db),
+    redis=Depends(get_redis),
 ):
     """로그인/회원가입."""
-    token, data = await AuthService(db=db).login_and_signup(req, access_token)
+    token, data = await AuthService(db=db, redis=redis).login_and_signup(
+        req, access_token
+    )
     return BaseResponse(token=token, data=data)
+
+
+@router.post("/logout")
+async def logout_user(auth_ctx=Depends(get_auth_context), redis=Depends(get_redis)):
+    """로그아웃 하는 메소드."""
+
+    # TODO 이것도 레이어에 맞게 분리하는 게 맞는 것인가...?
+    user_id = auth_ctx.get("user_id")
+    key = f"refresh_token:{user_id}"
+    await redis.delete(key)
+
+    return BaseResponse(message="로그아웃 되었습니다.")
 
 
 @router.post(

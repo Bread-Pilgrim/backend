@@ -33,6 +33,14 @@ class UserService:
         except Exception as e:
             raise UnknownException(detail=str(e))
 
+    async def delete_user(self, user_id: int):
+        """회원 탈퇴하는 비즈니스 로직."""
+
+        try:
+            await UserRepository(db=self.db).delete_user(user_id=user_id)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
     async def set_user_preference_onboarding(
         self, user_id: int, req: UserOnboardRequestDTO
     ):

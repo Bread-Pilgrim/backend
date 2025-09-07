@@ -20,10 +20,13 @@ router = APIRouter(prefix="/preferences", tags=["preference"])
     1. 500 에러 예시 : DB 이슈
     """,
 )
-async def get_preference_options(_: None = Depends(verify_token), db=Depends(get_db)):
+async def get_preference_options(auth_ctx=Depends(verify_token), db=Depends(get_db)):
     """취향항목 일괄조회 API"""
 
-    return BaseResponse(data=await PreferenceService(db=db).get_preference_options())
+    token = auth_ctx.get("token")
+    return BaseResponse(
+        data=await PreferenceService(db=db).get_preference_options(), token=token
+    )
 
 
 @router.get(
@@ -42,8 +45,11 @@ async def get_preference_options(_: None = Depends(verify_token), db=Depends(get
     """,
 )
 async def get_preference_option(
-    option_type: str, _: None = Depends(verify_token), db=Depends(get_db)
+    option_type: str, auth_ctx=Depends(verify_token), db=Depends(get_db)
 ):
+
+    token = auth_ctx.get("token")
     return BaseResponse(
-        data=await PreferenceService(db=db).get_preference_option(option_type)
+        data=await PreferenceService(db=db).get_preference_option(option_type),
+        token=token,
     )

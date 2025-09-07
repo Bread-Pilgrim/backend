@@ -1,11 +1,10 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, Query
 
-from app.core.auth import get_user_id
+from app.core.auth import get_auth_context
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_DUPLE, ERROR_UNKNOWN
+from app.schema.badge import AchievedBadge
 from app.schema.review import UserReviewReponseDTO
 from app.schema.users import (
     BreadReportMonthlyResponseDTO,
@@ -27,9 +26,26 @@ router = APIRouter(prefix="/users", tags=["user"])
         **ERROR_UNKNOWN,
     },
 )
-async def get_user_profile(user_id: int = Depends(get_user_id), db=Depends(get_db)):
+async def get_user_profile(
+    auth_ctx=Depends(get_auth_context),
+    db=Depends(get_db),
+):
     """유저 프로필을 조회하는 API."""
-    return BaseResponse(data=await UserService(db=db).get_user_profile(user_id=user_id))
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
+    return BaseResponse(
+        data=await UserService(db=db).get_user_profile(user_id=user_id), token=token
+    )
+
+
+@router.delete("/me", response_model=BaseResponse, responses=ERROR_UNKNOWN)
+async def delete_user_me(auth_ctx=Depends(get_auth_context), db=Depends(get_db)):
+    """회원 탈퇴하는 API."""
+
+    user_id = auth_ctx.get("user_id")
+    await UserService(db=db).delete_user(user_id=user_id)
+    return BaseResponse(message="탈퇴 완료되었습니다.")
 
 
 @router.post(
@@ -46,13 +62,26 @@ async def get_user_profile(user_id: int = Depends(get_user_id), db=Depends(get_d
 )
 async def complete_onboarding(
     req: UserOnboardRequestDTO,
-    user_id=Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """유저의 온보딩완료 처리하는 API(취향설정, 닉네임 설정)"""
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     await UserService(db=db).set_user_preference_onboarding(user_id=user_id, req=req)
-    return BaseResponse(message="유저 취향설정 성공")
+    return BaseResponse(
+        message="유저 취향설정 성공",
+        extra=[
+            AchievedBadge(
+                badge_id=1,
+                badge_name="새싹빵러",
+                badge_img="0cc535f1-d128-420c-b737-6dd7fd36c819.png",
+                description="처음이 소중해요~ 빵지순례 시작을 축하해요!",
+            )
+        ],
+        token=token,
+    )
 
 
 @router.patch(
@@ -64,35 +93,46 @@ async def complete_onboarding(
     """,
 )
 async def update_user_info(
-    req: UpdateUserInfoRequestDTO, user_id=Depends(get_user_id), db=Depends(get_db)
+    req: UpdateUserInfoRequestDTO,
+    auth_ctx=Depends(get_auth_context),
+    db=Depends(get_db),
 ):
     """유저 정보 수정하는 API"""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     await UserService(db=db).update_user_info(user_id=user_id, req=req)
-    return BaseResponse(message="유저정보 수정 성공")
+    return BaseResponse(message="유저정보 수정 성공", token=token)
 
 
 @router.get("/preferences")
 async def get_user_bakery_preferences(
-    user_id: int = Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """유저 취향정보 조회하는 API"""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     return BaseResponse(
-        data=await UserService(db=db).get_user_preferences(user_id=user_id)
+        data=await UserService(db=db).get_user_preferences(user_id=user_id), token=token
     )
 
 
 @router.patch("/preferences")
 async def update_user_bakery_preferences(
     req: UpdateUserPreferenceRequestDTO,
-    user_id: int = Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """유저 취향정보 변경하는 API"""
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     await UserService(db=db).modify_user_preference(user_id=user_id, req=req)
-    return BaseResponse(message="유저 취향 수정 성공")
+    return BaseResponse(message="유저 취향 수정 성공", token=token)
 
 
 @router.get(
@@ -106,15 +146,19 @@ async def get_bread_report_monthly(
         description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=15),
-    user_id=Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """빵말정산 월 리스트 조회 API"""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     return BaseResponse(
         data=await UserService(db=db).get_user_bread_report_monthly(
             cursor_value=cursor_value, page_size=page_size, user_id=user_id
-        )
+        ),
+        token=token,
     )
 
 
@@ -124,14 +168,18 @@ async def get_bread_report_monthly(
     response_model=BaseResponse[BreadReportResponeDTO | None],
 )
 async def get_bread_report(
-    year: int, month: int, user_id=Depends(get_user_id), db=Depends(get_db)
+    year: int, month: int, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """유저 빵말정산 API"""
+
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
 
     return BaseResponse(
         data=await UserService(db=db).get_user_bread_report(
             year=year, month=month, user_id=user_id
-        )
+        ),
+        token=token,
     )
 
 
@@ -146,15 +194,19 @@ async def get_my_reviews(
         description="처음엔 0을 입력하고, 다음 페이지부터는 응답에서 받은 next_cursor 값을 사용해서 조회.",
     ),
     page_size: int = Query(default=15),
-    user_id: int = Depends(get_user_id),
+    auth_ctx=Depends(get_auth_context),
     db=Depends(get_db),
 ):
     """내 리뷰 조회하는 API."""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     return BaseResponse(
         data=await UserService(db=db).get_user_reviews(
             cursor_value=cursor_value, page_size=page_size, user_id=user_id
-        )
+        ),
+        token=token,
     )
 
 
@@ -164,12 +216,15 @@ async def get_my_reviews(
     responses=ERROR_UNKNOWN,
 )
 async def represent_user_badge(
-    badge_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+    badge_id: int, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """대표뱃지 설정하는 API."""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     await UserService(db=db).represent_user_badge(badge_id=badge_id, user_id=user_id)
-    return BaseResponse(message="대표뱃지 설정 성공")
+    return BaseResponse(message="대표뱃지 설정 성공", token=token)
 
 
 @router.post(
@@ -178,9 +233,12 @@ async def represent_user_badge(
     responses=ERROR_UNKNOWN,
 )
 async def derepresent_user_badge(
-    badge_id: int, user_id: int = Depends(get_user_id), db=Depends(get_db)
+    badge_id: int, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
     """대표뱃지 해지하는 API."""
 
+    user_id = auth_ctx.get("user_id")
+    token = auth_ctx.get("token")
+
     await UserService(db=db).derepresent_user_badge(badge_id=badge_id, user_id=user_id)
-    return BaseResponse(message="대표뱃지 해지 성공")
+    return BaseResponse(message="대표뱃지 해지 성공", token=token)

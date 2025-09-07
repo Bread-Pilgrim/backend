@@ -25,3 +25,5 @@ class ErrorCode:
     ALREADY_LIKED = 1012
     # 이미 좋아요 해제함
     ALREADY_DISLIKED = 1013
+    # 탈퇴회원
+    WITHDRAW_USER = 1014

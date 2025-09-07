@@ -9,6 +9,9 @@ class Configs(BaseSettings):
     DB_PORT: str
     DATA_BASE: str
 
+    REDIS_HOST: str
+    REDIS_PORT: str
+
     # ====================== KAKAKO AUTH
     KAKAO_API_KEY: str
     KAKAO_REDIRECT_URI: str
@@ -38,10 +41,17 @@ class Configs(BaseSettings):
 
     @property
     # def DATABASE_URL(self):
-    #     return "postgresql+psycopg2://kimjihan77:dkffkqbd2019!@34.47.117.55:5432/bread"
+    #     return "postgresql+psycopg2://kimjihan77:dkffkqbd2019!@localhost:5432/bread"
 
     def DATABASE_URL(self):
-        return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-road-db"
+        return "postgresql+psycopg2://kimjihan77:dkffkqbd2019!@34.47.117.55:5432/bread"
+
+    # def DATABASE_URL(self):
+    #     return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-road-db"
+
+    @property
+    def REDIS_URL(self):
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     class Config:
         env_file = ".env"
