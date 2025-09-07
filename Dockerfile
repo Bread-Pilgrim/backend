@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir poetry && \
 
 COPY . .
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
