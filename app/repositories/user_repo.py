@@ -54,6 +54,13 @@ class UserRepository:
             {Users.is_active: False}
         )
 
+    async def restore_user(self, email: str):
+        """회원 탈퇴 복구하는 쿼리."""
+
+        user = self.db.query(Users).filter(Users.email == email).first()
+        if user:
+            user.is_active = True
+
     async def find_user_by_nickname(self, nickname: str, user_id: int) -> bool:
         """nickname 조회하는 쿼리.."""
 

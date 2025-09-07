@@ -99,3 +99,9 @@ class BreadReportResponeDTO(BaseModel):
     review_count: int = Field(default=0, description="리뷰 개수")
     liked_count: int = Field(default=0, description="좋아요 개수")
     received_likes_count: int = Field(default=0, description="받은 좋아요 개수")
+
+
+class RestoreUserRequestDTO(BaseModel):
+    """복구하려고 하는 계정 email"""
+
+    email: str = Field(..., description="복구하려는 이메일 계정")

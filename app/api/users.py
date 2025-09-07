@@ -9,6 +9,7 @@ from app.schema.review import UserReviewReponseDTO
 from app.schema.users import (
     BreadReportMonthlyResponseDTO,
     BreadReportResponeDTO,
+    RestoreUserRequestDTO,
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
@@ -46,6 +47,14 @@ async def delete_user_me(auth_ctx=Depends(get_auth_context), db=Depends(get_db))
     user_id = auth_ctx.get("user_id")
     await UserService(db=db).delete_user(user_id=user_id)
     return BaseResponse(message="탈퇴 완료되었습니다.")
+
+
+@router.post("/me/restore")
+async def restore_my_account(req: RestoreUserRequestDTO, db=Depends(get_db)):
+    """탈퇴한 계정 복구하는 API."""
+
+    await UserService(db=db).restore_user(req=req)
+    return BaseResponse(message="탈퇴 계정이 복구되었습니다.")
 
 
 @router.post(

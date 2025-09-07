@@ -13,6 +13,7 @@ from app.repositories.user_repo import UserRepository
 from app.schema.review import ReviewMenu, ReviewPhoto, UserReview, UserReviewReponseDTO
 from app.schema.users import (
     BreadReportMonthlyResponseDTO,
+    RestoreUserRequestDTO,
     UpdateUserInfoRequestDTO,
     UpdateUserPreferenceRequestDTO,
     UserOnboardRequestDTO,
@@ -38,6 +39,14 @@ class UserService:
 
         try:
             await UserRepository(db=self.db).delete_user(user_id=user_id)
+        except Exception as e:
+            raise UnknownException(detail=str(e))
+
+    async def restore_user(self, req: RestoreUserRequestDTO):
+        """탈퇴한 회원 복구하는 비즈니스 로직."""
+        try:
+            email = req.email
+            await UserRepository(db=self.db).restore_user(email=email)
         except Exception as e:
             raise UnknownException(detail=str(e))
 
