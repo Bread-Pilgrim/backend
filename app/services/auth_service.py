@@ -76,7 +76,6 @@ class AuthService:
 
             if not user:
                 user_id = await auth_repo.sign_up_user(login_type, kakao_data)
-
                 badge_repo = BadgeRepository(db=self.db)
                 # 새싹 뱃지 획득
                 await badge_repo.achieve_badges(user_id=user_id, badge_ids=[1])
@@ -86,16 +85,18 @@ class AuthService:
             # 탈퇴한 회원일 때,
             elif user and user.is_active == False:
                 raise WithdrawnMemberException()
+            else:
+                user_id = user.id
 
             # 토큰 발행
-            access_token, refresh_token = create_jwt_token(data={"sub": f"{user.id}"})
+            access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
             # 리프레시 토큰 저장
             await auth_repo.save_refresh_token(
-                user_id=user.id, refresh_token=refresh_token
+                user_id=user_id, refresh_token=refresh_token
             )
             # 온보딩 완료여부 체크
             onboarding_completed = await auth_repo.check_completed_onboarding(
-                user_id=user.id
+                user_id=user_id
             )
 
             return AuthToken(
