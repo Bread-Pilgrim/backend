@@ -1,4 +1,6 @@
-from datetime import datetime
+import time
+import uuid
+from datetime import datetime, timedelta
 
 from fastapi import Depends, Header
 from jose import ExpiredSignatureError, JWTError, jwt
@@ -14,8 +16,8 @@ from app.schema.auth import AuthToken
 
 configs = Configs()
 
-EXPIRE_IN = {"ACCESS": 259200, "REFRESH": 15768000}
-
+# 1시간 | 2주
+EXPIRE_IN = {"ACCESS": 60 * 60 * 1, "REFRESH": 60 * 60 * 24 * 14}
 SECRET_KEY = configs.SECRET_KEY
 REFRESH_SECRET_KEY = configs.REFRESH_SECRET_KEY
 ALGORITHM = configs.ALGORITHM
@@ -33,16 +35,29 @@ def create_jwt_token(data: dict[str, str]):
     """jwt token 반환하는 메소드."""
     to_encode = data.copy()
 
+    # 발급시간
+    now = int(time.time())
+    # 유효시간
     access_exp = get_expiration_time(token_type="ACCESS")
     refresh_exp = get_expiration_time(token_type="REFRESH")
 
+    # payload 생성
+    access_payload = {**to_encode, "iat": now, "exp": access_exp}
+    refresh_payload = {
+        **to_encode,
+        "iat": now,
+        "exp": refresh_exp,
+        "jti": str(uuid.uuid4()),
+    }
+
+    # 토큰생성
     access_token = jwt.encode(
-        {**to_encode, "exp": access_exp},
+        access_payload,
         SECRET_KEY,
         algorithm=ALGORITHM,
     )
     refresh_token = jwt.encode(
-        {**to_encode, "exp": refresh_exp},
+        refresh_payload,
         REFRESH_SECRET_KEY,
         algorithm=ALGORITHM,
     )
