@@ -55,9 +55,9 @@ class Configs(BaseSettings):
     # def DATABASE_URL(self):
     #     return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-road-db"
 
-    # @property
-    # def REDIS_URL(self):
-    #     return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+    @property
+    def REDIS_URL(self):
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     class Config:
         env_file = ".env"
