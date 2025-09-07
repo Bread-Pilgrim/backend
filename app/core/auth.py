@@ -7,6 +7,7 @@ from jose import ExpiredSignatureError, JWTError, jwt
 
 from app.core.base import BaseResponse, BaseTokenHeader
 from app.core.config import Configs
+from app.core.const import EXPIRE_IN
 from app.core.exception import (
     InvalidTokenException,
     RequestDataMissingException,
@@ -16,8 +17,6 @@ from app.schema.auth import AuthToken
 
 configs = Configs()
 
-# 1시간 | 2주
-EXPIRE_IN = {"ACCESS": 60 * 60 * 1, "REFRESH": 60 * 60 * 24 * 14}
 SECRET_KEY = configs.SECRET_KEY
 REFRESH_SECRET_KEY = configs.REFRESH_SECRET_KEY
 ALGORITHM = configs.ALGORITHM

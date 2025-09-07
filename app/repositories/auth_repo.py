@@ -1,9 +1,20 @@
+import time
+from typing import Optional
+
+import redis
+
+from app.core.auth import get_expiration_time
 from app.model.users import Users
 
 
 class AuthRepository:
-    def __init__(self, db) -> None:
+    def __init__(
+        self,
+        db,
+        redis: Optional[redis.Redis] = None,
+    ) -> None:
         self.db = db
+        self.redis = redis
 
     async def get_user_id_by_socials(
         self, login_type: str, email: str, social_id: str
@@ -40,3 +51,11 @@ class AuthRepository:
         )
 
         return res.is_preferences_set if res else False
+
+    async def save_refresh_token(self, user_id: int, refresh_token: str):
+        """redis에 refresh_token 저장"""
+
+        exp = get_expiration_time(token_type="REFRESH")
+        key = f"refresh_token:{user_id}"
+        ttl = exp - int(time.time())
+        await self.redis.setex(key, ttl, refresh_token)

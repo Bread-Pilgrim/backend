@@ -1,6 +1,7 @@
 from typing import Optional
 
 import httpx
+import redis
 from sqlalchemy.orm.session import Session
 
 from app.core.auth import create_jwt_token
@@ -16,8 +17,13 @@ configs = Configs()
 
 
 class AuthService:
-    def __init__(self, db: Optional[Session] = None):
+    def __init__(
+        self,
+        db: Optional[Session] = None,
+        redis: Optional[redis.Redis] = None,
+    ):
         self.db = db
+        self.redis = redis
 
     async def kakao_auth_callback(self, code):
         """카카오 소셜로그인 callback 메소드."""
@@ -65,7 +71,7 @@ class AuthService:
                 kakao_data = parse_kakao_user_info(data)
                 social_id, email = kakao_data.social_id, kakao_data.email
 
-            auth_repo = AuthRepository(db=self.db)
+            auth_repo = AuthRepository(db=self.db, redis=self.redis)
             user = await auth_repo.get_user_id_by_socials(login_type, email, social_id)
 
             if not user:
@@ -81,7 +87,13 @@ class AuthService:
             elif user and user.is_active == False:
                 raise WithdrawnMemberException()
 
+            # 토큰 발행
             access_token, refresh_token = create_jwt_token(data={"sub": f"{user.id}"})
+            # 리프레시 토큰 저장
+            await auth_repo.save_refresh_token(
+                user_id=user.id, refresh_token=refresh_token
+            )
+            # 온보딩 완료여부 체크
             onboarding_completed = await auth_repo.check_completed_onboarding(
                 user_id=user.id
             )

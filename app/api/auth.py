@@ -1,10 +1,16 @@
+from datetime import datetime, timedelta
+
+import jwt
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from fastapi import APIRouter, Depends, Header, Request
 
-from app.core.auth import verify_token
+from app.core.auth import get_apple_client_secret, get_user_id, verify_token
 from app.core.base import BaseResponse
 from app.core.config import Configs
 from app.core.database import get_db
 from app.core.exception import ERROR_DATA_MISSING, ERROR_UNKNOWN
+from app.core.redis import get_redis
 from app.schema.auth import LoginRequestDTO, LoginResponseDTO
 from app.services.auth_service import AuthService
 
@@ -33,9 +39,12 @@ async def login_and_signup(
     req: LoginRequestDTO,
     access_token: str = Header(),
     db=Depends(get_db),
+    redis=Depends(get_redis),
 ):
     """로그인/회원가입."""
-    token, data = await AuthService(db=db).login_and_signup(req, access_token)
+    token, data = await AuthService(db=db, redis=redis).login_and_signup(
+        req, access_token
+    )
     return BaseResponse(token=token, data=data)
 
 
