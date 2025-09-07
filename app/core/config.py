@@ -16,6 +16,12 @@ class Configs(BaseSettings):
     KAKAO_API_KEY: str
     KAKAO_REDIRECT_URI: str
 
+    # ====================== APPLE AUTH
+    APPLE_TEAM_ID: str
+    APPLE_CLIENT_ID: str
+    APPLE_KEY_ID: str
+    APPLE_PRIVATE_KEY: str
+
     # ====================== AUTH
     SECRET_KEY: str
     REFRESH_SECRET_KEY: str
@@ -49,9 +55,9 @@ class Configs(BaseSettings):
     # def DATABASE_URL(self):
     #     return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-road-db"
 
-    @property
-    def REDIS_URL(self):
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+    # @property
+    # def REDIS_URL(self):
+    #     return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     class Config:
         env_file = ".env"
