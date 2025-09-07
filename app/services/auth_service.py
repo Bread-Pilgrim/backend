@@ -5,7 +5,7 @@ from sqlalchemy.orm.session import Session
 
 from app.core.auth import create_jwt_token
 from app.core.config import Configs
-from app.core.exception import UnknownException
+from app.core.exception import UnknownException, WithdrawnMemberException
 from app.model.users import Users
 from app.repositories.auth_repo import AuthRepository
 from app.repositories.badge_repo import BadgeRepository
@@ -66,11 +66,9 @@ class AuthService:
                 social_id, email = kakao_data.social_id, kakao_data.email
 
             auth_repo = AuthRepository(db=self.db)
-            user_id = await auth_repo.get_user_id_by_socials(
-                login_type, email, social_id
-            )
+            user = await auth_repo.get_user_id_by_socials(login_type, email, social_id)
 
-            if not user_id:
+            if not user:
                 user_id = await auth_repo.sign_up_user(login_type, kakao_data)
 
                 badge_repo = BadgeRepository(db=self.db)
@@ -79,9 +77,13 @@ class AuthService:
                 # user_badge metric 초기화
                 await badge_repo.initialize_user_badge_metrics(user_id=user_id)
 
-            access_token, refresh_token = create_jwt_token(data={"sub": f"{user_id}"})
+            # 탈퇴한 회원일 때,
+            elif user and user.is_active == False:
+                raise WithdrawnMemberException()
+
+            access_token, refresh_token = create_jwt_token(data={"sub": f"{user.id}"})
             onboarding_completed = await auth_repo.check_completed_onboarding(
-                user_id=user_id
+                user_id=user.id
             )
 
             return AuthToken(
@@ -92,6 +94,8 @@ class AuthService:
             if isinstance(e, httpx.HTTPStatusError):
                 raise e
             elif isinstance(e, httpx.RequestError):
+                raise e
+            elif isinstance(e, WithdrawnMemberException):
                 raise e
             else:
                 raise UnknownException(detail=str(e))

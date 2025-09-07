@@ -11,7 +11,7 @@ class AuthRepository:
         """소셜로그인 유저 정보 기반으로 유저 id값 조회하는 쿼리."""
 
         user = (
-            self.db.query(Users.id)
+            self.db.query(Users.id, Users.is_active)
             .filter(
                 Users.login_type == login_type,
                 Users.email == email,
@@ -20,7 +20,7 @@ class AuthRepository:
             .first()
         )
 
-        return user.id if user else None
+        return user if user else None
 
     async def sign_up_user(self, login_type: str, data):
         """회원가입 메소드."""

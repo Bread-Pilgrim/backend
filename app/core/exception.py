@@ -143,6 +143,12 @@ class AlreadyDislikedException(CustomException):
     DEFAULT_MESSAGE = "이미 좋아요를 해제하셨습니다."
 
 
+class WithdrawnMemberException(CustomException):
+    STATUS_CODE = status.HTTP_410_GONE
+    ERROR_CODE = ErrorCode.WITHDRAW_USER
+    DEFAULT_MESSAGE = "탈퇴한 회원입니다."
+
+
 async def exception_handler(_, exc: Exception):
     """CustomException 예외 발생 시 처리"""
 

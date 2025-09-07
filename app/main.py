@@ -30,6 +30,7 @@ from app.core.exception import (
     TokenExpiredException,
     UnknownException,
     UploadImageException,
+    WithdrawnMemberException,
     exception_handler,
 )
 
@@ -78,5 +79,6 @@ app.add_exception_handler(UploadImageException, exception_handler)
 app.add_exception_handler(DailyReviewLimitExceededExecption, exception_handler)
 app.add_exception_handler(AlreadyLikedException, exception_handler)
 app.add_exception_handler(AlreadyDislikedException, exception_handler)
+app.add_exception_handler(WithdrawnMemberException, exception_handler)
 
 Instrumentator().instrument(app).expose(app)
