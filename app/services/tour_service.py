@@ -77,6 +77,8 @@ class TourService:
     def __proceed_tour_data(tour: List):
         """관광지 데이터 가공하는 메소드."""
 
+        tour = random.sample(tour, 5)
+
         only_img_exist = [
             TourResponseDTO(
                 title=t.get("title"),
@@ -139,8 +141,10 @@ class TourService:
         tour_cats = parse_comma_to_list(tour_cat)
         combos = [(s, c) for s in sigungu_codes for c in tour_cats]
 
+        print("combos", combos, math.ceil(40 / len(combos)))
+
         params_base = {
-            "numOfRows": math.ceil(40 / len(combos)),
+            "numOfRows": math.ceil(20 / len(combos)),
             "pageNo": 1,
             "MobileOS": "ETC",
             "MobileApp": "bread-pilgrim",
