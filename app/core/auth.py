@@ -126,13 +126,15 @@ async def verify_token(headers: BaseTokenHeader = Header()):
     )
 
 
-def get_user_id(user_info: dict = Depends(verify_token)):
-    """user_info에서 user_id만 추출하는 메소드."""
+def get_auth_context(auth_context: dict = Depends(verify_token)):
+    """user_id와 token값 반환하는 베소드."""
 
-    data = user_info.data
+    data = auth_context.data
+    token = auth_context.token
 
     if data:
         user_id = data.get("user_id")
-        return int(user_id) if user_id else None
+        return {"user_id": int(user_id), "token": token} if user_id else None
+
     else:
         raise InvalidTokenException("유효하지 않은 회원입니다.")
