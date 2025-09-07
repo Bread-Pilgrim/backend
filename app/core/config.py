@@ -46,14 +46,8 @@ class Configs(BaseSettings):
     TEST_KAKAO_SOCIAL_ID: str
 
     @property
-    # def DATABASE_URL(self):
-    #     return "postgresql+psycopg2://kimjihan77:dkffkqbd2019!@localhost:5432/bread"
-
     def DATABASE_URL(self):
-        return "postgresql+psycopg2://kimjihan77:dkffkqbd2019!@34.47.117.55:5432/bread"
-
-    # def DATABASE_URL(self):
-    #     return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-road-db"
+        return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PW}@/{self.DATA_BASE}?host=/cloudsql/{self.GCP_RUN_PROJECT_ID}:asia-northeast3:bread-road-db"
 
     @property
     def REDIS_URL(self):
