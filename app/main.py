@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -34,6 +36,14 @@ from app.core.exception import (
     exception_handler,
 )
 
+# -------------------- 로깅 설정 --------------------
+logging.basicConfig(
+    level=logging.DEBUG,  # 필요 시 INFO로 낮출 수 있음
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+logger = logging.getLogger("bread-api")
+# --------------------------------------------------
+
 origins = [
     "http://localhost:3000",
 ]
@@ -50,6 +60,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# -------------------- 요청/응답 로깅 --------------------
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"➡️ Request: {request.method} {request.url}")
+    try:
+        response = await call_next(request)
+        logger.info(f"⬅️ Response: {response.status_code}")
+        return response
+    except Exception:
+        logger.exception("🔥 Unhandled exception")
+        raise
+
+
+# -------------------------------------------------------
 
 # router
 app.include_router(auth.router)
