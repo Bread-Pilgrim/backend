@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 
-from app.core.auth import verify_token
+from app.core.auth import get_auth_context, verify_token
 from app.core.base import BaseResponse
 from app.core.database import get_db
 from app.core.exception import ERROR_UNKNOWN
@@ -20,7 +20,9 @@ router = APIRouter(prefix="/preferences", tags=["preference"])
     1. 500 에러 예시 : DB 이슈
     """,
 )
-async def get_preference_options(auth_ctx=Depends(verify_token), db=Depends(get_db)):
+async def get_preference_options(
+    auth_ctx=Depends(get_auth_context), db=Depends(get_db)
+):
     """취향항목 일괄조회 API"""
 
     token = auth_ctx.get("token")
@@ -45,7 +47,7 @@ async def get_preference_options(auth_ctx=Depends(verify_token), db=Depends(get_
     """,
 )
 async def get_preference_option(
-    option_type: str, auth_ctx=Depends(verify_token), db=Depends(get_db)
+    option_type: str, auth_ctx=Depends(get_auth_context), db=Depends(get_db)
 ):
 
     token = auth_ctx.get("token")
