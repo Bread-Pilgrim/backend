@@ -98,6 +98,8 @@ class BakeryDetailResponseDTO(BaseModel):
     B : 영업전
     """,
     )
+    mapy: float = Field(..., description="위도")
+    mapx: float = Field(..., description="경도")
     operating_hours: Optional[List[BakeryOperatingHour]] = Field(
         default=[], description="영업시간 리스트"
     )
