@@ -1,11 +1,14 @@
 from typing import Optional
 
 import httpx
+import jwt
 import redis
+import requests
 from sqlalchemy.orm.session import Session
 
 from app.core.auth import create_jwt_token
 from app.core.config import Configs
+from app.core.const import APPLE_PUBLIC_KEYS_URL
 from app.core.exception import UnknownException, WithdrawnMemberException
 from app.model.users import Users
 from app.repositories.auth_repo import AuthRepository
@@ -60,6 +63,36 @@ class AuthService:
             except httpx.RequestError as e:
                 raise UnknownException(detail=f"카카오 API 요청 중 오류 발생: {str(e)}")
 
+    def __decode_apple_token(self, id_token: str):
+        """애플 토큰 decoding"""
+
+        # 1. 애플 공개키 가져오기
+        apple_pub_key = requests.get(APPLE_PUBLIC_KEYS_URL).json()["keys"]
+
+        # 2. 토큰 헤더에서 kid 추출
+        headers = jwt.get_unverified_header(id_token)
+        kid = headers["kid"]
+
+        # kid가 일치하는 공개키 찾기
+        public_key = None
+        for key in apple_pub_key:
+            if key["kid"] == kid:
+                public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
+                break
+
+        if not public_key:
+            raise Exception("Apple public key not found")
+
+        # 토큰 검증 및 디코딩
+        decoded = jwt.decode(
+            id_token,
+            public_key,
+            audience=configs.APPLE_CLIENT_ID,
+            issuer="https://appleid.apple.com",
+            algorithms=["RS256"],
+        )
+        return decoded
+
     async def login_and_signup(self, req: LoginRequestDTO, social_access_token: str):
         """로그인/회원가입 비즈니스 로직."""
 
@@ -68,14 +101,28 @@ class AuthService:
         try:
             if login_type == "KAKAO" and social_access_token and self.db:
                 data = await self.__get_kakao_user_info(social_access_token)
-                kakao_data = parse_kakao_user_info(data)
-                social_id, email = kakao_data.social_id, kakao_data.email
+                social_data = parse_kakao_user_info(data)
+                social_id, email = social_data.social_id, social_data.email
+
+                add_data = {
+                    key: value for key, value in social_data if value is not None
+                }
+
+            elif login_type == "APPLE" and social_access_token and self.db:
+                social_data = self.__decode_apple_token(id_token=social_access_token)
+                social_id, email = social_data.get("sub"), social_data.get("email")
+                social_data = {"social_id": social_id, "email": email}
+                add_data = {
+                    key: value
+                    for key, value in social_data.items()
+                    if value is not None
+                }
 
             auth_repo = AuthRepository(db=self.db, redis=self.redis)
             user = await auth_repo.get_user_id_by_socials(login_type, email, social_id)
 
             if not user:
-                user_id = await auth_repo.sign_up_user(login_type, kakao_data)
+                user_id = await auth_repo.sign_up_user(login_type, add_data)
                 badge_repo = BadgeRepository(db=self.db)
                 # 새싹 뱃지 획득
                 await badge_repo.achieve_badges(user_id=user_id, badge_ids=[1])

@@ -38,3 +38,5 @@ BADGE_METRICS_REVERSE = {
     "cake_bread_count": 16,
     "pastry_bread_count": 41,
 }
+
+APPLE_PUBLIC_KEYS_URL = "https://appleid.apple.com/auth/keys"
