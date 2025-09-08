@@ -102,7 +102,6 @@ class BadgeRepository:
             )
 
         self.db.add_all(badges)
-        self.db.commit()
 
     async def update_metrics_on_review(self, user_id: int, update_metrics):
         """리뷰했을 때, metric 업데이트 하는 쿼리."""

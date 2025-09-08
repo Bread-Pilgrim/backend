@@ -33,10 +33,9 @@ class AuthRepository:
 
         return user if user else None
 
-    async def sign_up_user(self, login_type: str, data):
+    async def sign_up_user(self, login_type: str, add_data):
         """회원가입 메소드."""
 
-        add_data = {key: value for key, value in data if value is not None}
         user = Users(**{**add_data, "login_type": login_type})
         self.db.add(user)
         self.db.flush()

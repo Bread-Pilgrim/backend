@@ -13,7 +13,7 @@ class AuthToken(BaseModel):
 class LoginRequestDTO(BaseModel):
     """로그인/회원가입 요청 모델."""
 
-    login_type: str = Field(..., description="로그인 타입 (KAKAO | EMAIL)")
+    login_type: str = Field(default="KAKAO", description="로그인 타입 (KAKAO | APPLE)")
     # email: Optional[str] = Field(default=None, description="이메일")
     # pass_word: Optional[str] = Field(default=None, description="비밀번호")
 

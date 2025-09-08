@@ -77,8 +77,6 @@ class TourService:
     def __proceed_tour_data(tour: List):
         """관광지 데이터 가공하는 메소드."""
 
-        tour = random.sample(tour, 5)
-
         only_img_exist = [
             TourResponseDTO(
                 title=t.get("title"),
@@ -92,7 +90,7 @@ class TourService:
             if t.get("firstimage") != ""
         ]
 
-        return only_img_exist
+        return random.sample(only_img_exist, 5)
 
     async def get_area_event(self, area_code: str):
         """지역행사 조회하는 API"""

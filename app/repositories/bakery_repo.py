@@ -394,6 +394,8 @@ class BakeryRepository:
                 Bakery.name,
                 Bakery.address,
                 Bakery.phone,
+                Bakery.lat,
+                Bakery.lng,
                 OperatingHour.is_opened,
                 OperatingHour.close_time,
                 OperatingHour.open_time,
@@ -421,6 +423,8 @@ class BakeryRepository:
             return BakeryDetailResponseDTO(
                 bakery_id=res.id,
                 bakery_name=res.name,
+                mapy=res.lat,
+                mapx=res.lng,
                 address=res.address,
                 phone=res.phone,
                 open_status=operating_hours_to_open_status(
