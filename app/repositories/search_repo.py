@@ -93,5 +93,5 @@ class SearchRepository:
                     open_time=r.open_time,
                 ),
             )
-            for r in res
+            for r in res[:page_size]
         ]
